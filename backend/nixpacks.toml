@@ -1,0 +1,11 @@
+[variables]
+PHP_EXTENSIONS = "gd mbstring curl zip pdo pdo_mysql bcmath exif intl fileinfo openssl"
+
+[phases.setup]
+nixPkgs = ["php82", "php82Packages.composer", "php82Extensions.mbstring", "php82Extensions.curl", "php82Extensions.zip", "php82Extensions.pdo", "php82Extensions.pdo_mysql", "php82Extensions.gd", "php82Extensions.exif", "php82Extensions.bcmath", "php82Extensions.intl", "php82Extensions.fileinfo", "php82Extensions.openssl"]
+
+[phases.install]
+cmds = ["composer install --no-dev --no-interaction --prefer-dist"]
+
+[start]
+cmd = "php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"

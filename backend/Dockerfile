@@ -30,6 +30,8 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-a
 COPY . .
 RUN composer dump-autoload --no-interaction --optimize
 
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 8000
 
-CMD sh -c "php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"
+ENTRYPOINT ["./docker-entrypoint.sh"]

@@ -5,9 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Notifications\OtpNotification;
 use App\Repositories\Interfaces\UserRepositoryInterface;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -24,14 +22,12 @@ class AuthService
             'middle_name' => $data['middle_name'] ?? null,
             'email' => $data['email'],
             'phone' => $data['phone'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'],
             'role' => User::ROLE_FARMER,
             'municipality_id' => $data['municipality_id'],
             'barangay_id' => $data['barangay_id'],
             'status' => 'pending',
         ]);
-
-        event(new Registered($user));
 
         $this->issueOtp($user);
 
@@ -78,12 +74,10 @@ class AuthService
             $user->notify(new OtpNotification($otp));
         } catch (\Throwable $e) {
             report($e);
+        }
 
-            // Allow registration to succeed when mail is not configured yet.
-            // OTP is still stored; use resend after fixing MAIL_* variables.
-            if (config('mail.default') === 'log') {
-                logger()->info("OTP for {$user->email}: {$otp}");
-            }
+        if (config('mail.default') === 'log') {
+            logger()->info("OTP for {$user->email}: {$otp}");
         }
 
         return $otp;
@@ -122,7 +116,7 @@ class AuthService
 
     public function changePassword(User $user, string $newPassword): void
     {
-        $user->forceFill(['password' => Hash::make($newPassword)])->save();
+        $user->forceFill(['password' => $newPassword])->save();
         $user->tokens()->delete();
     }
 }

@@ -3,6 +3,16 @@ set -e
 
 echo "Starting AgriConnect API..."
 
+# Ensure Laravel writable directories exist
+mkdir -p \
+  bootstrap/cache \
+  storage/framework/cache/data \
+  storage/framework/sessions \
+  storage/framework/views \
+  storage/logs \
+  storage/app/public
+chmod -R 775 bootstrap/cache storage
+
 # Link storage (ignore if already linked)
 php artisan storage:link 2>/dev/null || true
 

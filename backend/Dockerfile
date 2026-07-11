@@ -30,7 +30,15 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-a
 COPY . .
 RUN composer dump-autoload --no-interaction --optimize
 
-RUN chmod +x docker-entrypoint.sh
+RUN mkdir -p \
+    bootstrap/cache \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    storage/app/public \
+    && chmod -R 775 bootstrap/cache storage \
+    && chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
 

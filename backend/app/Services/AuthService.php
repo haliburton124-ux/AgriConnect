@@ -72,8 +72,10 @@ class AuthService
 
         try {
             $user->notify(new OtpNotification($otp));
+            logger()->info("OTP email sent to {$user->email}");
         } catch (\Throwable $e) {
             report($e);
+            logger()->error("OTP email failed for {$user->email}: {$e->getMessage()}");
         }
 
         if (config('mail.default') === 'log') {

@@ -19,12 +19,13 @@ export const authService = {
     api.post<{ message: string; token: string; user: User }>('/auth/login', payload),
 
   register: (payload: RegisterPayload) =>
-    api.post<{ message: string; user: User }>('/auth/register', payload),
+    api.post<{ message: string; user: User; verification_code?: string }>('/auth/register', payload),
 
   verifyOtp: (email: string, otp: string) =>
     api.post<{ message: string; token: string; user: User }>('/auth/verify-otp', { email, otp }),
 
-  resendOtp: (email: string) => api.post<{ message: string }>('/auth/resend-otp', { email }),
+  resendOtp: (email: string) =>
+    api.post<{ message: string; verification_code?: string }>('/auth/resend-otp', { email }),
 
   forgotPassword: (email: string) => api.post<{ message: string }>('/auth/forgot-password', { email }),
 

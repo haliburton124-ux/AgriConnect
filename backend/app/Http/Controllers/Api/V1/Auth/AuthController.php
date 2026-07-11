@@ -28,12 +28,20 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = $this->authService->register($request->validated());
+        $result = $this->authService->register($request->validated());
 
-        return response()->json([
-            'message' => 'Registration successful. Please check your email for a one-time verification code.',
-            'user' => new UserResource($user),
-        ], 201);
+        $payload = [
+            'message' => $result['delivered']
+                ? 'Registration successful. Please check your email for a one-time verification code.'
+                : 'Registration successful. Email delivery is unavailable on this server — use the verification code shown on the next screen.',
+            'user' => new UserResource($result['user']),
+        ];
+
+        if ($result['verification_code']) {
+            $payload['verification_code'] = $result['verification_code'];
+        }
+
+        return response()->json($payload, 201);
     }
 
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
@@ -54,9 +62,19 @@ class AuthController extends Controller
     public function resendOtp(ForgotPasswordRequest $request): JsonResponse
     {
         $user = $this->users->findByEmail($request->validated('email'));
-        $this->authService->issueOtp($user);
+        $result = $this->authService->issueOtp($user);
 
-        return response()->json(['message' => 'A new verification code has been sent to your email.']);
+        $payload = [
+            'message' => $result['delivered']
+                ? 'A new verification code has been sent to your email.'
+                : 'A new verification code has been generated. Use the code shown on screen.',
+        ];
+
+        if ($result['verification_code']) {
+            $payload['verification_code'] = $result['verification_code'];
+        }
+
+        return response()->json($payload);
     }
 
     public function login(LoginRequest $request): JsonResponse

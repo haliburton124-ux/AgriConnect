@@ -57,9 +57,14 @@ export function RegisterPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await authService.register(values)
-      toast.success('Registration successful! Check your email for the verification code.')
-      navigate('/verify-otp', { state: { email: values.email } })
+      const { data } = await authService.register(values)
+      toast.success(data.message)
+      navigate('/verify-otp', {
+        state: {
+          email: values.email,
+          verificationCode: data.verification_code,
+        },
+      })
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Registration failed. Please check your details.'))
     }

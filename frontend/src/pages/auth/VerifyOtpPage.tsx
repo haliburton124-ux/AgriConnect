@@ -12,7 +12,10 @@ export function VerifyOtpPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const setSession = useAuthStore((s) => s.setSession)
-  const email = (location.state as { email?: string })?.email ?? ''
+  const email = (location.state as { email?: string; verificationCode?: string })?.email ?? ''
+  const [verificationCode, setVerificationCode] = useState(
+    (location.state as { verificationCode?: string })?.verificationCode ?? '',
+  )
 
   const [digits, setDigits] = useState<string[]>(Array(6).fill(''))
   const [submitting, setSubmitting] = useState(false)
@@ -64,8 +67,13 @@ export function VerifyOtpPage() {
   const handleResend = async () => {
     setResending(true)
     try {
-      await authService.resendOtp(email)
-      toast.success('A new code has been sent to your email.')
+      const { data } = await authService.resendOtp(email)
+      if (data.verification_code) {
+        setVerificationCode(data.verification_code)
+        toast.success('New code generated. Use the code shown below.')
+      } else {
+        toast.success(data.message)
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     } finally {
@@ -74,7 +82,20 @@ export function VerifyOtpPage() {
   }
 
   return (
-    <AuthLayout title="Verify your email" subtitle={`Enter the 6-digit code we sent to ${email || 'your email'}.`}>
+    <AuthLayout
+      title="Verify your email"
+      subtitle={
+        verificationCode
+          ? `Email delivery is unavailable on the server. Use the code below to verify ${email || 'your account'}.`
+          : `Enter the 6-digit code we sent to ${email || 'your email'}.`
+      }
+    >
+      {verificationCode && (
+        <div className="mb-6 rounded-2xl border border-forest/15 bg-forest/[0.06] p-4 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-forest">Your verification code</p>
+          <p className="mt-2 text-3xl font-bold tracking-[0.35em] text-ink">{verificationCode}</p>
+        </div>
+      )}
       <div className="flex justify-between gap-2" onPaste={handlePaste}>
         {digits.map((digit, i) => (
           <input

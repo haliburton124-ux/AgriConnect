@@ -10,11 +10,13 @@ use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
-    public function __construct(protected UserRepositoryInterface $users)
-    {
+    public function __construct(
+        protected UserRepositoryInterface $users,
+        protected GmailApiService $gmailApi,
+    ) {
     }
 
-    public function register(array $data): User
+    public function register(array $data): array
     {
         $user = $this->users->create([
             'first_name' => $data['first_name'],
@@ -29,9 +31,13 @@ class AuthService
             'status' => 'pending',
         ]);
 
-        $this->issueOtp($user);
+        $otpDelivery = $this->issueOtp($user);
 
-        return $user;
+        return [
+            'user' => $user,
+            'delivered' => $otpDelivery['delivered'],
+            'verification_code' => $otpDelivery['verification_code'],
+        ];
     }
 
     public function attemptLogin(string $email, string $password, ?string $deviceName = null): array
@@ -61,7 +67,10 @@ class AuthService
         return ['user' => $user, 'token' => $token];
     }
 
-    public function issueOtp(User $user): string
+    /**
+     * @return array{delivered: bool, verification_code: ?string}
+     */
+    public function issueOtp(User $user): array
     {
         $otp = (string) random_int(100000, 999999);
 
@@ -70,19 +79,47 @@ class AuthService
             'otp_expires_at' => now()->addMinutes(10),
         ])->save();
 
+        $delivered = $this->deliverOtpEmail($user, $otp);
+
+        return [
+            'delivered' => $delivered,
+            'verification_code' => $delivered ? null : $otp,
+        ];
+    }
+
+    protected function deliverOtpEmail(User $user, string $otp): bool
+    {
+        $subject = 'Agriri — Your One-Time Verification Code';
+        $html = view('mail.otp', [
+            'firstName' => $user->first_name,
+            'otp' => $otp,
+        ])->render();
+
+        if ($this->gmailApi->isConfigured()) {
+            try {
+                $this->gmailApi->send($user->email, $subject, $html);
+                logger()->info("Gmail API OTP sent to {$user->email}");
+
+                return true;
+            } catch (\Throwable $e) {
+                report($e);
+                logger()->error("Gmail API OTP failed for {$user->email}: {$e->getMessage()}");
+            }
+        }
+
         try {
             $user->notify(new OtpNotification($otp));
-            logger()->info("OTP email sent to {$user->email}");
+            logger()->info("SMTP OTP sent to {$user->email}");
+
+            return true;
         } catch (\Throwable $e) {
             report($e);
-            logger()->error("OTP email failed for {$user->email}: {$e->getMessage()}");
+            logger()->error("SMTP OTP failed for {$user->email}: {$e->getMessage()}");
         }
 
-        if (config('mail.default') === 'log') {
-            logger()->info("OTP for {$user->email}: {$otp}");
-        }
+        logger()->warning("OTP for {$user->email}: {$otp} (email delivery unavailable)");
 
-        return $otp;
+        return false;
     }
 
     public function verifyOtp(User $user, string $otp): bool

@@ -40,4 +40,11 @@ return [
         'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase-credentials.json')),
     ],
 
+    'gmail' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
+        'sender' => env('GMAIL_SENDER', env('MAIL_FROM_ADDRESS')),
+    ],
+
 ];

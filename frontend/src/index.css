@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 90 30% 97%;
+    --foreground: 200 20% 16%;
+    --border: 100 15% 88%;
+    --input: 100 15% 88%;
+    --ring: 122 39% 34%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-family: 'Poppins', system-ui, sans-serif;
+  }
+
+  /* Visible keyboard focus everywhere — accessibility requirement */
+  :focus-visible {
+    outline: 2px solid #66BB6A;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Glassmorphism surface used for the top navbar and floating panels */
+  .glass-surface {
+    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-glass;
+  }
+
+  /* Skeleton loading shimmer */
+  .skeleton {
+    background: linear-gradient(90deg, #EEF2ED 25%, #F8FAF5 37%, #EEF2ED 63%);
+    background-size: 400px 100%;
+    @apply animate-skeleton rounded-lg;
+  }
+
+  /* Button ripple container */
+  .btn-ripple {
+    @apply relative overflow-hidden;
+  }
+}
+
+/* Leaflet z-index fix so modals/dropdowns render above the map */
+.leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 10 !important; }

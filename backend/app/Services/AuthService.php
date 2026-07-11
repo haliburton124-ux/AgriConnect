@@ -74,7 +74,17 @@ class AuthService
             'otp_expires_at' => now()->addMinutes(10),
         ])->save();
 
-        $user->notify(new OtpNotification($otp));
+        try {
+            $user->notify(new OtpNotification($otp));
+        } catch (\Throwable $e) {
+            report($e);
+
+            // Allow registration to succeed when mail is not configured yet.
+            // OTP is still stored; use resend after fixing MAIL_* variables.
+            if (config('mail.default') === 'log') {
+                logger()->info("OTP for {$user->email}: {$otp}");
+            }
+        }
 
         return $otp;
     }

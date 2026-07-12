@@ -3,6 +3,8 @@ import {
   Sprout, Facebook, Instagram, AlertTriangle, BookOpen, MapPin, Gift, ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { useAuthStore } from '@/store/authStore'
+import { cn } from '@/lib/utils'
 
 const HIGHLIGHTS = [
   {
@@ -32,6 +34,8 @@ const HIGHLIGHTS = [
 ] as const
 
 export function Footer() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
   return (
     <footer className="bg-forest-dark px-4 pb-8 pt-20 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -81,24 +85,26 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-6 sm:flex-row sm:px-8">
-          <div>
-            <p className="text-base font-semibold text-white">Ready to connect with your agriculture office?</p>
-            <p className="mt-1 text-sm text-white/60">Create a free account to report incidents, register farms, and access programs.</p>
+        {!isAuthenticated && (
+          <div className="mt-14 flex flex-col items-center justify-between gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-6 sm:flex-row sm:px-8">
+            <div>
+              <p className="text-base font-semibold text-white">Ready to connect with your agriculture office?</p>
+              <p className="mt-1 text-sm text-white/60">Create a free account to report incidents, register farms, and access programs.</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+              <Link to="/register">
+                <Button className="bg-white text-forest hover:bg-white/90">
+                  Create Account <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/login" className="text-sm font-medium text-white/75 transition-colors hover:text-white">
+                Sign in
+              </Link>
+            </div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-3">
-            <Link to="/register">
-              <Button className="bg-white text-forest hover:bg-white/90">
-                Create Account <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/login" className="text-sm font-medium text-white/75 transition-colors hover:text-white">
-              Sign in
-            </Link>
-          </div>
-        </div>
+        )}
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row">
+        <div className={cn('flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row', isAuthenticated ? 'mt-14' : 'mt-10')}>
           <p>© {new Date().getFullYear()} Provincial Agriculture Office of Ilocos Norte. All rights reserved.</p>
           <p>Built for the farmers of Ilocos Norte.</p>
         </div>

@@ -26,6 +26,10 @@ function commentReplies(comment: CommunityPostComment): CommunityPostComment[] {
   return Array.isArray(wrapped.data) ? wrapped.data : []
 }
 
+function countThreadedComments(items: CommunityPostComment[]): number {
+  return items.reduce((total, comment) => total + 1 + countThreadedComments(commentReplies(comment)), 0)
+}
+
 function CommentThread({
   comment,
   onReply,
@@ -63,13 +67,38 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!post) return
+    if (!post) {
+      setComments(null)
+      return
+    }
+
+    let cancelled = false
+    const postId = post.id
+
     setComments(null)
-    communityService.get(post.id).then((res) => onUpdate(res.data.data)).catch(() => {})
-    communityService.comments(post.id).then((res) => setComments(res.data.data))
     setBody('')
     setReplyTo(null)
-  }, [post]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    communityService
+      .get(postId)
+      .then((res) => {
+        if (!cancelled) onUpdate(res.data.data)
+      })
+      .catch(() => {})
+
+    communityService
+      .comments(postId)
+      .then((res) => {
+        if (!cancelled) setComments(res.data.data)
+      })
+      .catch(() => {
+        if (!cancelled) setComments([])
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [post?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!post) return null
 
@@ -144,7 +173,9 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
         )}
 
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-ink">Comments ({post.comments_count})</h4>
+          <h4 className="text-sm font-semibold text-ink">
+            Comments ({comments ? countThreadedComments(comments) : post.comments_count})
+          </h4>
 
           {enableEngagement && (
             <div className="space-y-2">

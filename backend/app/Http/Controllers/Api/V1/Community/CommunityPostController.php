@@ -188,7 +188,9 @@ class CommunityPostController extends Controller
             ->latest()
             ->get();
 
-        return response()->json(['data' => CommunityPostCommentResource::collection($comments)]);
+        return response()->json([
+            'data' => CommunityPostCommentResource::collection($comments)->resolve(),
+        ]);
     }
 
     public function storeComment(

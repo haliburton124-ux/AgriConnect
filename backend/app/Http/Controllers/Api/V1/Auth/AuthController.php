@@ -30,11 +30,18 @@ class AuthController extends Controller
     {
         $result = $this->authService->register($request->validated());
 
-        $payload = [
-            'message' => $result['delivered']
+        $message = $result['resumed']
+            ? ($result['delivered']
+                ? 'Your registration has been resumed. A new verification code has been sent to your email.'
+                : 'Your registration has been resumed. Use the new verification code shown on the next screen.')
+            : ($result['delivered']
                 ? 'Registration successful. Please check your email for a one-time verification code.'
-                : 'Registration successful. Email delivery is unavailable on this server — use the verification code shown on the next screen.',
+                : 'Registration successful. Email delivery is unavailable on this server — use the verification code shown on the next screen.');
+
+        $payload = [
+            'message' => $message,
             'user' => new UserResource($result['user']),
+            'resumed' => $result['resumed'],
         ];
 
         if ($result['verification_code']) {

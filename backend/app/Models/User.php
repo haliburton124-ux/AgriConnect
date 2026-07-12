@@ -48,6 +48,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return trim("{$this->first_name} {$this->middle_name} {$this->last_name}");
     }
 
+    public function isPendingVerification(): bool
+    {
+        return $this->status === 'pending' && ! $this->hasVerifiedEmail();
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;

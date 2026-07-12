@@ -19,7 +19,7 @@ export const authService = {
     api.post<{ message: string; token: string; user: User }>('/auth/login', payload),
 
   register: (payload: RegisterPayload) =>
-    api.post<{ message: string; user: User; verification_code?: string }>('/auth/register', payload),
+    api.post<{ message: string; user: User; verification_code?: string; resumed?: boolean }>('/auth/register', payload),
 
   verifyOtp: (email: string, otp: string) =>
     api.post<{ message: string; token: string; user: User }>('/auth/verify-otp', { email, otp }),

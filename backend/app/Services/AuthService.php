@@ -18,18 +18,45 @@ class AuthService
 
     public function register(array $data): array
     {
-        $user = $this->users->create([
+        $existing = $this->users->findByEmail($data['email']);
+        $resumed = false;
+
+        $profile = [
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'middle_name' => $data['middle_name'] ?? null,
-            'email' => $data['email'],
             'phone' => $data['phone'],
             'password' => $data['password'],
-            'role' => User::ROLE_FARMER,
             'municipality_id' => $data['municipality_id'],
             'barangay_id' => $data['barangay_id'],
+            'role' => User::ROLE_FARMER,
             'status' => 'pending',
-        ]);
+        ];
+
+        if ($existing) {
+            if ($existing->hasVerifiedEmail()) {
+                throw ValidationException::withMessages([
+                    'email' => ['This email is already registered. Please sign in instead.'],
+                ]);
+            }
+
+            if (! $existing->isPendingVerification()) {
+                throw ValidationException::withMessages([
+                    'email' => ['This email is already associated with an account. Please contact support.'],
+                ]);
+            }
+
+            $user = $this->users->update($existing, array_merge($profile, [
+                'otp_code' => null,
+                'otp_expires_at' => null,
+                'email_verified_at' => null,
+            ]));
+            $resumed = true;
+        } else {
+            $user = $this->users->create(array_merge($profile, [
+                'email' => $data['email'],
+            ]));
+        }
 
         $otpDelivery = $this->issueOtp($user);
 
@@ -37,6 +64,7 @@ class AuthService
             'user' => $user,
             'delivered' => $otpDelivery['delivered'],
             'verification_code' => $otpDelivery['verification_code'],
+            'resumed' => $resumed,
         ];
     }
 

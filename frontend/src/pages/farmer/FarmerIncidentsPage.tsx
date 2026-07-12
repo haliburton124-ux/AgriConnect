@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Plus, Search, MapPin } from 'lucide-react'
+import { AlertTriangle, Plus, Search, MapPin, Sprout } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -9,6 +10,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { ReportIncidentModal } from '@/components/modals/ReportIncidentModal'
 import { IncidentDetailModal } from '@/components/modals/IncidentDetailModal'
 import { incidentService } from '@/services/incidentService'
+import { useGeolocatedFarms } from '@/hooks/useGeolocatedFarms'
+import { FARM_REGISTRATION_REQUIRED_MESSAGE } from '@/lib/farms'
 import { formatDate, cn } from '@/lib/utils'
 import type { Incident } from '@/types'
 
@@ -30,6 +33,7 @@ export function FarmerIncidentsPage() {
   const [selected, setSelected] = useState<Incident | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
+  const { farms, loading: farmsLoading, hasFarm } = useGeolocatedFarms()
 
   const load = () => {
     setIncidents(null)
@@ -59,10 +63,26 @@ export function FarmerIncidentsPage() {
           <h1 className="text-2xl font-bold text-ink">My Incident Reports</h1>
           <p className="mt-1 text-sm text-muted-foreground">Track every report you've submitted, from pending to resolved.</p>
         </div>
-        <Button onClick={() => setReportOpen(true)}>
+        <Button onClick={() => setReportOpen(true)} disabled={farmsLoading || !hasFarm}>
           <Plus className="h-4 w-4" /> Report Incident
         </Button>
       </div>
+
+      {!farmsLoading && farms !== null && !hasFarm && (
+        <Card className="border-gold/20 bg-gold/[0.04]">
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="font-semibold text-ink">Register a farm to report incidents</p>
+              <p className="text-sm text-muted-foreground">{FARM_REGISTRATION_REQUIRED_MESSAGE}</p>
+            </div>
+            <Link to="/farmer/farms">
+              <Button>
+                <Sprout className="h-4 w-4" /> Register Farm
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
@@ -97,9 +117,18 @@ export function FarmerIncidentsPage() {
                 icon={AlertTriangle}
                 title="No incidents found"
                 description="Try a different filter, or report a new incident if you're seeing a problem on your farm."
-                actionLabel="Report Incident"
-                onAction={() => setReportOpen(true)}
+                actionLabel={hasFarm ? 'Report Incident' : undefined}
+                onAction={hasFarm ? () => setReportOpen(true) : undefined}
               />
+              {!hasFarm && (
+                <div className="mt-4 flex justify-center">
+                  <Link to="/farmer/farms">
+                    <Button>
+                      <Sprout className="h-4 w-4" /> Register Farm
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-black/5">

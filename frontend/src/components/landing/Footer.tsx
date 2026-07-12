@@ -1,27 +1,42 @@
 import { Link } from 'react-router-dom'
-import { Sprout, MapPin, Phone, Mail, Facebook, Instagram } from 'lucide-react'
-import { PUBLIC_NAV_LINKS } from '@/config/farmerPublicNav'
+import {
+  Sprout, Facebook, Instagram, AlertTriangle, BookOpen, MapPin, Gift, ArrowRight,
+} from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
-const COLUMNS = [
+const HIGHLIGHTS = [
   {
-    title: 'Explore',
-    links: PUBLIC_NAV_LINKS.filter((l) => l.path !== '/').map((l) => ({ label: l.label, to: l.path })),
+    icon: AlertTriangle,
+    title: 'GPS Incident Reporting',
+    description: 'Flag crop disease, pests, or emergencies and track response in real time.',
+    to: '/services',
   },
   {
-    title: 'Account',
-    links: [
-      { label: 'Sign In', to: '/login' },
-      { label: 'Register', to: '/register' },
-    ],
+    icon: BookOpen,
+    title: 'Knowledge Sharing',
+    description: 'Browse public advisories from municipalities across the province.',
+    to: '/knowledge-center',
   },
-]
+  {
+    icon: MapPin,
+    title: 'Farm Registration',
+    description: 'Pin your farm on the map so technicians can find you faster.',
+    to: '/register',
+  },
+  {
+    icon: Gift,
+    title: 'Government Programs',
+    description: 'Discover subsidies, training, loans, and equipment support.',
+    to: '/government-programs',
+  },
+] as const
 
 export function Footer() {
   return (
     <footer className="bg-forest-dark px-4 pb-8 pt-20 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
             <div className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
                 <Sprout className="h-5 w-5" />
@@ -31,7 +46,7 @@ export function Footer() {
                 <p className="mt-1 text-[11px] text-white/60">Ilocos Norte</p>
               </div>
             </div>
-            <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/60">
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-white/60">
               A real-time agricultural extension and farm incident response platform
               connecting farmers with the Provincial and Municipal Agriculture Offices
               of Ilocos Norte.
@@ -46,42 +61,44 @@ export function Footer() {
             </div>
           </div>
 
-          {COLUMNS.map((col) => (
-            <div key={col.title}>
-              <p className="text-sm font-semibold uppercase tracking-wide text-white/50">{col.title}</p>
-              <ul className="mt-4 space-y-2.5">
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <Link to={link.to} className="text-sm text-white/75 transition-colors hover:text-white">{link.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/50">Contact</p>
-            <ul className="mt-4 space-y-3 text-sm text-white/75">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/50" />
-                Provincial Capitol Complex, Laoag City, Ilocos Norte
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-white/50" />
-                (077) 000-0000
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail className="h-4 w-4 shrink-0 text-white/50" />
-                agriculture@ilocosnorte.gov.ph
-              </li>
-              <li>
-                <Link to="/contact" className="transition-colors hover:text-white">View contact page →</Link>
-              </li>
-            </ul>
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/50">What you can do</p>
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {HIGHLIGHTS.map(({ icon: Icon, title, description, to }) => (
+                <Link
+                  key={title}
+                  to={to}
+                  className="group rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-colors hover:border-white/20 hover:bg-white/[0.08]"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-forest-light transition-colors group-hover:bg-white/15">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-white">{title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-white/55">{description}</p>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-6 sm:flex-row sm:px-8">
+          <div>
+            <p className="text-base font-semibold text-white">Ready to connect with your agriculture office?</p>
+            <p className="mt-1 text-sm text-white/60">Create a free account to report incidents, register farms, and access programs.</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
+            <Link to="/register">
+              <Button className="bg-white text-forest hover:bg-white/90">
+                Create Account <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/login" className="text-sm font-medium text-white/75 transition-colors hover:text-white">
+              Sign in
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row">
           <p>© {new Date().getFullYear()} Provincial Agriculture Office of Ilocos Norte. All rights reserved.</p>
           <p>Built for the farmers of Ilocos Norte.</p>
         </div>

@@ -3,10 +3,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { MapPin, LocateFixed } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { FarmLocationPicker } from '@/components/farms/FarmLocationPicker'
 import { api, getApiErrorMessage } from '@/lib/api'
 import { farmService } from '@/services/farmService'
 import type { Farm } from '@/types'
@@ -79,13 +79,6 @@ export function AddEditFarmModal({ open, onClose, farm, onSuccess }: AddEditFarm
       setBarangays([])
     }
   }, [municipalityId])
-
-  const useCurrentLocation = () => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => toast.error('Could not access your location. Please enable location services.'),
-    )
-  }
 
   const close = () => {
     reset()
@@ -162,19 +155,11 @@ export function AddEditFarmModal({ open, onClose, farm, onSuccess }: AddEditFarm
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-ink">Farm Location (GPS)</label>
-          <button
-            type="button"
-            onClick={useCurrentLocation}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-forest-light/40 bg-forest/[0.02] py-3 text-sm font-medium text-forest transition-colors hover:bg-forest/5"
-          >
-            <LocateFixed className="h-4 w-4" />
-            {coords ? 'Update current location' : 'Use my current location'}
-          </button>
-          {coords && (
-            <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" /> {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-            </p>
-          )}
+          <FarmLocationPicker
+            active={open}
+            value={coords}
+            onChange={setCoords}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

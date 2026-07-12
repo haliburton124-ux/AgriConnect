@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/store/authStore'
+import { farmService } from '@/services/farmService'
+import { FARM_REGISTRATION_REQUIRED_MESSAGE, getGeolocatedFarms } from '@/lib/farms'
 import { ReportIncidentModal } from '@/components/modals/ReportIncidentModal'
 import { ScheduleAppointmentModal } from '@/components/modals/ScheduleAppointmentModal'
 
@@ -24,8 +27,21 @@ export function FarmerActionsProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, navigate])
 
   const openReportIncident = useCallback(() => {
-    requireAuth(() => setReportOpen(true))
-  }, [requireAuth])
+    requireAuth(async () => {
+      try {
+        const { data } = await farmService.list()
+        const geolocatedFarms = getGeolocatedFarms(data.data)
+        if (geolocatedFarms.length === 0) {
+          toast.error(FARM_REGISTRATION_REQUIRED_MESSAGE)
+          navigate('/farmer/farms')
+          return
+        }
+        setReportOpen(true)
+      } catch {
+        toast.error('Could not verify your farm registration. Please try again.')
+      }
+    })
+  }, [requireAuth, navigate])
 
   const openRequestVisit = useCallback(() => {
     requireAuth(() => setVisitOpen(true))

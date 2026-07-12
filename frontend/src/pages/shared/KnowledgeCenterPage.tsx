@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
+import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { knowledgeService } from '@/services/knowledgeService'
@@ -27,16 +28,15 @@ export function KnowledgeCenterPage() {
   const [articles, setArticles] = useState<KnowledgeArticle[] | null>(null)
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
   const [categories, setCategories] = useState<KnowledgeCategory[]>([])
-  const [postCategories, setPostCategories] = useState<{ value: string; label: string }[]>([])
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [activePostCategory, setActivePostCategory] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null)
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null)
 
   useEffect(() => {
     knowledgeService.categories().then((res) => setCategories(res.data.data))
-    communityService.categories().then((res) => setPostCategories(res.data.data))
   }, [])
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export function KnowledgeCenterPage() {
       <div className="flex rounded-xl border border-black/5 bg-white p-1 shadow-card w-fit">
         <button
           type="button"
-          onClick={() => { setTab('advisories'); setSearch('') }}
+          onClick={() => { setTab('advisories'); setSearch(''); setSearchOpen(false) }}
           className={cn(
             'rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
             tab === 'advisories' ? 'bg-gradient-primary text-white' : 'text-ink/60 hover:bg-forest/5',
@@ -107,7 +107,7 @@ export function KnowledgeCenterPage() {
         </button>
         <button
           type="button"
-          onClick={() => { setTab('guides'); setSearch('') }}
+          onClick={() => { setTab('guides'); setSearch(''); setSearchOpen(false) }}
           className={cn(
             'rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
             tab === 'guides' ? 'bg-gradient-primary text-white' : 'text-ink/60 hover:bg-forest/5',
@@ -117,69 +117,50 @@ export function KnowledgeCenterPage() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {tab === 'advisories' ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setActivePostCategory(null)}
-                className={cn(
-                  'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
-                  activePostCategory === null ? 'bg-gradient-primary text-white shadow-card' : 'bg-white text-ink/60 hover:bg-forest/5 border border-black/5',
-                )}
-              >
-                All Topics
-              </button>
-              {postCategories.map((cat) => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => setActivePostCategory(cat.value)}
-                  className={cn(
-                    'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
-                    activePostCategory === cat.value ? 'bg-gradient-primary text-white shadow-card' : 'bg-white text-ink/60 hover:bg-forest/5 border border-black/5',
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setActiveCategory(null)}
-                className={cn(
-                  'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
-                  activeCategory === null ? 'bg-gradient-primary text-white shadow-card' : 'bg-white text-ink/60 hover:bg-forest/5 border border-black/5',
-                )}
-              >
-                All
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={cn(
-                    'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
-                    activeCategory === cat.id ? 'bg-gradient-primary text-white shadow-card' : 'bg-white text-ink/60 hover:bg-forest/5 border border-black/5',
-                  )}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-        <Input
-          placeholder={tab === 'advisories' ? 'Search advisories…' : 'Search articles…'}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-64"
+      {tab === 'advisories' ? (
+        <AdvisorySearchPanel
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          search={search}
+          onSearchChange={setSearch}
+          activeCategory={activePostCategory}
+          onCategoryChange={setActivePostCategory}
         />
-      </div>
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveCategory(null)}
+              className={cn(
+                'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
+                activeCategory === null ? 'bg-gradient-primary text-white shadow-card' : 'bg-white text-ink/60 hover:bg-forest/5 border border-black/5',
+              )}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat.id)}
+                className={cn(
+                  'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
+                  activeCategory === cat.id ? 'bg-gradient-primary text-white shadow-card' : 'bg-white text-ink/60 hover:bg-forest/5 border border-black/5',
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+          <Input
+            placeholder="Search articles…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:w-64"
+          />
+        </div>
+      )}
 
       {tab === 'advisories' ? (
         posts === null ? (
@@ -189,7 +170,7 @@ export function KnowledgeCenterPage() {
         ) : posts.length === 0 ? (
           <Card>
             <CardContent className="p-6">
-              <EmptyState icon={Sprout} title="No advisories found" description="Try a different category or search term." />
+              <EmptyState icon={Sprout} title="No advisories found." description="Try a different category or search term." />
             </CardContent>
           </Card>
         ) : (

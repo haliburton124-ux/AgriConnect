@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import {
-  Search, Sprout, Lock, ShieldAlert, ArrowRight, Newspaper, BookOpen,
+  Sprout, Lock, ShieldAlert, ArrowRight, Newspaper, BookOpen,
 } from 'lucide-react'
 import { SectionHeading } from '@/components/landing/SectionHeading'
-import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
+import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { communityService } from '@/services/communityService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
@@ -25,16 +25,12 @@ export function KnowledgeHubSection() {
   const isFarmer = isAuthenticated && user?.role === 'farmer'
 
   const [view, setView] = useState<FeedView>('advisories')
-  const [categories, setCategories] = useState<{ value: string; label: string }[]>([])
+  const [searchOpen, setSearchOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<CommunityPost | null>(null)
-
-  useEffect(() => {
-    communityService.categories().then((res) => setCategories(res.data.data)).catch(() => {})
-  }, [])
 
   useEffect(() => {
     setPosts(null)
@@ -108,9 +104,12 @@ export function KnowledgeHubSection() {
           {/* Main feed */}
           <div className="space-y-6">
             {/* View toggle + search */}
-            <div className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-black/[0.03] sm:p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex rounded-xl border border-black/5 bg-canvas p-1">
+            <div className={cn(
+              'flex flex-col gap-4',
+              !searchOpen && 'rounded-2xl bg-white p-4 shadow-soft ring-1 ring-black/[0.03] sm:p-5',
+            )}>
+              {!searchOpen && (
+                <div className="flex rounded-xl border border-black/5 bg-canvas p-1 w-fit">
                   <button
                     type="button"
                     onClick={() => setView('advisories')}
@@ -134,42 +133,16 @@ export function KnowledgeHubSection() {
                     </button>
                   )}
                 </div>
-                <div className="relative w-full sm:max-w-xs">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search advisories…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
+              )}
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveCategory(null)}
-                  className={cn(
-                    'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                    activeCategory === null ? 'bg-gradient-primary text-white' : 'bg-forest/5 text-ink/70 hover:bg-forest/10',
-                  )}
-                >
-                  All Topics
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.value}
-                    type="button"
-                    onClick={() => setActiveCategory(cat.value)}
-                    className={cn(
-                      'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                      activeCategory === cat.value ? 'bg-gradient-primary text-white' : 'bg-forest/5 text-ink/70 hover:bg-forest/10',
-                    )}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
+              <AdvisorySearchPanel
+                open={searchOpen}
+                onOpenChange={setSearchOpen}
+                search={search}
+                onSearchChange={setSearch}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
             </div>
 
             {/* Posts */}
@@ -184,7 +157,7 @@ export function KnowledgeHubSection() {
                 <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
                   <Sprout className="h-10 w-10 text-forest-light" />
                   <p className="font-medium text-ink">
-                    {loadError ? 'Could not load advisories' : 'No advisories found'}
+                    {loadError ? 'Could not load advisories' : 'No advisories found.'}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {loadError

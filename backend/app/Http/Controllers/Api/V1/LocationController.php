@@ -27,8 +27,10 @@ class LocationController extends Controller
         $request->validate(['municipality_id' => ['required', 'exists:municipalities,id']]);
 
         return response()->json([
-            'data' => Barangay::where('municipality_id', $request->query('municipality_id'))
-                ->orderBy('name')
+            'data' => Barangay::query()
+                ->where('municipality_id', $request->integer('municipality_id'))
+                ->whereNotNull('sort_order')
+                ->orderBy('sort_order')
                 ->get(['id', 'name', 'latitude', 'longitude']),
         ]);
     }

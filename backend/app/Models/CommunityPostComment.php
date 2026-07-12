@@ -27,6 +27,6 @@ class CommunityPostComment extends Model
 
     public function replies(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_id')->latest();
+        return $this->hasMany(self::class, 'parent_id')->oldest();
     }
 }

@@ -50,10 +50,11 @@ export function KnowledgeCenterPage() {
   useEffect(() => {
     if (tab !== 'advisories') return
     setPosts(null)
-    communityService.list({
-      category: activePostCategory ?? undefined,
-      search: search || undefined,
-    }).then((res) => setPosts(res.data.data))
+    communityService.list(
+      activePostCategory
+        ? { category: activePostCategory }
+        : { search: search || undefined },
+    ).then((res) => setPosts(res.data.data))
   }, [tab, activePostCategory, search])
 
   const updatePost = (updated: CommunityPost) => {
@@ -97,7 +98,7 @@ export function KnowledgeCenterPage() {
       <div className="flex rounded-xl border border-black/5 bg-white p-1 shadow-card w-fit">
         <button
           type="button"
-          onClick={() => { setTab('advisories'); setSearch(''); setSearchOpen(false) }}
+          onClick={() => { setTab('advisories'); setSearch(''); setActivePostCategory(null); setSearchOpen(false) }}
           className={cn(
             'rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
             tab === 'advisories' ? 'bg-gradient-primary text-white' : 'text-ink/60 hover:bg-forest/5',
@@ -107,7 +108,7 @@ export function KnowledgeCenterPage() {
         </button>
         <button
           type="button"
-          onClick={() => { setTab('guides'); setSearch(''); setSearchOpen(false) }}
+          onClick={() => { setTab('guides'); setSearch(''); setActivePostCategory(null); setSearchOpen(false) }}
           className={cn(
             'rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
             tab === 'guides' ? 'bg-gradient-primary text-white' : 'text-ink/60 hover:bg-forest/5',
@@ -123,7 +124,6 @@ export function KnowledgeCenterPage() {
           onOpenChange={setSearchOpen}
           search={search}
           onSearchChange={setSearch}
-          activeCategory={activePostCategory}
           onCategoryChange={setActivePostCategory}
         />
       ) : (

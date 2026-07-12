@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,8 +6,9 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { MunicipalityBarangayFields } from '@/components/forms/MunicipalityBarangayFields'
 import { FarmLocationPicker } from '@/components/farms/FarmLocationPicker'
-import { api, getApiErrorMessage } from '@/lib/api'
+import { getApiErrorMessage } from '@/lib/api'
 import { farmService } from '@/services/farmService'
 import type { Farm } from '@/types'
 
@@ -36,23 +37,23 @@ interface AddEditFarmModalProps {
 
 export function AddEditFarmModal({ open, onClose, farm, onSuccess }: AddEditFarmModalProps) {
   const isEditing = Boolean(farm)
-  const [municipalities, setMunicipalities] = useState<{ id: number; name: string }[]>([])
-  const [barangays, setBarangays] = useState<{ id: number; name: string }[]>([])
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const previousMunicipalityRef = useRef<number | null>(null)
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   const municipalityId = watch('municipality_id')
+  const barangayId = watch('barangay_id')
 
   useEffect(() => {
     if (!open) return
-    api.get('/locations/municipalities').then((res) => setMunicipalities(res.data.data))
 
     if (farm) {
       reset({
@@ -66,23 +67,36 @@ export function AddEditFarmModal({ open, onClose, farm, onSuccess }: AddEditFarm
         ownership_status: undefined,
       })
       setCoords({ lat: farm.latitude, lng: farm.longitude })
+      previousMunicipalityRef.current = farm.municipality?.id ?? null
     } else {
       reset({ farm_type: 'rice' })
       setCoords(null)
+      previousMunicipalityRef.current = null
     }
-  }, [open, farm]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, farm, reset])
 
-  useEffect(() => {
-    if (municipalityId) {
-      api.get('/locations/barangays', { params: { municipality_id: municipalityId } }).then((res) => setBarangays(res.data.data))
-    } else {
-      setBarangays([])
+  const handleMunicipalityChange = (value: string) => {
+    const nextMunicipalityId = value ? Number(value) : null
+
+    if (
+      previousMunicipalityRef.current !== null
+      && previousMunicipalityRef.current !== nextMunicipalityId
+    ) {
+      setValue('barangay_id', '' as unknown as number, { shouldValidate: true })
     }
-  }, [municipalityId])
+
+    setValue('municipality_id', value ? Number(value) : ('' as unknown as number), { shouldValidate: true })
+    previousMunicipalityRef.current = nextMunicipalityId
+  }
+
+  const handleBarangayChange = (value: string) => {
+    setValue('barangay_id', value ? Number(value) : ('' as unknown as number), { shouldValidate: true })
+  }
 
   const close = () => {
     reset()
     setCoords(null)
+    previousMunicipalityRef.current = null
     onClose()
   }
 
@@ -126,30 +140,14 @@ export function AddEditFarmModal({ open, onClose, farm, onSuccess }: AddEditFarm
       <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
         <Input label="Farm name" error={errors.farm_name?.message} {...register('farm_name')} />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Municipality</label>
-            <select
-              className="h-11 w-full rounded-xl border-2 border-input bg-white px-4 text-sm focus-visible:outline-none focus-visible:border-forest-light"
-              {...register('municipality_id')}
-            >
-              <option value="">Select…</option>
-              {municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-            {errors.municipality_id && <p className="mt-1.5 text-xs text-danger">{errors.municipality_id.message}</p>}
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Barangay</label>
-            <select
-              className="h-11 w-full rounded-xl border-2 border-input bg-white px-4 text-sm focus-visible:outline-none focus-visible:border-forest-light"
-              {...register('barangay_id')}
-            >
-              <option value="">Select…</option>
-              {barangays.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-            {errors.barangay_id && <p className="mt-1.5 text-xs text-danger">{errors.barangay_id.message}</p>}
-          </div>
-        </div>
+        <MunicipalityBarangayFields
+          municipalityId={municipalityId}
+          barangayId={barangayId}
+          onMunicipalityChange={handleMunicipalityChange}
+          onBarangayChange={handleBarangayChange}
+          municipalityError={errors.municipality_id?.message}
+          barangayError={errors.barangay_id?.message}
+        />
 
         <Input label="Address (optional)" {...register('address')} />
 

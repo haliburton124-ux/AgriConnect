@@ -18,6 +18,14 @@ interface PostDetailModalProps {
   enableEngagement?: boolean
 }
 
+function commentReplies(comment: CommunityPostComment): CommunityPostComment[] {
+  const replies = comment.replies
+  if (!replies) return []
+  if (Array.isArray(replies)) return replies
+  const wrapped = replies as { data?: CommunityPostComment[] }
+  return Array.isArray(wrapped.data) ? wrapped.data : []
+}
+
 function CommentThread({
   comment,
   onReply,
@@ -41,7 +49,7 @@ function CommentThread({
           <Reply className="h-3 w-3" /> Reply
         </button>
       </div>
-      {comment.replies?.map((reply) => (
+      {commentReplies(comment).map((reply) => (
         <CommentThread key={reply.id} comment={reply} onReply={onReply} />
       ))}
     </div>
@@ -57,10 +65,11 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
   useEffect(() => {
     if (!post) return
     setComments(null)
+    communityService.get(post.id).then((res) => onUpdate(res.data.data)).catch(() => {})
     communityService.comments(post.id).then((res) => setComments(res.data.data))
     setBody('')
     setReplyTo(null)
-  }, [post])
+  }, [post]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!post) return null
 

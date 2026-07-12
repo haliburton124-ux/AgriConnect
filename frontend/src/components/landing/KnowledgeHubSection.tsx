@@ -35,10 +35,9 @@ export function KnowledgeHubSection() {
   useEffect(() => {
     setPosts(null)
     setLoadError(null)
-    const params = {
-      category: activeCategory ?? undefined,
-      search: search.trim() || undefined,
-    }
+    const params = activeCategory
+      ? { category: activeCategory }
+      : { search: search.trim() || undefined }
 
     const request =
       view === 'my-feed' && isFarmer
@@ -140,7 +139,6 @@ export function KnowledgeHubSection() {
                 onOpenChange={setSearchOpen}
                 search={search}
                 onSearchChange={setSearch}
-                activeCategory={activeCategory}
                 onCategoryChange={setActiveCategory}
               />
             </div>

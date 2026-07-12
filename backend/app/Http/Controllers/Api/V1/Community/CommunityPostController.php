@@ -184,7 +184,7 @@ class CommunityPostController extends Controller
         abort_unless($communityPost->is_published, 404);
 
         $comments = $communityPost->comments()
-            ->with(['user', 'replies.user'])
+            ->with(['user', 'replies' => fn ($query) => $query->with(['user', 'replies.user'])])
             ->latest()
             ->get();
 

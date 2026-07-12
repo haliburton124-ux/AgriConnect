@@ -3,7 +3,7 @@ import {
   Search, ArrowLeft, Clock, X, ChevronRight,
 } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
-import { ADVISORY_CATEGORIES } from '@/lib/advisoryCategories'
+import { ADVISORY_CATEGORIES, findAdvisoryCategoryByLabel } from '@/lib/advisoryCategories'
 import { useAdvisoryRecentSearches } from '@/hooks/useAdvisoryRecentSearches'
 import { cn } from '@/lib/utils'
 
@@ -12,7 +12,6 @@ interface AdvisorySearchPanelProps {
   onOpenChange: (open: boolean) => void
   search: string
   onSearchChange: (value: string) => void
-  activeCategory: string | null
   onCategoryChange: (category: string | null) => void
 }
 
@@ -21,7 +20,6 @@ export function AdvisorySearchPanel({
   onOpenChange,
   search,
   onSearchChange,
-  activeCategory,
   onCategoryChange,
 }: AdvisorySearchPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -34,17 +32,55 @@ export function AdvisorySearchPanel({
     }
   }, [open])
 
-  const commitSearch = (term: string) => {
+  const applyQuery = (term: string) => {
     const trimmed = term.trim()
-    onSearchChange(trimmed)
-    if (trimmed) addRecent(trimmed)
+    const categoryMatch = findAdvisoryCategoryByLabel(trimmed)
+
+    if (categoryMatch?.value) {
+      onCategoryChange(categoryMatch.value)
+      onSearchChange(categoryMatch.label)
+      addRecent(categoryMatch.label)
+    } else if (!trimmed) {
+      onCategoryChange(null)
+      onSearchChange('')
+    } else {
+      onCategoryChange(null)
+      onSearchChange(trimmed)
+      addRecent(trimmed)
+    }
+
     inputRef.current?.blur()
     onOpenChange(false)
   }
 
+  const commitSearch = (term: string) => {
+    applyQuery(term)
+  }
+
+  const selectCategory = (value: string | null, label: string) => {
+    if (value === null) {
+      onCategoryChange(null)
+      onSearchChange('')
+      inputRef.current?.blur()
+      onOpenChange(false)
+      return
+    }
+
+    onCategoryChange(value)
+    onSearchChange(label)
+    addRecent(label)
+    inputRef.current?.blur()
+    onOpenChange(false)
+  }
+
+  const handleSearchChange = (value: string) => {
+    onCategoryChange(null)
+    onSearchChange(value)
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    commitSearch(search)
+    applyQuery(search)
   }
 
   if (!open) {
@@ -55,12 +91,8 @@ export function AdvisorySearchPanel({
         className="flex w-full items-center gap-3 rounded-xl border border-black/5 bg-canvas px-4 py-3 text-left transition-colors hover:bg-forest/[0.04]"
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className={cn('text-sm', search || activeCategory ? 'font-medium text-ink' : 'text-muted-foreground')}>
-          {search
-            ? `"${search}"`
-            : activeCategory
-              ? ADVISORY_CATEGORIES.find((c) => c.value === activeCategory)?.label ?? 'Filtered'
-              : 'Search advisories…'}
+        <span className={cn('text-sm', search ? 'font-medium text-ink' : 'text-muted-foreground')}>
+          {search ? `"${search}"` : 'Search advisories…'}
         </span>
       </button>
     )
@@ -86,7 +118,7 @@ export function AdvisorySearchPanel({
             enterKeyHint="search"
             placeholder="Search advisories…"
             value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="border-0 bg-canvas pl-9 shadow-none ring-0 focus-visible:ring-0 [&::-webkit-search-cancel-button]:hidden"
           />
         </form>
@@ -135,31 +167,21 @@ export function AdvisorySearchPanel({
         <h3 className="text-sm font-semibold text-ink">Browse Categories</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">Explore advisories by topic</p>
         <ul className="mt-3 space-y-0.5">
-          {ADVISORY_CATEGORIES.map(({ value, label, icon: Icon }) => {
-            const selected = activeCategory === value || (value === null && activeCategory === null)
-            return (
-              <li key={label}>
-                <button
-                  type="button"
-                  onClick={() => onCategoryChange(value)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition-colors',
-                    selected ? 'bg-forest/[0.08] text-forest' : 'hover:bg-forest/[0.04]',
-                  )}
-                >
-                  <span className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-                    selected ? 'bg-forest/15 text-forest' : 'bg-forest/[0.06] text-forest',
-                  )}
-                >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="flex-1 text-sm font-medium text-ink">{label}</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </li>
-            )
-          })}
+          {ADVISORY_CATEGORIES.map(({ value, label, icon: Icon }) => (
+            <li key={label}>
+              <button
+                type="button"
+                onClick={() => selectCategory(value, label)}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition-colors hover:bg-forest/[0.04] active:bg-forest/[0.08]"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-forest/[0.06] text-forest">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="flex-1 text-sm font-medium text-ink">{label}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

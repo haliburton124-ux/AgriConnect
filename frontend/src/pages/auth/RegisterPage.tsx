@@ -1,17 +1,16 @@
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
-import { useEffect, useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { ArrowLeft, ArrowRight, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { MunicipalityBarangayFields } from '@/components/forms/MunicipalityBarangayFields'
 import { authService } from '@/services/authService'
 import { getApiErrorMessage } from '@/lib/api'
-import { api } from '@/lib/api'
-import type { Barangay, Municipality } from '@/types'
 
 const schema = z
   .object({
@@ -67,28 +66,27 @@ function StepIndicator({ step }: { step: number }) {
 export function RegisterPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
-  const [municipalities, setMunicipalities] = useState<Municipality[]>([])
-  const [barangays, setBarangays] = useState<Barangay[]>([])
 
   const {
     register,
     handleSubmit,
-    control,
     watch,
+    setValue,
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   const municipalityId = watch('municipality_id')
+  const barangayId = watch('barangay_id')
 
-  useEffect(() => {
-    api.get('/locations/municipalities').then((res) => setMunicipalities(res.data.data))
-  }, [])
+  const handleMunicipalityChange = (value: string) => {
+    setValue('municipality_id', value ? Number(value) : ('' as unknown as number), { shouldValidate: true })
+    setValue('barangay_id', '' as unknown as number, { shouldValidate: true })
+  }
 
-  useEffect(() => {
-    if (!municipalityId) return
-    api.get('/locations/barangays', { params: { municipality_id: municipalityId } }).then((res) => setBarangays(res.data.data))
-  }, [municipalityId])
+  const handleBarangayChange = (value: string) => {
+    setValue('barangay_id', value ? Number(value) : ('' as unknown as number), { shouldValidate: true })
+  }
 
   const isLastStep = step === STEPS.length
 
@@ -141,50 +139,14 @@ export function RegisterPage() {
         )}
 
         {step === 2 && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink">Municipality</label>
-              <Controller
-                control={control}
-                name="municipality_id"
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    value={field.value ?? ''}
-                    className="h-11 w-full rounded-xl border-2 border-input bg-white px-3 text-sm text-ink transition-colors focus-visible:border-forest-light focus-visible:outline-none"
-                  >
-                    <option value="">Select...</option>
-                    {municipalities.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                )}
-              />
-              {errors.municipality_id && <p className="mt-1.5 text-xs text-danger">{errors.municipality_id.message}</p>}
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink">Barangay</label>
-              <Controller
-                control={control}
-                name="barangay_id"
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    value={field.value ?? ''}
-                    disabled={!municipalityId}
-                    className="h-11 w-full rounded-xl border-2 border-input bg-white px-3 text-sm text-ink transition-colors focus-visible:border-forest-light focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-                  >
-                    <option value="">Select...</option>
-                    {barangays.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-                )}
-              />
-              {errors.barangay_id && <p className="mt-1.5 text-xs text-danger">{errors.barangay_id.message}</p>}
-            </div>
-          </div>
+          <MunicipalityBarangayFields
+            municipalityId={municipalityId}
+            barangayId={barangayId}
+            onMunicipalityChange={handleMunicipalityChange}
+            onBarangayChange={handleBarangayChange}
+            municipalityError={errors.municipality_id?.message}
+            barangayError={errors.barangay_id?.message}
+          />
         )}
 
         {step === 3 && (

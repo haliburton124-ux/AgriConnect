@@ -63,8 +63,10 @@ Route::prefix('v1')->group(function () {
         Route::get('knowledge/articles/{article}', [KnowledgeArticleController::class, 'show']);
 
         Route::get('community/categories', [CommunityPostController::class, 'categories']);
-        Route::get('community/posts', [CommunityPostController::class, 'index']);
-        Route::get('community/posts/{communityPost}', [CommunityPostController::class, 'show']);
+        Route::middleware('auth.optional')->group(function () {
+            Route::get('community/posts', [CommunityPostController::class, 'index']);
+            Route::get('community/posts/{communityPost}', [CommunityPostController::class, 'show']);
+        });
 
         Route::get('programs', [ProgramController::class, 'index']);
         Route::get('programs/{program}', [ProgramController::class, 'show']);

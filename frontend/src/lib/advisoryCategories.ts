@@ -30,3 +30,8 @@ export function getAdvisoryCategoryLabel(value: string | null): string {
   if (!value) return 'All Topics'
   return ADVISORY_CATEGORIES.find((c) => c.value === value)?.label ?? value.replace(/_/g, ' ')
 }
+
+export function findAdvisoryCategoryByLabel(label: string) {
+  const normalized = label.trim().toLowerCase()
+  return ADVISORY_CATEGORIES.find((c) => c.label.toLowerCase() === normalized)
+}

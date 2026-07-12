@@ -30,9 +30,11 @@ export function ForgotPasswordPage() {
   if (sent) {
     return (
       <AuthLayout title="Check your email" subtitle="We've sent password reset instructions to your inbox.">
-        <div className="flex flex-col items-center rounded-2xl bg-forest/5 px-6 py-10 text-center animate-fade-in">
-          <CheckCircle2 className="h-10 w-10 text-forest" />
-          <p className="mt-3 text-sm text-muted-foreground">
+        <div className="flex flex-col items-center rounded-2xl border border-forest/10 bg-forest/[0.05] px-6 py-10 text-center animate-fade-in">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-forest/10">
+            <CheckCircle2 className="h-7 w-7 text-forest" />
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             If an account exists with that email, a reset link is on its way. It may take a few minutes to arrive.
           </p>
           <Link to="/login" className="mt-6 text-sm font-semibold text-forest hover:underline">Back to sign in</Link>
@@ -43,7 +45,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthLayout title="Forgot your password?" subtitle="Enter your email and we'll send you a link to reset it.">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <Input label="Email address" type="email" error={errors.email?.message} {...register('email')} />
         <Button type="submit" className="w-full" loading={isSubmitting}>
           <Mail className="h-4 w-4" />

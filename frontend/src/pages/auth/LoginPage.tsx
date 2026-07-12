@@ -67,7 +67,7 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-[38px] text-muted-foreground hover:text-ink"
+            className="absolute right-2.5 top-[34px] rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-forest/10 hover:text-forest"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -75,7 +75,7 @@ export function LoginPage() {
         </div>
 
         <div className="flex justify-end">
-          <Link to="/forgot-password" className="text-sm font-medium text-forest hover:underline">
+          <Link to="/forgot-password" className="text-sm font-semibold text-forest hover:text-forest-light hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -86,7 +86,7 @@ export function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         New farmer?{' '}
         <Link to="/register" className="font-semibold text-forest hover:underline">
           Create an account

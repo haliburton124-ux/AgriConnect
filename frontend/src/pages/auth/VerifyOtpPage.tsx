@@ -91,12 +91,12 @@ export function VerifyOtpPage() {
       }
     >
       {verificationCode && (
-        <div className="mb-6 rounded-2xl border border-forest/15 bg-forest/[0.06] p-4 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-forest">Your verification code</p>
+        <div className="mb-6 rounded-2xl border border-forest/15 bg-gradient-to-br from-forest/[0.07] to-teal-500/[0.06] p-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wider text-forest/80">Your verification code</p>
           <p className="mt-2 text-3xl font-bold tracking-[0.35em] text-ink">{verificationCode}</p>
         </div>
       )}
-      <div className="flex justify-between gap-2" onPaste={handlePaste}>
+      <div className="flex justify-between gap-2.5" onPaste={handlePaste}>
         {digits.map((digit, i) => (
           <input
             key={i}
@@ -107,7 +107,7 @@ export function VerifyOtpPage() {
             value={digit}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
-            className="h-14 w-12 rounded-xl border-2 border-input bg-white text-center text-xl font-semibold focus-visible:outline-none focus-visible:border-forest-light"
+            className="h-14 w-12 rounded-2xl border-2 border-input bg-white text-center text-xl font-semibold text-ink shadow-sm transition-colors focus-visible:border-forest-light focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest/10"
             aria-label={`Digit ${i + 1}`}
           />
         ))}

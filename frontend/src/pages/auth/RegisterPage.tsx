@@ -2,8 +2,8 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { UserPlus } from 'lucide-react'
+import { useEffect, useState, type KeyboardEvent } from 'react'
+import { ArrowLeft, ArrowRight, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Input } from '@/components/ui/Input'
@@ -31,8 +31,42 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>
 
+const STEPS = [
+  { label: 'Your details', fields: ['first_name', 'last_name', 'email', 'phone'] as const },
+  { label: 'Location', fields: ['municipality_id', 'barangay_id'] as const },
+  { label: 'Security', fields: ['password', 'password_confirmation'] as const },
+]
+
+function StepIndicator({ step }: { step: number }) {
+  return (
+    <div className="mb-7 flex items-center gap-2">
+      {STEPS.map((s, i) => {
+        const index = i + 1
+        const active = index === step
+        const done = index < step
+        return (
+          <div key={s.label} className="flex flex-1 items-center gap-2">
+            <div
+              className={[
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
+                done ? 'bg-forest text-white' : active ? 'bg-forest/10 text-forest ring-2 ring-forest' : 'bg-muted text-muted-foreground',
+              ].join(' ')}
+            >
+              {index}
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={['h-0.5 flex-1 rounded-full transition-colors', done ? 'bg-forest' : 'bg-muted'].join(' ')} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function RegisterPage() {
   const navigate = useNavigate()
+  const [step, setStep] = useState(1)
   const [municipalities, setMunicipalities] = useState<Municipality[]>([])
   const [barangays, setBarangays] = useState<Barangay[]>([])
 
@@ -41,6 +75,7 @@ export function RegisterPage() {
     handleSubmit,
     control,
     watch,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
@@ -54,6 +89,22 @@ export function RegisterPage() {
     if (!municipalityId) return
     api.get('/locations/barangays', { params: { municipality_id: municipalityId } }).then((res) => setBarangays(res.data.data))
   }, [municipalityId])
+
+  const isLastStep = step === STEPS.length
+
+  const handleNext = async () => {
+    const valid = await trigger(STEPS[step - 1].fields as unknown as (keyof FormValues)[])
+    if (valid) setStep((s) => Math.min(s + 1, STEPS.length))
+  }
+
+  const handleBack = () => setStep((s) => Math.max(s - 1, 1))
+
+  const handleFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter' && !isLastStep) {
+      e.preventDefault()
+      handleNext()
+    }
+  }
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -71,68 +122,104 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Create your farmer account" subtitle="Register to start reporting incidents and requesting assistance.">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="First name" error={errors.first_name?.message} {...register('first_name')} />
-          <Input label="Last name" error={errors.last_name?.message} {...register('last_name')} />
-        </div>
+    <AuthLayout
+      title="Create your farmer account"
+      subtitle={`Step ${step} of ${STEPS.length} — ${STEPS[step - 1].label}.`}
+    >
+      <StepIndicator step={step} />
 
-        <Input label="Email address" type="email" error={errors.email?.message} {...register('email')} />
-        <Input label="Mobile number" type="tel" placeholder="09XXXXXXXXX" error={errors.phone?.message} {...register('phone')} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Municipality</label>
-            <Controller
-              control={control}
-              name="municipality_id"
-              render={({ field }) => (
-                <select
-                  {...field}
-                  value={field.value ?? ''}
-                  className="h-11 w-full rounded-xl border-2 border-input bg-white px-3 text-sm focus-visible:outline-none focus-visible:border-forest-light"
-                >
-                  <option value="">Select...</option>
-                  {municipalities.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              )}
-            />
-            {errors.municipality_id && <p className="mt-1.5 text-xs text-danger">{errors.municipality_id.message}</p>}
+      <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleFormKeyDown} className="space-y-4" noValidate>
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="First name" error={errors.first_name?.message} {...register('first_name')} />
+              <Input label="Last name" error={errors.last_name?.message} {...register('last_name')} />
+            </div>
+            <Input label="Email address" type="email" error={errors.email?.message} {...register('email')} />
+            <Input label="Mobile number" type="tel" placeholder="09XXXXXXXXX" error={errors.phone?.message} {...register('phone')} />
           </div>
+        )}
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Barangay</label>
-            <Controller
-              control={control}
-              name="barangay_id"
-              render={({ field }) => (
-                <select
-                  {...field}
-                  value={field.value ?? ''}
-                  disabled={!municipalityId}
-                  className="h-11 w-full rounded-xl border-2 border-input bg-white px-3 text-sm focus-visible:outline-none focus-visible:border-forest-light disabled:bg-muted"
-                >
-                  <option value="">Select...</option>
-                  {barangays.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              )}
-            />
-            {errors.barangay_id && <p className="mt-1.5 text-xs text-danger">{errors.barangay_id.message}</p>}
+        {step === 2 && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-ink">Municipality</label>
+              <Controller
+                control={control}
+                name="municipality_id"
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    value={field.value ?? ''}
+                    className="h-11 w-full rounded-xl border-2 border-input bg-white px-3 text-sm text-ink transition-colors focus-visible:border-forest-light focus-visible:outline-none"
+                  >
+                    <option value="">Select...</option>
+                    {municipalities.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                )}
+              />
+              {errors.municipality_id && <p className="mt-1.5 text-xs text-danger">{errors.municipality_id.message}</p>}
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-ink">Barangay</label>
+              <Controller
+                control={control}
+                name="barangay_id"
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    value={field.value ?? ''}
+                    disabled={!municipalityId}
+                    className="h-11 w-full rounded-xl border-2 border-input bg-white px-3 text-sm text-ink transition-colors focus-visible:border-forest-light focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                  >
+                    <option value="">Select...</option>
+                    {barangays.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                )}
+              />
+              {errors.barangay_id && <p className="mt-1.5 text-xs text-danger">{errors.barangay_id.message}</p>}
+            </div>
           </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4">
+            <Input label="Password" type="password" error={errors.password?.message} {...register('password')} />
+            <Input label="Confirm password" type="password" error={errors.password_confirmation?.message} {...register('password_confirmation')} />
+          </div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          {step > 1 && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-input bg-white text-sm font-semibold text-ink transition-colors hover:bg-muted"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          )}
+
+          {!isLastStep && (
+            <Button type="button" onClick={handleNext} className="flex-1">
+              Continue
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
+
+          {isLastStep && (
+            <Button type="submit" className="flex-1" loading={isSubmitting}>
+              <UserPlus className="h-4 w-4" />
+              Create account
+            </Button>
+          )}
         </div>
-
-        <Input label="Password" type="password" error={errors.password?.message} {...register('password')} />
-        <Input label="Confirm password" type="password" error={errors.password_confirmation?.message} {...register('password_confirmation')} />
-
-        <Button type="submit" className="w-full" loading={isSubmitting}>
-          <UserPlus className="h-4 w-4" />
-          Create account
-        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">

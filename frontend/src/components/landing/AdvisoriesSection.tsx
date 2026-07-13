@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CloudRain, Bug, Leaf, TrendingUp, Info, ChevronLeft, ChevronRight } from 'lucide-react'
 import { SectionHeading } from './SectionHeading'
+import { ExpandableText } from '@/components/ui/ExpandableText'
 import { advisoryService, type Advisory } from '@/services/advisoryService'
 import { formatDate } from '@/lib/utils'
 
@@ -71,7 +72,7 @@ export function AdvisoriesSection() {
                     <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: meta.color }}>{meta.label}</span>
                   </div>
                   <h3 className="mt-4 font-semibold text-ink">{advisory.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/60">{advisory.content}</p>
+                  <ExpandableText text={advisory.content} className="mt-2 text-ink/60" />
                   <p className="mt-4 text-xs text-muted-foreground">{formatDate(advisory.created_at)}</p>
                 </motion.div>
               )

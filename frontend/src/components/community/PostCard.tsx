@@ -2,6 +2,7 @@ import { Heart, MessageCircle, Share2, MapPin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { ExpandableText } from '@/components/ui/ExpandableText'
 import { formatCategory } from '@/lib/community'
 import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -26,10 +27,12 @@ export function PostCard({ post, onOpen, onLike, onShare, compact = false }: Pos
           )}
         </div>
 
-        <button type="button" onClick={() => onOpen(post)} className="w-full text-left">
-          <h3 className="font-semibold text-ink hover:text-forest">{post.title}</h3>
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink/70">{post.content}</p>
-        </button>
+        <div className="w-full text-left">
+          <button type="button" onClick={() => onOpen(post)} className="w-full text-left">
+            <h3 className="font-semibold text-ink hover:text-forest">{post.title}</h3>
+          </button>
+          <ExpandableText text={post.content} className="mt-2 text-ink/70" />
+        </div>
 
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 text-forest" />

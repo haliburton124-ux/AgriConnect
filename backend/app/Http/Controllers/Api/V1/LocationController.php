@@ -29,8 +29,9 @@ class LocationController extends Controller
         return response()->json([
             'data' => Barangay::query()
                 ->where('municipality_id', $request->integer('municipality_id'))
-                ->whereNotNull('sort_order')
+                ->orderByRaw('sort_order IS NULL')
                 ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get(['id', 'name', 'latitude', 'longitude']),
         ]);
     }

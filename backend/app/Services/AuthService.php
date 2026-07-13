@@ -117,7 +117,7 @@ class AuthService
 
     protected function deliverOtpEmail(User $user, string $otp): bool
     {
-        $subject = 'Agriri — Your One-Time Verification Code';
+        $subject = 'AgriConnect-IN - Your One-Time Verification Code';
         $html = view('mail.otp', [
             'firstName' => $user->first_name,
             'otp' => $otp,

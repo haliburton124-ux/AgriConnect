@@ -45,6 +45,7 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
         'sender' => env('GMAIL_SENDER', env('MAIL_FROM_ADDRESS')),
+        'sender_name' => env('GMAIL_SENDER_NAME', env('MAIL_FROM_NAME', 'AgriConnect-IN')),
     ],
 
 ];

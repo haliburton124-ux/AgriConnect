@@ -35,21 +35,44 @@ class GmailApiService
         $client->fetchAccessTokenWithRefreshToken(config('services.gmail.refresh_token'));
 
         $service = new Gmail($client);
-        $from = config('services.gmail.sender', config('mail.from.address'));
 
         $raw = implode("\r\n", [
-            "From: {$from}",
+            'From: '.$this->formatFromAddress(),
             "To: {$to}",
-            "Subject: {$subject}",
+            'Subject: '.$this->encodeHeader($subject),
             'MIME-Version: 1.0',
             'Content-Type: text/html; charset=utf-8',
+            'Content-Transfer-Encoding: base64',
             '',
-            $htmlBody,
+            base64_encode($htmlBody),
         ]);
 
         $message = new Message();
         $message->setRaw(rtrim(strtr(base64_encode($raw), '+/', '-_'), '='));
 
         $service->users_messages->send('me', $message);
+    }
+
+    protected function formatFromAddress(): string
+    {
+        $address = config('services.gmail.sender', config('mail.from.address'));
+        $name = trim((string) config('services.gmail.sender_name', config('mail.from.name', 'AgriConnect-IN')));
+
+        if ($name === '') {
+            return $address;
+        }
+
+        $escapedName = str_replace(['\\', '"'], ['\\\\', '\\"'], $name);
+
+        return "\"{$escapedName}\" <{$address}>";
+    }
+
+    protected function encodeHeader(string $value): string
+    {
+        if (preg_match('/[^\x20-\x7E]/', $value)) {
+            return '=?UTF-8?B?'.base64_encode($value).'?=';
+        }
+
+        return $value;
     }
 }

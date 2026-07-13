@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Notifications\OtpNotification;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -148,6 +149,49 @@ class AuthService
         logger()->warning("OTP for {$user->email}: {$otp} (email delivery unavailable)");
 
         return false;
+    }
+
+    /**
+     * @return array{delivered: bool, reset_url?: string}
+     */
+    public function sendPasswordResetLink(string $email): array
+    {
+        $user = $this->users->findByEmail($email);
+
+        if (! $user) {
+            return ['delivered' => true];
+        }
+
+        $token = Password::broker()->createToken($user);
+        $resetUrl = rtrim((string) config('app.frontend_url'), '/').'/reset-password?'.http_build_query([
+            'token' => $token,
+            'email' => $user->email,
+        ]);
+
+        $subject = 'AgriConnect-IN - Reset Your Password';
+        $html = view('mail.reset-password', [
+            'firstName' => $user->first_name,
+            'resetUrl' => $resetUrl,
+        ])->render();
+
+        if ($this->gmailApi->isConfigured()) {
+            try {
+                $this->gmailApi->send($user->email, $subject, $html);
+                logger()->info("Gmail API password reset sent to {$user->email}");
+
+                return ['delivered' => true];
+            } catch (\Throwable $e) {
+                report($e);
+                logger()->error("Gmail API password reset failed for {$user->email}: {$e->getMessage()}");
+            }
+        }
+
+        logger()->warning("Password reset URL for {$user->email}: {$resetUrl} (email delivery unavailable)");
+
+        return [
+            'delivered' => false,
+            'reset_url' => $resetUrl,
+        ];
     }
 
     public function verifyOtp(User $user, string $otp): bool

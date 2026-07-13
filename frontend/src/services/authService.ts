@@ -27,7 +27,8 @@ export const authService = {
   resendOtp: (email: string) =>
     api.post<{ message: string; verification_code?: string }>('/auth/resend-otp', { email }),
 
-  forgotPassword: (email: string) => api.post<{ message: string }>('/auth/forgot-password', { email }),
+  forgotPassword: (email: string) =>
+    api.post<{ message: string; reset_url?: string }>('/auth/forgot-password', { email }),
 
   resetPassword: (payload: { email: string; token: string; password: string; password_confirmation: string }) =>
     api.post<{ message: string }>('/auth/reset-password', payload),

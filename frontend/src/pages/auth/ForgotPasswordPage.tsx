@@ -20,7 +20,11 @@ export function ForgotPasswordPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await authService.forgotPassword(values.email)
+      const { data } = await authService.forgotPassword(values.email)
+      if (data.reset_url) {
+        window.location.href = data.reset_url
+        return
+      }
       setSent(true)
     } catch (error) {
       toast.error(getApiErrorMessage(error))

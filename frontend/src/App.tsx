@@ -12,6 +12,7 @@ import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { VerifyOtpPage } from '@/pages/auth/VerifyOtpPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
 import { HomePage } from '@/pages/public/HomePage'
 import { ServicesPage } from '@/pages/public/ServicesPage'
 import { AgriculturalExtensionPage } from '@/pages/public/AgriculturalExtensionPage'
@@ -119,6 +120,7 @@ export function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* ── Farmer: authenticated app pages (top-nav shell) ── */}
         <Route element={<ProtectedRoute allowedRoles={['farmer']} />}>

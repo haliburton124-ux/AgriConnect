@@ -21,6 +21,7 @@ class CommunityPostCommentResource extends JsonResource
             'replies' => $this->when(
                 $this->relationLoaded('replies'),
                 fn () => CommunityPostCommentResource::collection($this->replies)->resolve(),
+                [],
             ),
             'created_at' => $this->created_at,
         ];

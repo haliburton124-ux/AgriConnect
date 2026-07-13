@@ -33,12 +33,14 @@ function countThreadedComments(items: CommunityPostComment[]): number {
 function CommentThread({
   comment,
   onReply,
+  depth = 0,
 }: {
   comment: CommunityPostComment
   onReply: (parentId: number) => void
+  depth?: number
 }) {
   return (
-    <div className={cn('space-y-3', comment.parent_id && 'ml-6 border-l-2 border-forest/10 pl-4')}>
+    <div className={cn('space-y-3', depth > 0 && 'ml-6 border-l-2 border-forest/10 pl-4')}>
       <div className="rounded-xl bg-forest/[0.03] p-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-ink">{comment.user?.full_name ?? 'Farmer'}</p>
@@ -54,7 +56,7 @@ function CommentThread({
         </button>
       </div>
       {commentReplies(comment).map((reply) => (
-        <CommentThread key={reply.id} comment={reply} onReply={onReply} />
+        <CommentThread key={reply.id} comment={reply} onReply={onReply} depth={depth + 1} />
       ))}
     </div>
   )

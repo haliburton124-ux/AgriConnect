@@ -183,10 +183,9 @@ class CommunityPostController extends Controller
     {
         abort_unless($communityPost->is_published, 404);
 
-        $comments = $communityPost->comments()
-            ->with(['user', 'replies' => fn ($query) => $query->with(['user', 'replies.user'])])
-            ->latest()
-            ->get();
+        $comments = CommunityPostComment::assembleTree(
+            $communityPost->allComments()->with('user')->get(),
+        );
 
         return response()->json([
             'data' => CommunityPostCommentResource::collection($comments)->resolve(),

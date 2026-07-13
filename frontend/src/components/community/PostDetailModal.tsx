@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type KeyboardEvent } from 'react'
 import { toast } from 'sonner'
-import { Heart, Share2, MapPin, Reply } from 'lucide-react'
+import { Heart, Share2, MapPin, Reply, Send } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { communityService } from '@/services/communityService'
 import { formatCategory } from '@/lib/community'
@@ -58,6 +57,63 @@ function CommentThread({
       {commentReplies(comment).map((reply) => (
         <CommentThread key={reply.id} comment={reply} onReply={onReply} depth={depth + 1} />
       ))}
+    </div>
+  )
+}
+
+function CommentComposer({
+  body,
+  replyTo,
+  submitting,
+  onBodyChange,
+  onCancelReply,
+  onSubmit,
+}: {
+  body: string
+  replyTo: number | null
+  submitting: boolean
+  onBodyChange: (value: string) => void
+  onCancelReply: () => void
+  onSubmit: () => void
+}) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey && body.trim()) {
+      event.preventDefault()
+      onSubmit()
+    }
+  }
+
+  return (
+    <div className="bg-white px-4 py-3 sm:px-6">
+      {replyTo && (
+        <p className="mb-2 text-xs text-forest">
+          Replying to a comment ·{' '}
+          <button type="button" className="font-medium underline" onClick={onCancelReply}>
+            Cancel
+          </button>
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={body}
+          onChange={(e) => onBodyChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={replyTo ? 'Write a reply…' : 'Write a comment…'}
+          className="h-11 min-w-0 flex-1 rounded-full border border-black/10 bg-forest/[0.04] px-4 text-sm text-ink placeholder:text-muted-foreground focus-visible:border-forest-light focus-visible:outline-none"
+        />
+        <Button
+          type="button"
+          size="icon"
+          onClick={onSubmit}
+          loading={submitting}
+          disabled={!body.trim()}
+          className="h-11 w-11 shrink-0 rounded-full"
+          aria-label="Post comment"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 }
@@ -150,6 +206,18 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
       title={post.title}
       size="lg"
       description={post.is_shared_in_feed ? `Originally posted by ${post.municipality?.name}` : undefined}
+      footer={
+        enableEngagement ? (
+          <CommentComposer
+            body={body}
+            replyTo={replyTo}
+            submitting={submitting}
+            onBodyChange={setBody}
+            onCancelReply={() => setReplyTo(null)}
+            onSubmit={handleComment}
+          />
+        ) : undefined
+      }
     >
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -174,41 +242,24 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
           </div>
         )}
 
-        <div className="space-y-4">
+        <div>
           <h4 className="text-sm font-semibold text-ink">
             Comments ({comments ? countThreadedComments(comments) : post.comments_count})
           </h4>
 
-          {enableEngagement && (
-            <div className="space-y-2">
-              {replyTo && (
-                <p className="text-xs text-forest">
-                  Replying to a comment ·{' '}
-                  <button type="button" className="underline" onClick={() => setReplyTo(null)}>Cancel</button>
-                </p>
-              )}
-              <Input
-                placeholder={replyTo ? 'Write a reply…' : 'Join the discussion…'}
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-              />
-              <Button size="sm" onClick={handleComment} loading={submitting} disabled={!body.trim()}>
-                Post Comment
-              </Button>
-            </div>
-          )}
-
-          {comments === null ? (
-            <div className="space-y-2">
-              {[1, 2].map((i) => <div key={i} className="skeleton h-16 w-full rounded-xl" />)}
-            </div>
-          ) : comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No comments yet. Start the conversation.</p>
-          ) : (
-            comments.map((comment) => (
-              <CommentThread key={comment.id} comment={comment} onReply={setReplyTo} />
-            ))
-          )}
+          <div className="mt-4 space-y-4">
+            {comments === null ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => <div key={i} className="skeleton h-16 w-full rounded-xl" />)}
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No comments yet. Be the first to comment.</p>
+            ) : (
+              comments.map((comment) => (
+                <CommentThread key={comment.id} comment={comment} onReply={setReplyTo} />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </Modal>

@@ -1,19 +1,17 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
+import { CircleMarker, Popup } from 'react-leaflet'
 import { motion } from 'framer-motion'
 import { SlidersHorizontal, Flame, MapPinned } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { AgriMap } from '@/components/map'
 import { HeatmapLayer } from '@/components/gis/HeatmapLayer'
 import { GisFilterModal } from '@/components/modals/GisFilterModal'
 import { gisService, type GisFilters, type MapPoint, type HeatPoint } from '@/services/gisService'
 import { useAuthStore } from '@/store/authStore'
 import { formatDateTime, cn } from '@/lib/utils'
-
-// Ilocos Norte's approximate geographic center.
-const ILOCOS_NORTE_CENTER: [number, number] = [18.1647, 120.7116]
+import { ILOCOS_NORTE_CENTER } from '@/lib/mapConfig'
 
 const SEVERITY_COLORS: Record<MapPoint['severity'], string> = {
   low: '#4CAF50',
@@ -88,12 +86,7 @@ export function GisMapPage() {
       </div>
 
       <Card className="relative flex-1 overflow-hidden p-0">
-        <MapContainer center={ILOCOS_NORTE_CENTER} zoom={10} className="h-full w-full" scrollWheelZoom>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
+        <AgriMap embedded center={ILOCOS_NORTE_CENTER} zoom={10} className="h-full min-h-[420px] w-full sm:min-h-0" scrollWheelZoom>
           {viewMode === 'heatmap' && <HeatmapLayer points={heatPoints} />}
 
           {viewMode === 'markers' && points?.map((point) => (
@@ -122,7 +115,7 @@ export function GisMapPage() {
               </Popup>
             </CircleMarker>
           ))}
-        </MapContainer>
+        </AgriMap>
 
         {points === null && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">

@@ -62,3 +62,18 @@
 
 /* Leaflet z-index fix so modals/dropdowns render above the map */
 .leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
+
+.agri-map-marker-icon {
+  background: transparent;
+  border: none;
+}
+
+.agri-map-marker-dot {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #fff;
+  border-radius: 9999px;
+  background: #2E7D32;
+  box-shadow: 0 2px 8px rgba(27, 94, 32, 0.45);
+}

@@ -2,6 +2,8 @@ import { MapPin, Calendar, User, Clock, Image as ImageIcon, FileText } from 'luc
 import type { ReactNode } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
+import { AgriMap } from '@/components/map'
+import { isValidMapCoords } from '@/lib/mapConfig'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import type { Incident } from '@/types'
 
@@ -83,6 +85,32 @@ export function IncidentDetailModal({ open, onClose, incident, loading, footer }
               </div>
             </div>
           </div>
+
+          {isValidMapCoords({ lat: incident.latitude, lng: incident.longitude }) && (
+            <div>
+              <h4 className="mb-2 text-sm font-semibold text-ink">Incident location</h4>
+              <AgriMap
+                active={open}
+                center={[incident.latitude, incident.longitude]}
+                scrollWheelZoom={false}
+                markers={[
+                  {
+                    id: incident.id,
+                    lat: incident.latitude,
+                    lng: incident.longitude,
+                    popup: (
+                      <div className="min-w-[160px] space-y-1 font-sans">
+                        <p className="text-sm font-semibold text-ink">{incident.reference_code}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Brgy. {incident.barangay?.name}, {incident.municipality?.name}
+                        </p>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          )}
 
           {incident.rejection_reason && (
             <div className="rounded-xl bg-danger/5 border border-danger/20 p-4">

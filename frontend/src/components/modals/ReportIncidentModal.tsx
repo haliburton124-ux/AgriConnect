@@ -4,10 +4,11 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { MapPin, Send, Upload, X, Sprout, AlertTriangle } from 'lucide-react'
+import { Send, Upload, X, Sprout, AlertTriangle } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { AgriMap } from '@/components/map'
 import { api, getApiErrorMessage } from '@/lib/api'
 import { farmService } from '@/services/farmService'
 import { FARM_REGISTRATION_REQUIRED_MESSAGE, getGeolocatedFarms } from '@/lib/farms'
@@ -93,19 +94,6 @@ export function ReportIncidentModal({ open, onClose, onSuccess, farmId }: Report
       setCoords({ lat: farm.latitude, lng: farm.longitude })
     }
   }, [selectedFarmId, farms])
-
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Location services are not available on this device.')
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => toast.error('Could not access your location. Please enable location services.'),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    )
-  }
 
   const handlePhotoSelect = (files: FileList | null) => {
     if (!files) return
@@ -290,13 +278,17 @@ export function ReportIncidentModal({ open, onClose, onSuccess, farmId }: Report
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">Incident GPS location</label>
-            <p className="mb-2 text-xs text-muted-foreground">
-              Defaults to your registered farm location. You can refine it with your current GPS position.
-            </p>
-            <Button type="button" variant="outline" size="sm" onClick={useCurrentLocation}>
-              <MapPin className="h-4 w-4" />
-              {coords ? `Pinned: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Use my current location'}
-            </Button>
+            <AgriMap
+              active={open}
+              value={coords}
+              onChange={setCoords}
+              interactive
+              showGpsButton
+              showSearch
+              showCoordinates
+              scrollWheelZoom={false}
+              hint="Tap the map or drag the marker to pinpoint where the incident occurred."
+            />
           </div>
 
           <div>

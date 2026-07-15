@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Marker, Popup, GeoJSON, useMap, useMapEvents } from 'react-leaflet'
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Marker,
+  Popup,
+  GeoJSON,
+  ZoomControl,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
 import type { LatLngBoundsExpression } from 'leaflet'
 import L from 'leaflet'
 import { LocateFixed, MapPin, Search } from 'lucide-react'
@@ -9,6 +19,7 @@ import {
   DEFAULT_MAP_ZOOM,
   DETAIL_MAP_ZOOM,
   ESRI_ATTRIBUTION,
+  ESRI_REFERENCE_LABELS_URL,
   ESRI_WORLD_IMAGERY_URL,
   ILOCOS_NORTE_CENTER,
   PICKER_MAP_ZOOM,
@@ -276,9 +287,12 @@ export function AgriMap({
         zoom={resolvedZoom}
         className={cn('h-56 w-full touch-manipulation sm:h-64', className)}
         scrollWheelZoom={scrollWheelZoom}
+        zoomControl={false}
       >
         <TileLayer attribution={ESRI_ATTRIBUTION} url={ESRI_WORLD_IMAGERY_URL} />
+        <TileLayer url={ESRI_REFERENCE_LABELS_URL} />
 
+        <ZoomControl position="bottomright" />
         <MapResize active={active} />
         {onChange && <MapClickHandler enabled={interactive || hasPicker} onPick={onChange} />}
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -119,17 +119,8 @@ function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
 }
 
 function MapMarker({ marker }: { marker: AgriMapMarker }) {
-  const markerRef = useRef<L.CircleMarker>(null)
-
-  useEffect(() => {
-    if (!marker.openPopup || !marker.popup) return
-    const timer = window.setTimeout(() => markerRef.current?.openPopup(), 200)
-    return () => window.clearTimeout(timer)
-  }, [marker.openPopup, marker.popup])
-
   return (
     <CircleMarker
-      ref={markerRef}
       center={[marker.lat, marker.lng]}
       radius={marker.radius ?? 10}
       pathOptions={{
@@ -138,6 +129,15 @@ function MapMarker({ marker }: { marker: AgriMapMarker }) {
         fillOpacity: marker.fillOpacity ?? 0.85,
         weight: marker.weight ?? 2,
       }}
+      eventHandlers={
+        marker.openPopup && marker.popup
+          ? {
+              add: (event) => {
+                window.setTimeout(() => event.target.openPopup(), 250)
+              },
+            }
+          : undefined
+      }
     >
       {marker.popup && <Popup>{marker.popup}</Popup>}
     </CircleMarker>

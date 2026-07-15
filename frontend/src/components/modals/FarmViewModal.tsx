@@ -1,5 +1,6 @@
 import { Modal } from '@/components/ui/Modal'
 import { FarmLocationMap } from '@/components/farms/FarmLocationMap'
+import { isValidFarmLocation } from '@/lib/farms'
 import type { Farm } from '@/types'
 
 interface FarmViewModalProps {
@@ -18,7 +19,19 @@ export function FarmViewModal({ open, onClose, farm }: FarmViewModalProps) {
       size="lg"
     >
       {farm && (
-        <FarmLocationMap farm={farm} active={open} className="h-80 w-full sm:h-96" openPopup />
+        isValidFarmLocation(farm) ? (
+          <FarmLocationMap
+            farm={farm}
+            active={open}
+            mapKey={`farm-view-${farm.id}`}
+            className="h-80 w-full sm:h-96"
+            openPopup
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            This farm does not have GPS coordinates yet. Edit the farm to pin its location on the map.
+          </p>
+        )
       )}
     </Modal>
   )

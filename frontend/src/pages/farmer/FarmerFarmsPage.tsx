@@ -9,6 +9,7 @@ import { AddEditFarmModal } from '@/components/modals/AddEditFarmModal'
 import { FarmViewModal } from '@/components/modals/FarmViewModal'
 import { farmService } from '@/services/farmService'
 import { getApiErrorMessage } from '@/lib/api'
+import { isValidFarmLocation } from '@/lib/farms'
 import type { Farm } from '@/types'
 
 export function FarmerFarmsPage() {
@@ -42,6 +43,10 @@ export function FarmerFarmsPage() {
   }
 
   const openFarmView = (farm: Farm) => {
+    if (!isValidFarmLocation(farm)) {
+      toast.error('This farm has no map location yet. Edit the farm and pin it on the map.')
+      return
+    }
     setViewingFarm(farm)
   }
 
@@ -88,17 +93,26 @@ export function FarmerFarmsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="h-full transition-shadow hover:shadow-glass">
+              <Card
+                className="h-full cursor-pointer transition-shadow hover:shadow-glass"
+                role="button"
+                tabIndex={0}
+                onClick={() => openFarmView(farm)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    openFarmView(farm)
+                  }
+                }}
+              >
                 <CardContent className="flex h-full flex-col gap-3 p-5">
                   <div className="flex items-start justify-between">
-                    <button
-                      type="button"
-                      title="View farm on map"
-                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white transition-transform hover:scale-105"
-                      onClick={() => openFarmView(farm)}
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white"
+                      aria-hidden="true"
                     >
                       <Sprout className="h-5 w-5" />
-                    </button>
+                    </div>
                     <div className="flex gap-1">
                       <Button
                         size="icon"

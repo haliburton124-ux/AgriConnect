@@ -8,6 +8,7 @@ interface FarmLocationMapProps {
   className?: string
   active?: boolean
   openPopup?: boolean
+  mapKey?: string
 }
 
 function polygonBounds(geojson: GeoJSON.Polygon): LatLngBoundsExpression {
@@ -19,6 +20,7 @@ export function FarmLocationMap({
   className = 'h-72 w-full',
   active = true,
   openPopup = false,
+  mapKey,
 }: FarmLocationMapProps) {
   const boundary = farm.boundaries?.[0]?.geojson ?? null
   const bounds = boundary ? polygonBounds(boundary) : null
@@ -26,6 +28,7 @@ export function FarmLocationMap({
   return (
     <AgriMap
       active={active}
+      mapKey={mapKey ?? `farm-${farm.id}`}
       className={className}
       center={[farm.latitude, farm.longitude]}
       zoom={DETAIL_MAP_ZOOM}

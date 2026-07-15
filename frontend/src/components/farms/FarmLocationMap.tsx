@@ -6,18 +6,26 @@ import type { Farm } from '@/types'
 interface FarmLocationMapProps {
   farm: Farm
   className?: string
+  active?: boolean
+  openPopup?: boolean
 }
 
 function polygonBounds(geojson: GeoJSON.Polygon): LatLngBoundsExpression {
   return geojson.coordinates[0].map(([lng, lat]) => [lat, lng] as [number, number])
 }
 
-export function FarmLocationMap({ farm, className = 'h-72 w-full' }: FarmLocationMapProps) {
+export function FarmLocationMap({
+  farm,
+  className = 'h-72 w-full',
+  active = true,
+  openPopup = false,
+}: FarmLocationMapProps) {
   const boundary = farm.boundaries?.[0]?.geojson ?? null
   const bounds = boundary ? polygonBounds(boundary) : null
 
   return (
     <AgriMap
+      active={active}
       className={className}
       center={[farm.latitude, farm.longitude]}
       zoom={DETAIL_MAP_ZOOM}
@@ -29,6 +37,7 @@ export function FarmLocationMap({ farm, className = 'h-72 w-full' }: FarmLocatio
           id: farm.id,
           lat: farm.latitude,
           lng: farm.longitude,
+          openPopup,
           popup: (
             <div className="min-w-[160px] space-y-1 font-sans">
               <p className="text-sm font-semibold text-ink">{farm.farm_name}</p>

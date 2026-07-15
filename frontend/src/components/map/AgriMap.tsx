@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -39,6 +39,7 @@ export interface AgriMapMarker {
   fillOpacity?: number
   weight?: number
   popup?: ReactNode
+  openPopup?: boolean
 }
 
 export interface AgriMapProps {
@@ -115,6 +116,32 @@ function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
   }, [map, bounds])
 
   return null
+}
+
+function MapMarker({ marker }: { marker: AgriMapMarker }) {
+  const markerRef = useRef<L.CircleMarker>(null)
+
+  useEffect(() => {
+    if (!marker.openPopup || !marker.popup) return
+    const timer = window.setTimeout(() => markerRef.current?.openPopup(), 200)
+    return () => window.clearTimeout(timer)
+  }, [marker.openPopup, marker.popup])
+
+  return (
+    <CircleMarker
+      ref={markerRef}
+      center={[marker.lat, marker.lng]}
+      radius={marker.radius ?? 10}
+      pathOptions={{
+        color: marker.color ?? PRIMARY_MARKER_STYLE.color,
+        fillColor: marker.fillColor ?? marker.color ?? PRIMARY_MARKER_STYLE.fillColor,
+        fillOpacity: marker.fillOpacity ?? 0.85,
+        weight: marker.weight ?? 2,
+      }}
+    >
+      {marker.popup && <Popup>{marker.popup}</Popup>}
+    </CircleMarker>
+  )
 }
 
 function DraggablePickerMarker({
@@ -327,19 +354,7 @@ export function AgriMap({
         )}
 
         {markers.map((marker) => (
-          <CircleMarker
-            key={marker.id}
-            center={[marker.lat, marker.lng]}
-            radius={marker.radius ?? 10}
-            pathOptions={{
-              color: marker.color ?? PRIMARY_MARKER_STYLE.color,
-              fillColor: marker.fillColor ?? marker.color ?? PRIMARY_MARKER_STYLE.fillColor,
-              fillOpacity: marker.fillOpacity ?? 0.85,
-              weight: marker.weight ?? 2,
-            }}
-          >
-            {marker.popup && <Popup>{marker.popup}</Popup>}
-          </CircleMarker>
+          <MapMarker key={marker.id} marker={marker} />
         ))}
 
         {children}

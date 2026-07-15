@@ -6,24 +6,23 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AddEditFarmModal } from '@/components/modals/AddEditFarmModal'
-import { FarmLocationMap } from '@/components/farms/FarmLocationMap'
+import { FarmViewModal } from '@/components/modals/FarmViewModal'
 import { farmService } from '@/services/farmService'
 import { getApiErrorMessage } from '@/lib/api'
-import { cn } from '@/lib/utils'
 import type { Farm } from '@/types'
 
 export function FarmerFarmsPage() {
   const [farms, setFarms] = useState<Farm[] | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null)
-  const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null)
+  const [viewingFarm, setViewingFarm] = useState<Farm | null>(null)
 
   const load = () => {
     setFarms(null)
     farmService.list().then((res) => {
       const nextFarms = res.data.data
       setFarms(nextFarms)
-      setSelectedFarm((current) => {
+      setViewingFarm((current) => {
         if (!current) return null
         return nextFarms.find((farm) => farm.id === current.id) ?? null
       })
@@ -42,8 +41,8 @@ export function FarmerFarmsPage() {
     setModalOpen(true)
   }
 
-  const selectFarm = (farm: Farm) => {
-    setSelectedFarm((current) => (current?.id === farm.id ? null : farm))
+  const openFarmView = (farm: Farm) => {
+    setViewingFarm(farm)
   }
 
   const handleDelete = async (farm: Farm) => {
@@ -51,7 +50,7 @@ export function FarmerFarmsPage() {
     try {
       await farmService.remove(farm.id)
       toast.success('Farm removed.')
-      if (selectedFarm?.id === farm.id) setSelectedFarm(null)
+      if (viewingFarm?.id === farm.id) setViewingFarm(null)
       load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -89,18 +88,17 @@ export function FarmerFarmsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card
-                className={cn(
-                  'h-full cursor-pointer transition-shadow hover:shadow-glass',
-                  selectedFarm?.id === farm.id && 'ring-2 ring-forest ring-offset-2',
-                )}
-                onClick={() => selectFarm(farm)}
-              >
+              <Card className="h-full transition-shadow hover:shadow-glass">
                 <CardContent className="flex h-full flex-col gap-3 p-5">
                   <div className="flex items-start justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white">
+                    <button
+                      type="button"
+                      title="View farm on map"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white transition-transform hover:scale-105"
+                      onClick={() => openFarmView(farm)}
+                    >
                       <Sprout className="h-5 w-5" />
-                    </div>
+                    </button>
                     <div className="flex gap-1">
                       <Button
                         size="icon"
@@ -151,23 +149,11 @@ export function FarmerFarmsPage() {
         </div>
       )}
 
-      {selectedFarm && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
-        >
-          <div>
-            <h2 className="text-lg font-semibold text-ink">{selectedFarm.farm_name}</h2>
-            <p className="text-sm text-muted-foreground">
-              Farm location on map — click the card again to hide.
-            </p>
-          </div>
-          <Card className="overflow-hidden p-0">
-            <FarmLocationMap farm={selectedFarm} className="h-80 w-full sm:h-96" />
-          </Card>
-        </motion.div>
-      )}
+      <FarmViewModal
+        open={Boolean(viewingFarm)}
+        onClose={() => setViewingFarm(null)}
+        farm={viewingFarm}
+      />
 
       <AddEditFarmModal open={modalOpen} onClose={() => setModalOpen(false)} farm={editingFarm} onSuccess={load} />
     </div>

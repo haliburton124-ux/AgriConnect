@@ -132,8 +132,12 @@ class AuthService
                 return true;
             } catch (\Throwable $e) {
                 report($e);
-                logger()->error("Gmail API OTP failed for {$user->email}: {$e->getMessage()}");
+                logger()->error("Gmail API OTP failed for {$user->email}: {$e->getMessage()}", [
+                    'exception' => $e::class,
+                ]);
             }
+        } else {
+            logger()->warning('Gmail API not configured — skipping Gmail OTP delivery.');
         }
 
         try {

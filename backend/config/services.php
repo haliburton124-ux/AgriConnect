@@ -44,6 +44,7 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI', 'https://developers.google.com/oauthplayground'),
         'sender' => env('GMAIL_SENDER', env('MAIL_FROM_ADDRESS')),
         'sender_name' => env('GMAIL_SENDER_NAME', env('MAIL_FROM_NAME', 'AgriConnect-IN')),
     ],

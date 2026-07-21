@@ -5,6 +5,7 @@ namespace App\Services;
 use Google\Client as GoogleClient;
 use Google\Service\Gmail;
 use Google\Service\Gmail\Message;
+use RuntimeException;
 
 /**
  * Sends email through the Gmail API over HTTPS (port 443).
@@ -25,14 +26,24 @@ class GmailApiService
     public function send(string $to, string $subject, string $htmlBody): void
     {
         if (! $this->isConfigured()) {
-            throw new \RuntimeException('Gmail API is not configured.');
+            throw new RuntimeException('Gmail API is not configured.');
         }
 
         $client = new GoogleClient();
         $client->setClientId(config('services.gmail.client_id'));
         $client->setClientSecret(config('services.gmail.client_secret'));
+        $client->setRedirectUri(config('services.gmail.redirect_uri'));
         $client->setAccessType('offline');
-        $client->fetchAccessTokenWithRefreshToken(config('services.gmail.refresh_token'));
+
+        $token = $client->fetchAccessTokenWithRefreshToken(config('services.gmail.refresh_token'));
+
+        if (! is_array($token) || isset($token['error'])) {
+            $message = is_array($token)
+                ? ($token['error_description'] ?? $token['error'] ?? 'Unknown OAuth error')
+                : 'Invalid OAuth token response';
+
+            throw new RuntimeException("Gmail OAuth refresh failed: {$message}");
+        }
 
         $service = new Gmail($client);
 

@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/agri_button.dart';
 import '../../widgets/brand_logo.dart';
 import '../farmer/farmer_shell_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -179,8 +180,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text('New farmer? ', style: TextStyle(color: AgriColors.muted, fontSize: 14)),
                         GestureDetector(
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Register on the AgriConnect website for now.')),
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const RegisterScreen()),
                             );
                           },
                           child: Text(

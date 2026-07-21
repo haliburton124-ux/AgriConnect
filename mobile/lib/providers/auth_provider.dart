@@ -24,6 +24,7 @@ class AuthProvider extends ChangeNotifier {
   bool isLoading = false;
 
   ApiClient get api => _api;
+  AuthService get apiAuth => _auth;
 
   void _handleUnauthorized() {
     user = null;
@@ -66,6 +67,26 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final result = await _auth.login(email: email.trim(), password: password);
+      await _storage.saveSession(token: result.token, user: result.user.toJson());
+      user = result.user;
+      status = AuthStatus.authenticated;
+      return true;
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> verifyOtp(String email, String otp) async {
+    errorMessage = null;
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _auth.verifyOtp(email: email.trim(), otp: otp);
       await _storage.saveSession(token: result.token, user: result.user.toJson());
       user = result.user;
       status = AuthStatus.authenticated;

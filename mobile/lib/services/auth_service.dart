@@ -56,4 +56,72 @@ class AuthService {
       (_) {},
     );
   }
+
+  Future<({String message, String email, String? verificationCode})> register({
+    required String firstName,
+    required String lastName,
+    String? suffix,
+    required String email,
+    required String phone,
+    required String password,
+    required String passwordConfirmation,
+    required int municipalityId,
+    required int barangayId,
+  }) {
+    return _api.handle(
+      _api.post('/auth/register', data: {
+        'first_name': firstName,
+        'last_name': lastName,
+        if (suffix != null && suffix.isNotEmpty) 'suffix': suffix,
+        'email': email.trim(),
+        'phone': phone,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+        'municipality_id': municipalityId,
+        'barangay_id': barangayId,
+      }),
+      (json) {
+        final map = json as Map<String, dynamic>;
+        final user = map['user'] as Map<String, dynamic>;
+        return (
+          message: map['message'] as String? ?? 'Registration successful.',
+          email: user['email'] as String? ?? email.trim(),
+          verificationCode: map['verification_code'] as String?,
+        );
+      },
+    );
+  }
+
+  Future<({String token, AppUser user, String message})> verifyOtp({
+    required String email,
+    required String otp,
+  }) {
+    return _api.handle(
+      _api.post('/auth/verify-otp', data: {
+        'email': email.trim(),
+        'otp': otp,
+      }),
+      (json) {
+        final map = json as Map<String, dynamic>;
+        return (
+          token: map['token'] as String,
+          user: AppUser.fromJson(map['user'] as Map<String, dynamic>),
+          message: map['message'] as String? ?? 'Account verified successfully.',
+        );
+      },
+    );
+  }
+
+  Future<({String message, String? verificationCode})> resendOtp(String email) {
+    return _api.handle(
+      _api.post('/auth/resend-otp', data: {'email': email.trim()}),
+      (json) {
+        final map = json as Map<String, dynamic>;
+        return (
+          message: map['message'] as String? ?? 'A new verification code has been sent.',
+          verificationCode: map['verification_code'] as String?,
+        );
+      },
+    );
+  }
 }

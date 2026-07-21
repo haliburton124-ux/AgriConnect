@@ -3,8 +3,10 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Support\PhilippinePhone;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
@@ -14,12 +16,26 @@ class RegisterRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('phone')) {
+            $this->merge([
+                'phone' => PhilippinePhone::normalize($this->input('phone')),
+            ]);
+        }
+
+        if ($this->has('suffix') && in_array($this->input('suffix'), [null, '', 'none'], true)) {
+            $this->merge(['suffix' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'middle_name' => ['nullable', 'string', 'max:100'],
+            'suffix' => ['nullable', 'string', Rule::in(PhilippinePhone::ALLOWED_SUFFIXES)],
             'email' => [
                 'required',
                 'email',
@@ -32,11 +48,17 @@ class RegisterRequest extends FormRequest
                     }
                 },
             ],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => [
+                'required',
+                'string',
+                'max:20',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (! PhilippinePhone::isValid($value)) {
+                        $fail('Enter a valid Philippine mobile number (+63 9XXXXXXXXX).');
+                    }
+                },
+            ],
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
-            // Public registration is restricted to farmers. Staff accounts
-            // (technician/municipal_office/provincial_office/admin) are
-            // provisioned by an Admin via the internal user management module.
             'municipality_id' => ['required', 'exists:municipalities,id'],
             'barangay_id' => ['required', 'exists:barangays,id'],
         ];

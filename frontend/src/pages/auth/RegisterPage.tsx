@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
@@ -7,17 +7,22 @@ import { ArrowLeft, ArrowRight, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Input } from '@/components/ui/Input'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { Button } from '@/components/ui/Button'
 import { MunicipalityBarangayFields } from '@/components/forms/MunicipalityBarangayFields'
+import { PhilippinePhoneInput } from '@/components/forms/PhilippinePhoneInput'
+import { SuffixSelect } from '@/components/forms/SuffixSelect'
 import { authService } from '@/services/authService'
 import { getApiErrorMessage } from '@/lib/api'
+import { isValidPhilippineLocalPhone, PH_SUFFIX_OPTIONS, toPhilippineE164 } from '@/lib/phone'
 
 const schema = z
   .object({
     first_name: z.string().min(1, 'First name is required'),
     last_name: z.string().min(1, 'Last name is required'),
+    suffix: z.union([z.literal(''), z.enum(PH_SUFFIX_OPTIONS)]),
     email: z.string().email('Enter a valid email address'),
-    phone: z.string().min(10, 'Enter a valid phone number'),
+    phone: z.string().refine(isValidPhilippineLocalPhone, 'Enter a valid Philippine mobile number (9XXXXXXXXX)'),
     municipality_id: z.coerce.number({ invalid_type_error: 'Select your municipality' }).min(1, 'Select your municipality'),
     barangay_id: z.coerce.number({ invalid_type_error: 'Select your barangay' }).min(1, 'Select your barangay'),
     password: z.string().min(8, 'At least 8 characters').regex(/[A-Z]/, 'Include an uppercase letter').regex(/[0-9]/, 'Include a number'),
@@ -31,7 +36,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 
 const STEPS = [
-  { label: 'Your details', fields: ['first_name', 'last_name', 'email', 'phone'] as const },
+  { label: 'Your details', fields: ['first_name', 'last_name', 'suffix', 'email', 'phone'] as const },
   { label: 'Location', fields: ['municipality_id', 'barangay_id'] as const },
   { label: 'Security', fields: ['password', 'password_confirmation'] as const },
 ]
@@ -69,12 +74,19 @@ export function RegisterPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
     trigger,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) })
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      suffix: '',
+      phone: '',
+    },
+  })
 
   const municipalityId = watch('municipality_id')
   const barangayId = watch('barangay_id')
@@ -106,7 +118,11 @@ export function RegisterPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const { data } = await authService.register(values)
+      const { data } = await authService.register({
+        ...values,
+        suffix: values.suffix || undefined,
+        phone: toPhilippineE164(values.phone),
+      })
       toast.success(data.message)
       navigate('/verify-otp', {
         state: {
@@ -133,8 +149,31 @@ export function RegisterPage() {
               <Input label="First name" error={errors.first_name?.message} {...register('first_name')} />
               <Input label="Last name" error={errors.last_name?.message} {...register('last_name')} />
             </div>
+            <Controller
+              name="suffix"
+              control={control}
+              render={({ field }) => (
+                <SuffixSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.suffix?.message}
+                />
+              )}
+            />
             <Input label="Email address" type="email" error={errors.email?.message} {...register('email')} />
-            <Input label="Mobile number" type="tel" placeholder="09XXXXXXXXX" error={errors.phone?.message} {...register('phone')} />
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <PhilippinePhoneInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.phone?.message}
+                />
+              )}
+            />
           </div>
         )}
 
@@ -151,8 +190,8 @@ export function RegisterPage() {
 
         {step === 3 && (
           <div className="space-y-4">
-            <Input label="Password" type="password" error={errors.password?.message} {...register('password')} />
-            <Input label="Confirm password" type="password" error={errors.password_confirmation?.message} {...register('password_confirmation')} />
+            <PasswordInput label="Password" error={errors.password?.message} {...register('password')} />
+            <PasswordInput label="Confirm password" error={errors.password_confirmation?.message} {...register('password_confirmation')} />
           </div>
         )}
 

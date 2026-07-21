@@ -25,6 +25,7 @@ class AuthService
         $profile = [
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'suffix' => $data['suffix'] ?? null,
             'middle_name' => $data['middle_name'] ?? null,
             'phone' => $data['phone'],
             'password' => $data['password'],

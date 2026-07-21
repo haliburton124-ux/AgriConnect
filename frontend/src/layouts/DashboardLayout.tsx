@@ -1,18 +1,26 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Menu, X, LogOut, ChevronDown, Sprout } from 'lucide-react'
+import { Menu, X, LogOut, ChevronDown, Sprout } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { NAVIGATION, ROLE_LABELS } from '@/config/navigation'
 import { authService } from '@/services/authService'
+import { communityService } from '@/services/communityService'
 import { toast } from 'sonner'
+import { NotificationBell } from '@/components/community/NotificationPanel'
+import { PostDetailModal } from '@/components/community/PostDetailModal'
+import { useNotifications } from '@/hooks/useNotifications'
+import type { CommunityPost } from '@/types'
 
 export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notificationPost, setNotificationPost] = useState<CommunityPost | null>(null)
   const user = useAuthStore((s) => s.user)
   const clearSession = useAuthStore((s) => s.clearSession)
+  const { unreadCount, notifications, loading, load, markAsRead, markAllAsRead } = useNotifications()
   const navigate = useNavigate()
 
   if (!user) return null
@@ -27,6 +35,15 @@ export function DashboardLayout() {
       clearSession()
       toast.success('You have been logged out.')
       navigate('/login')
+    }
+  }
+
+  const handleOpenNotificationPost = async (postId: number) => {
+    try {
+      const { data } = await communityService.get(postId)
+      setNotificationPost(data.data)
+    } catch {
+      toast.error('Could not open this advisory.')
     }
   }
 
@@ -111,10 +128,17 @@ export function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative rounded-full p-2 text-ink/70 hover:bg-forest/5" aria-label="Notifications">
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger" />
-            </button>
+            <NotificationBell
+              unreadCount={unreadCount}
+              open={notificationsOpen}
+              onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false) }}
+              onOpenPost={handleOpenNotificationPost}
+              notifications={notifications}
+              loading={loading}
+              onLoad={load}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+            />
 
             <div className="relative">
               <button
@@ -154,6 +178,12 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      <PostDetailModal
+        post={notificationPost}
+        onClose={() => setNotificationPost(null)}
+        onUpdate={setNotificationPost}
+      />
     </div>
   )
 }

@@ -252,3 +252,17 @@ export interface CommunityCategory {
   value: CommunityPostCategory
   label: string
 }
+
+export interface AppNotification {
+  id: string
+  type: 'like' | 'share' | 'comment' | 'reply' | 'mention' | 'community'
+  message: string
+  post_id: number | null
+  comment_id: number | null
+  parent_comment_id: number | null
+  actor_id: number | null
+  actor_name: string | null
+  post_title: string | null
+  read_at: string | null
+  created_at: string
+}

@@ -11,12 +11,18 @@ use App\Models\CommunityPost;
 use App\Models\CommunityPostComment;
 use App\Models\CommunityPostLike;
 use App\Models\CommunityPostShare;
+use App\Services\CommunityNotificationService;
+use App\Support\CommunityPostSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CommunityPostController extends Controller
 {
+    public function __construct(protected CommunityNotificationService $communityNotifications)
+    {
+    }
+
     public function categories(): JsonResponse
     {
         return response()->json([
@@ -143,6 +149,13 @@ class CommunityPostController extends Controller
             }
         });
 
+        if (! $existing) {
+            $this->communityNotifications->notifyLike(
+                $communityPost->loadMissing('author'),
+                $user,
+            );
+        }
+
         $communityPost->refresh();
         $this->applyEngagementFlags($request, collect([$communityPost]));
 
@@ -165,6 +178,10 @@ class CommunityPostController extends Controller
 
         if ($share->wasRecentlyCreated) {
             $communityPost->increment('shares_count');
+            $this->communityNotifications->notifyShare(
+                $communityPost->loadMissing('author'),
+                $user,
+            );
         }
 
         $communityPost->refresh();
@@ -211,6 +228,12 @@ class CommunityPostController extends Controller
 
         $communityPost->increment('comments_count');
 
+        $this->communityNotifications->notifyComment(
+            $communityPost->loadMissing('author'),
+            $comment->loadMissing('user'),
+            $request->user(),
+        );
+
         return response()->json([
             'message' => 'Comment posted.',
             'data' => new CommunityPostCommentResource($comment->load('user')),
@@ -223,17 +246,11 @@ class CommunityPostController extends Controller
             ->where('is_published', true)
             ->with(['municipality', 'author']);
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->query('category'));
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->query('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('content', 'like', "%{$search}%");
-            });
-        }
+        CommunityPostSearch::apply(
+            $query,
+            $request->query('search'),
+            $request->query('category'),
+        );
 
         if ($request->filled('municipality_id')) {
             $query->where('municipality_id', $request->integer('municipality_id'));

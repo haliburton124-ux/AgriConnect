@@ -11,6 +11,7 @@ import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { knowledgeService } from '@/services/knowledgeService'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
+import { buildCommunityListParams } from '@/lib/communityQuery'
 import { cn } from '@/lib/utils'
 import type { CommunityPost, KnowledgeArticle, KnowledgeCategory } from '@/types'
 
@@ -50,11 +51,8 @@ export function KnowledgeCenterPage() {
   useEffect(() => {
     if (tab !== 'advisories') return
     setPosts(null)
-    communityService.list(
-      activePostCategory
-        ? { category: activePostCategory }
-        : { search: search || undefined },
-    ).then((res) => setPosts(res.data.data))
+    communityService.list(buildCommunityListParams({ category: activePostCategory, search }))
+      .then((res) => setPosts(res.data.data))
   }, [tab, activePostCategory, search])
 
   const updatePost = (updated: CommunityPost) => {

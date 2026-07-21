@@ -3,22 +3,28 @@ import { toast } from 'sonner'
 import { Newspaper } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
+import { buildCommunityListParams } from '@/lib/communityQuery'
 import type { CommunityPost } from '@/types'
 
 export function CommunityFeedPage() {
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
   const [selected, setSelected] = useState<CommunityPost | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
-  const load = () => {
+  useEffect(() => {
     setPosts(null)
-    communityService.feed().then((res) => setPosts(res.data.data))
-  }
-
-  useEffect(load, [])
+    communityService
+      .feed(buildCommunityListParams({ category: activeCategory, search }))
+      .then((res) => setPosts(res.data.data))
+      .catch(() => setPosts([]))
+  }, [activeCategory, search])
 
   const updatePost = (updated: CommunityPost) => {
     setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
@@ -53,6 +59,14 @@ export function CommunityFeedPage() {
         </p>
       </div>
 
+      <AdvisorySearchPanel
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        search={search}
+        onSearchChange={setSearch}
+        onCategoryChange={setActiveCategory}
+      />
+
       {posts === null ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => <div key={i} className="skeleton h-44 w-full rounded-2xl" />)}
@@ -63,7 +77,7 @@ export function CommunityFeedPage() {
             <EmptyState
               icon={Newspaper}
               title="No posts in your feed yet"
-              description="Public agricultural advisories from municipalities will appear here."
+              description="Try a different search or category filter."
             />
           </CardContent>
         </Card>

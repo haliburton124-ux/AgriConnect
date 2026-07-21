@@ -33,5 +33,21 @@ export function getAdvisoryCategoryLabel(value: string | null): string {
 
 export function findAdvisoryCategoryByLabel(label: string) {
   const normalized = label.trim().toLowerCase()
-  return ADVISORY_CATEGORIES.find((c) => c.label.toLowerCase() === normalized)
+  if (!normalized) return undefined
+
+  const exact = ADVISORY_CATEGORIES.find((c) => c.label.toLowerCase() === normalized)
+  if (exact) return exact
+
+  return ADVISORY_CATEGORIES.find((c) => {
+    if (!c.value) return false
+    const catLabel = c.label.toLowerCase()
+    const slug = c.value.replace(/_/g, ' ')
+    return (
+      normalized === c.value
+      || normalized.includes(catLabel)
+      || catLabel.includes(normalized)
+      || normalized.includes(slug)
+      || slug.includes(normalized)
+    )
+  })
 }

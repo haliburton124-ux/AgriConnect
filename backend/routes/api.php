@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\Shared\AppointmentController;
 use App\Http\Controllers\Api\V1\Shared\DocumentController;
 use App\Http\Controllers\Api\V1\Shared\MunicipalityDocumentController;
 use App\Http\Controllers\Api\V1\Shared\MessageController;
+use App\Http\Controllers\Api\V1\Shared\NotificationController;
 use App\Http\Controllers\Api\V1\Technician\IncidentController as TechnicianIncidentController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +79,11 @@ Route::prefix('v1')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::post('auth/logout-all', [AuthController::class, 'logoutAllDevices']);
         Route::post('auth/change-password', [AuthController::class, 'changePassword']);
+
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
         // Knowledge Center — write access restricted inside the request/controller
         Route::post('knowledge/articles', [KnowledgeArticleController::class, 'store']);

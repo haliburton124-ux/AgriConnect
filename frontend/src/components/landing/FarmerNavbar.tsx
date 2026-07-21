@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sprout, Menu, X, Bell, MessageSquare, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Newspaper, BookOpen, Gift, Megaphone } from 'lucide-react'
+import { Sprout, Menu, X, MessageSquare, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Newspaper, BookOpen, Gift, Megaphone } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
+import { communityService } from '@/services/communityService'
 import { PUBLIC_NAV_LINKS } from '@/config/farmerPublicNav'
 import { toast } from 'sonner'
+import { NotificationBell } from '@/components/community/NotificationPanel'
+import { PostDetailModal } from '@/components/community/PostDetailModal'
+import { useNotifications } from '@/hooks/useNotifications'
+import type { CommunityPost } from '@/types'
 
 const ACCOUNT_LINKS = [
   { label: 'My Farms', path: '/farmer/farms', icon: MapPin },
@@ -39,7 +44,9 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notificationPost, setNotificationPost] = useState<CommunityPost | null>(null)
   const { user, isAuthenticated, clearSession } = useAuthStore()
+  const { unreadCount, notifications, loading, load, markAsRead, markAllAsRead } = useNotifications()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -62,6 +69,15 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
       clearSession()
       toast.success("You've been logged out.")
       navigate('/')
+    }
+  }
+
+  const handleOpenNotificationPost = async (postId: number) => {
+    try {
+      const { data } = await communityService.get(postId)
+      setNotificationPost(data.data)
+    } catch {
+      toast.error('Could not open this advisory.')
     }
   }
 
@@ -120,35 +136,18 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
             </>
           ) : (
             <>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => { setNotificationsOpen((v) => !v); setProfileOpen(false) }}
-                  className={cn('relative rounded-full p-2.5 transition-colors', isTransparent ? 'text-white hover:bg-white/10' : 'text-ink/70 hover:bg-forest/5')}
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-gold" />
-                </button>
-
-                <AnimatePresence>
-                  {notificationsOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                        className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-black/5 bg-white p-4 shadow-glass"
-                      >
-                        <p className="px-1 text-sm font-semibold text-ink">Notifications</p>
-                        <div className="mt-3 flex flex-col items-center gap-2 rounded-xl bg-forest/[0.03] py-8 text-center">
-                          <Bell className="h-6 w-6 text-forest-light" />
-                          <p className="text-xs text-muted-foreground">You're all caught up.</p>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
+              <NotificationBell
+                unreadCount={unreadCount}
+                open={notificationsOpen}
+                onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false) }}
+                onOpenPost={handleOpenNotificationPost}
+                tone={isTransparent ? 'transparent' : 'default'}
+                notifications={notifications}
+                loading={loading}
+                onLoad={load}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+              />
               <Link
                 to="/farmer/messages"
                 className={cn('rounded-full p-2.5 transition-colors', isTransparent ? 'text-white hover:bg-white/10' : 'text-ink/70 hover:bg-forest/5')}
@@ -275,6 +274,13 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PostDetailModal
+        post={notificationPost}
+        onClose={() => setNotificationPost(null)}
+        onUpdate={setNotificationPost}
+        enableEngagement={isAuthenticated}
+      />
     </header>
   )
 }

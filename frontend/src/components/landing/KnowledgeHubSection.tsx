@@ -14,6 +14,7 @@ import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { communityService } from '@/services/communityService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
+import { buildCommunityListParams } from '@/lib/communityQuery'
 import { cn } from '@/lib/utils'
 import type { CommunityPost } from '@/types'
 
@@ -35,9 +36,7 @@ export function KnowledgeHubSection() {
   useEffect(() => {
     setPosts(null)
     setLoadError(null)
-    const params = activeCategory
-      ? { category: activeCategory }
-      : { search: search.trim() || undefined }
+    const params = buildCommunityListParams({ category: activeCategory, search })
 
     const request =
       view === 'my-feed' && isFarmer

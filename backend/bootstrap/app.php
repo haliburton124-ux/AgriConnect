@@ -16,9 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
+        // API auth uses Sanctum personal access tokens (Bearer), not cookie sessions.
+        // Stateful SPA CSRF is not used — avoids "CSRF token mismatch" on local Vite (5173).
 
         $middleware->alias([
             'role' => EnsureUserHasRole::class,

@@ -22,11 +22,10 @@ class OtpNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('AgriConnect-IN - Your One-Time Verification Code')
-            ->greeting("Hello {$notifiable->first_name},")
-            ->line('Your one-time verification code is:')
-            ->line("**{$this->otp}**")
-            ->line('This code will expire in 10 minutes.')
-            ->line('If you did not request this, please ignore this email.');
+            ->subject('Verify your AgriConnect account')
+            ->view('mail.otp', [
+                'firstName' => $notifiable->first_name,
+                'otp' => $this->otp,
+            ]);
     }
 }

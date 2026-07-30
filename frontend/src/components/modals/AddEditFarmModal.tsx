@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
+import { ModalActions, modalActionButtonClass } from '@/components/ui/ModalActions'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { MunicipalityBarangayFields } from '@/components/forms/MunicipalityBarangayFields'
@@ -131,10 +132,18 @@ export function AddEditFarmModal({ open, onClose, farm, onSuccess }: AddEditFarm
       description="Farm details help technicians locate and assist you faster."
       size="lg"
       footer={
-        <>
-          <Button variant="ghost" onClick={close}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={isSubmitting}>{isEditing ? 'Save Changes' : 'Register Farm'}</Button>
-        </>
+        <ModalActions
+          cancel={
+            <Button variant="outline" onClick={close} className={modalActionButtonClass}>
+              Cancel
+            </Button>
+          }
+          confirm={
+            <Button onClick={handleSubmit(onSubmit)} loading={isSubmitting} className={modalActionButtonClass}>
+              {isEditing ? 'Save Changes' : 'Register Farm'}
+            </Button>
+          }
+        />
       }
     >
       <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>

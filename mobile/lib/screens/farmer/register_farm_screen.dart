@@ -9,7 +9,7 @@ import '../../models/farm.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/farm_service.dart';
 import '../../services/location_service.dart';
-import '../../widgets/agri_button.dart';
+import '../../widgets/agri_form_footer.dart';
 import '../../widgets/agri_location_picker.dart';
 import '../../widgets/municipality_barangay_fields.dart';
 
@@ -148,66 +148,76 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Farm' : 'Register Farm'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Farm details help technicians locate and assist you faster.',
-              style: GoogleFonts.poppins(fontSize: 13, color: AgriColors.muted, height: 1.4),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Farm details help technicians locate and assist you faster.',
+                    style: GoogleFonts.poppins(fontSize: 13, color: AgriColors.muted, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
+                  _textField('Farm name', _nameController),
+                  const SizedBox(height: 16),
+                  MunicipalityBarangayFields(
+                    locationService: _locationService,
+                    municipalityId: _municipalityId,
+                    barangayId: _barangayId,
+                    onMunicipalityChanged: (v) => setState(() {
+                      _municipalityId = v;
+                      _barangayId = null;
+                    }),
+                    onBarangayChanged: (v) => setState(() => _barangayId = v),
+                  ),
+                  const SizedBox(height: 16),
+                  _textField('Address (optional)', _addressController),
+                  const SizedBox(height: 16),
+                  Text('Farm location (GPS)', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  AgriLocationPicker(
+                    latitude: _lat,
+                    longitude: _lng,
+                    onChanged: (lat, lng) => setState(() {
+                      _lat = lat;
+                      _lng = lng;
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  _labeledDropdown(
+                    label: 'Farm type',
+                    value: _farmType,
+                    items: farmTypes,
+                    onChanged: (v) => setState(() => _farmType = v ?? 'rice'),
+                  ),
+                  const SizedBox(height: 12),
+                  _textField('Area (hectares, optional)', _areaController, keyboardType: TextInputType.number),
+                  const SizedBox(height: 12),
+                  _textField('Primary crop (optional)', _cropController),
+                  const SizedBox(height: 12),
+                  _labeledDropdown(
+                    label: 'Ownership (optional)',
+                    value: _ownership ?? '',
+                    items: ['', ...ownershipStatuses],
+                    onChanged: (v) => setState(() => _ownership = v == null || v.isEmpty ? null : v),
+                    formatLabel: (v) => v.isEmpty ? 'Select…' : formatFarmType(v),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
-            _textField('Farm name', _nameController),
-            const SizedBox(height: 16),
-            MunicipalityBarangayFields(
-              locationService: _locationService,
-              municipalityId: _municipalityId,
-              barangayId: _barangayId,
-              onMunicipalityChanged: (v) => setState(() => _municipalityId = v),
-              onBarangayChanged: (v) => setState(() => _barangayId = v),
-            ),
-            const SizedBox(height: 16),
-            _textField('Address (optional)', _addressController),
-            const SizedBox(height: 16),
-            Text('Farm location (GPS)', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            AgriLocationPicker(
-              latitude: _lat,
-              longitude: _lng,
-              onChanged: (lat, lng) => setState(() {
-                _lat = lat;
-                _lng = lng;
-              }),
-            ),
-            const SizedBox(height: 16),
-            _labeledDropdown(
-              label: 'Farm type',
-              value: _farmType,
-              items: farmTypes,
-              onChanged: (v) => setState(() => _farmType = v ?? 'rice'),
-            ),
-            const SizedBox(height: 12),
-            _textField('Area (hectares, optional)', _areaController, keyboardType: TextInputType.number),
-            const SizedBox(height: 12),
-            _textField('Primary crop (optional)', _cropController),
-            const SizedBox(height: 12),
-            _labeledDropdown(
-              label: 'Ownership (optional)',
-              value: _ownership ?? '',
-              items: ['', ...ownershipStatuses],
-              onChanged: (v) => setState(() => _ownership = v == null || v.isEmpty ? null : v),
-              formatLabel: (v) => v.isEmpty ? 'Select…' : formatFarmType(v),
-            ),
-            const SizedBox(height: 28),
-            AgriButton(
-              label: _isEditing ? 'Save Changes' : 'Register Farm',
-              icon: Icons.check,
-              loading: _submitting,
-              onPressed: _submitting ? null : _submit,
-            ),
-          ],
-        ),
+          ),
+          AgriFormFooter(
+            cancelLabel: 'Cancel',
+            confirmLabel: _isEditing ? 'Save Changes' : 'Register Farm',
+            confirmIcon: Icons.check_rounded,
+            loading: _submitting,
+            onCancel: () => Navigator.of(context).maybePop(),
+            onConfirm: _submit,
+          ),
+        ],
       ),
     );
   }

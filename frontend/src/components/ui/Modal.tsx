@@ -86,9 +86,13 @@ export function Modal({
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">{children}</div>
 
-            {footer && <div className="shrink-0 border-t border-black/5">{footer}</div>}
+            {footer && (
+              <div className="sticky bottom-0 z-10 shrink-0 border-t border-black/5 bg-white/95 backdrop-blur-md px-4 py-4 shadow-[0_-10px_28px_rgba(38,50,56,0.07)] pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+                {footer}
+              </div>
+            )}
           </motion.div>
         </div>
       )}

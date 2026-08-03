@@ -97,7 +97,7 @@ class _MunicipalityBarangayFieldsState extends State<MunicipalityBarangayFields>
             if (value != null) _loadBarangays(value);
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         _DropdownField<int>(
           label: 'Barangay',
           value: widget.barangayId,
@@ -135,14 +135,32 @@ class _DropdownField<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: AgriColors.ink)),
-        const SizedBox(height: 6),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AgriColors.ink.withValues(alpha: 0.88),
+          ),
+        ),
+        const SizedBox(height: 8),
         InputDecorator(
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide(color: AgriColors.ink.withValues(alpha: 0.08)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide(color: AgriColors.ink.withValues(alpha: 0.08)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide(color: AgriColors.forest.withValues(alpha: 0.55), width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           ),
           child: loading
               ? const SizedBox(height: 24, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
@@ -150,7 +168,8 @@ class _DropdownField<T> extends StatelessWidget {
                   child: DropdownButton<T>(
                     isExpanded: true,
                     value: items.any((i) => i.value == value) ? value : null,
-                    hint: Text('Select…', style: GoogleFonts.poppins(color: AgriColors.muted)),
+                    hint: Text('Select…', style: GoogleFonts.poppins(color: AgriColors.muted, fontSize: 15)),
+                    style: GoogleFonts.poppins(fontSize: 15, color: AgriColors.ink),
                     items: items,
                     onChanged: enabled ? onChanged : null,
                   ),

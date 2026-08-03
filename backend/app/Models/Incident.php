@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\Archivable;
 
 class Incident extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Archivable, HasFactory;
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_VALIDATED = 'validated';

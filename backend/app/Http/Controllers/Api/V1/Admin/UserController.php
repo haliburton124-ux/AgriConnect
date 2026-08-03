@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreStaffUserRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
@@ -14,13 +15,15 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    use HandlesArchiving;
+
     /**
      * List all users, filterable by role/municipality/status — powers the
      * Admin "Manage Users" table.
      */
     public function index(Request $request): JsonResponse
     {
-        $query = User::query()->with(['municipality', 'barangay']);
+        $query = $this->applyArchiveScope(User::query()->with(['municipality', 'barangay']), $request);
 
         if ($request->filled('role')) {
             $query->where('role', $request->query('role'));
@@ -115,10 +118,16 @@ class UserController extends Controller
         ]);
     }
 
-    public function destroy(User $user): JsonResponse
+    public function archive(User $user): JsonResponse
     {
-        $user->delete(); // soft delete — preserves audit/report history
+        $user->archive();
+        $user->tokens()->delete();
 
-        return response()->json(['message' => 'User account removed.']);
+        return response()->json(['message' => 'User account archived.']);
+    }
+
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(User::class, $id, 'User account');
     }
 }

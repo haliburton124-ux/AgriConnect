@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Megaphone, Plus, Trash2 } from 'lucide-react'
+import { Megaphone, Plus, Archive, RotateCcw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ArchivedFilterTabs } from '@/components/ui/ArchivedFilterTabs'
+import { ArchiveConfirmDialog } from '@/components/ui/ArchiveConfirmDialog'
 import { CreateAnnouncementModal } from '@/components/modals/CreateAnnouncementModal'
 import { announcementService } from '@/services/announcementService'
 import { useAuthStore } from '@/store/authStore'
@@ -17,20 +19,34 @@ export function AnnouncementsPage() {
   const { user } = useAuthStore()
   const canManage = user ? OFFICE_ROLES.includes(user.role) : false
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null)
+  const [view, setView] = useState<'active' | 'archived'>('active')
   const [modalOpen, setModalOpen] = useState(false)
+  const [archiveTarget, setArchiveTarget] = useState<Announcement | null>(null)
 
   const load = () => {
     setAnnouncements(null)
-    announcementService.list().then((res) => setAnnouncements(res.data.data))
+    announcementService.list({ archived: canManage && view === 'archived' }).then((res) => setAnnouncements(res.data.data))
   }
 
-  useEffect(load, [])
+  useEffect(load, [view, canManage])
 
-  const handleDelete = async (announcement: Announcement) => {
-    if (!user || !window.confirm('Remove this announcement?')) return
+  const handleArchive = async () => {
+    if (!user || !archiveTarget) return
     try {
-      await announcementService.remove(user.role, announcement.id)
-      toast.success('Announcement removed.')
+      await announcementService.archive(user.role, archiveTarget.id)
+      toast.success('Announcement archived.')
+      setArchiveTarget(null)
+      load()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const handleRestore = async (announcement: Announcement) => {
+    if (!user) return
+    try {
+      await announcementService.restore(user.role, announcement.id)
+      toast.success('Announcement restored.')
       load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -44,12 +60,14 @@ export function AnnouncementsPage() {
           <h1 className="text-2xl font-bold text-ink">Announcements</h1>
           <p className="mt-1 text-sm text-muted-foreground">Updates and notices from the Agriculture Office.</p>
         </div>
-        {canManage && (
+        {canManage && view === 'active' && (
           <Button onClick={() => setModalOpen(true)}>
             <Plus className="h-4 w-4" /> New Announcement
           </Button>
         )}
       </div>
+
+      {canManage && <ArchivedFilterTabs value={view} onChange={setView} />}
 
       {announcements === null ? (
         <div className="space-y-4">
@@ -58,7 +76,11 @@ export function AnnouncementsPage() {
       ) : announcements.length === 0 ? (
         <Card>
           <CardContent className="p-6">
-            <EmptyState icon={Megaphone} title="No announcements yet" description="Check back later for updates from the Agriculture Office." />
+            <EmptyState
+              icon={Megaphone}
+              title={view === 'archived' ? 'No archived announcements' : 'No announcements yet'}
+              description={view === 'archived' ? 'Archived announcements will appear here.' : 'Check back later for updates from the Agriculture Office.'}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -77,9 +99,15 @@ export function AnnouncementsPage() {
                   </p>
                 </div>
                 {canManage && (
-                  <Button size="icon" variant="ghost" onClick={() => handleDelete(a)}>
-                    <Trash2 className="h-4 w-4 text-danger" />
-                  </Button>
+                  view === 'archived' ? (
+                    <Button size="icon" variant="ghost" title="Restore" onClick={() => handleRestore(a)}>
+                      <RotateCcw className="h-4 w-4 text-success" />
+                    </Button>
+                  ) : (
+                    <Button size="icon" variant="ghost" title="Archive" onClick={() => setArchiveTarget(a)}>
+                      <Archive className="h-4 w-4 text-danger" />
+                    </Button>
+                  )
                 )}
               </CardContent>
             </Card>
@@ -87,7 +115,17 @@ export function AnnouncementsPage() {
         </div>
       )}
 
-      <CreateAnnouncementModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={load} />
+      {canManage && (
+        <CreateAnnouncementModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={load} />
+      )}
+
+      <ArchiveConfirmDialog
+        open={Boolean(archiveTarget)}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={handleArchive}
+        title="Archive announcement?"
+        description={archiveTarget ? `Archive "${archiveTarget.title}"? It will be hidden from public view but can be restored.` : ''}
+      />
     </div>
   )
 }

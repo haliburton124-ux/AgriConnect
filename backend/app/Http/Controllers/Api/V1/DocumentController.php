@@ -39,11 +39,11 @@ class DocumentController extends Controller
         return response()->json(['message' => 'Document uploaded successfully.', 'data' => $document], 201);
     }
 
-    public function destroy(Request $request, Document $document): JsonResponse
+    public function archive(Request $request, Document $document): JsonResponse
     {
         abort_if($document->user_id !== $request->user()->id, 403);
-        $document->delete();
+        $document->archive();
 
-        return response()->json(['message' => 'Document removed.']);
+        return response()->json(['message' => 'Document archived.']);
     }
 }

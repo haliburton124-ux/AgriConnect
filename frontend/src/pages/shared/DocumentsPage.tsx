@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { FileText, Upload, Trash2, File as FileIcon, Lock, ShieldAlert } from 'lucide-react'
+import { FileText, Upload, Archive, RotateCcw, File as FileIcon, Lock, ShieldAlert } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ArchivedFilterTabs } from '@/components/ui/ArchivedFilterTabs'
+import { ArchiveConfirmDialog } from '@/components/ui/ArchiveConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { documentService } from '@/services/documentService'
 import { municipalityDocumentService } from '@/services/municipalityDocumentService'
@@ -44,9 +46,11 @@ export function DocumentsPage() {
   const hasMunicipality = Boolean(user?.municipality?.id)
 
   const [tab, setTab] = useState<DocTab>('personal')
+  const [view, setView] = useState<'active' | 'archived'>('active')
   const [documents, setDocuments] = useState<AppDocument[] | null>(null)
   const [municipalityDocs, setMunicipalityDocs] = useState<AppDocument[] | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [archiveTarget, setArchiveTarget] = useState<AppDocument | null>(null)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('other')
   const [file, setFile] = useState<File | null>(null)
@@ -54,7 +58,7 @@ export function DocumentsPage() {
 
   const loadPersonal = () => {
     setDocuments(null)
-    documentService.list().then((res) => setDocuments(res.data.data))
+    documentService.list(view === 'archived').then((res) => setDocuments(res.data.data))
   }
 
   const loadMunicipality = () => {
@@ -63,13 +67,13 @@ export function DocumentsPage() {
       return
     }
     setMunicipalityDocs(null)
-    municipalityDocumentService.list().then((res) => setMunicipalityDocs(res.data.data))
+    municipalityDocumentService.list(view === 'archived').then((res) => setMunicipalityDocs(res.data.data))
   }
 
   useEffect(() => {
     if (tab === 'personal') loadPersonal()
     else loadMunicipality()
-  }, [tab, hasMunicipality])
+  }, [tab, hasMunicipality, view])
 
   const close = () => {
     setModalOpen(false)
@@ -108,25 +112,37 @@ export function DocumentsPage() {
     }
   }
 
-  const handleDeletePersonal = async (doc: AppDocument) => {
-    if (!window.confirm(`Remove "${doc.title}"?`)) return
+  const handleArchive = async () => {
+    if (!archiveTarget) return
+    const prefix = rolePrefix(user!.role)
     try {
-      await documentService.remove(doc.id)
-      toast.success('Document removed.')
-      loadPersonal()
+      if (tab === 'personal') {
+        await documentService.archive(archiveTarget.id)
+        loadPersonal()
+      } else {
+        if (!prefix) throw new Error('Unauthorized')
+        await municipalityDocumentService.archive(archiveTarget.id, prefix)
+        loadMunicipality()
+      }
+      toast.success('Document archived.')
+      setArchiveTarget(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
   }
 
-  const handleDeleteMunicipality = async (doc: AppDocument) => {
-    if (!window.confirm(`Remove "${doc.title}"?`)) return
+  const handleRestore = async (doc: AppDocument) => {
     const prefix = rolePrefix(user!.role)
-    if (!prefix) return
     try {
-      await municipalityDocumentService.remove(doc.id, prefix)
-      toast.success('Document removed.')
-      loadMunicipality()
+      if (tab === 'personal') {
+        await documentService.restore(doc.id)
+        loadPersonal()
+      } else {
+        if (!prefix) throw new Error('Unauthorized')
+        await municipalityDocumentService.restore(doc.id, prefix)
+        loadMunicipality()
+      }
+      toast.success('Document restored.')
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
@@ -146,12 +162,14 @@ export function DocumentsPage() {
               : 'Official municipality files visible only to authorized users in your LGU.'}
           </p>
         </div>
-        {(tab === 'personal' || canUploadMunicipality) && (
+        {(tab === 'personal' || canUploadMunicipality) && view === 'active' && (
           <Button onClick={() => setModalOpen(true)}>
             <Upload className="h-4 w-4" /> Upload Document
           </Button>
         )}
       </div>
+
+      <ArchivedFilterTabs value={view} onChange={setView} />
 
       {hasMunicipality && (
         <div className="flex rounded-xl border border-black/5 bg-white p-1 shadow-card w-fit">
@@ -198,10 +216,10 @@ export function DocumentsPage() {
             <div className="p-6">
               <EmptyState
                 icon={FileText}
-                title={tab === 'personal' ? 'No personal documents yet' : 'No municipality documents yet'}
-                description={tab === 'personal' ? 'Upload your first document to get started.' : 'Municipality-only files shared by your LGU will appear here.'}
-                actionLabel={tab === 'personal' || canUploadMunicipality ? 'Upload Document' : undefined}
-                onAction={tab === 'personal' || canUploadMunicipality ? () => setModalOpen(true) : undefined}
+                title={view === 'archived' ? 'No archived documents' : tab === 'personal' ? 'No personal documents yet' : 'No municipality documents yet'}
+                description={view === 'archived' ? 'Archived documents will appear here.' : tab === 'personal' ? 'Upload your first document to get started.' : 'Municipality-only files shared by your LGU will appear here.'}
+                actionLabel={view === 'active' && (tab === 'personal' || canUploadMunicipality) ? 'Upload Document' : undefined}
+                onAction={view === 'active' && (tab === 'personal' || canUploadMunicipality) ? () => setModalOpen(true) : undefined}
               />
             </div>
           ) : (
@@ -228,13 +246,15 @@ export function DocumentsPage() {
                       <Button size="sm" variant="outline">View</Button>
                     </a>
                     {(tab === 'personal' || canUploadMunicipality) && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => (tab === 'personal' ? handleDeletePersonal(doc) : handleDeleteMunicipality(doc))}
-                      >
-                        <Trash2 className="h-4 w-4 text-danger" />
-                      </Button>
+                      view === 'archived' ? (
+                        <Button size="icon" variant="ghost" title="Restore" onClick={() => handleRestore(doc)}>
+                          <RotateCcw className="h-4 w-4 text-success" />
+                        </Button>
+                      ) : (
+                        <Button size="icon" variant="ghost" title="Archive" onClick={() => setArchiveTarget(doc)}>
+                          <Archive className="h-4 w-4 text-danger" />
+                        </Button>
+                      )
                     )}
                   </div>
                 </div>
@@ -281,6 +301,14 @@ export function DocumentsPage() {
           </div>
         </div>
       </Modal>
+
+      <ArchiveConfirmDialog
+        open={Boolean(archiveTarget)}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={handleArchive}
+        title="Archive document?"
+        description={archiveTarget ? `Archive "${archiveTarget.title}"? You can restore it later from the Archived tab.` : ''}
+      />
     </div>
   )
 }

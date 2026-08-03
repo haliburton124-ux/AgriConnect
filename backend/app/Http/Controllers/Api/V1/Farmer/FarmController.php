@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Farmer;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Farm\StoreFarmRequest;
 use App\Http\Requests\Farm\UpdateFarmRequest;
@@ -13,13 +14,15 @@ use Illuminate\Http\Request;
 
 class FarmController extends Controller
 {
+    use HandlesArchiving;
+
     public function __construct(protected FarmService $farmService)
     {
     }
 
     public function index(Request $request): JsonResponse
     {
-        $farms = $this->farmService->listForFarmer($request->user());
+        $farms = $this->farmService->listForFarmer($request->user(), $request->boolean('archived'));
 
         return response()->json(['data' => FarmResource::collection($farms)]);
     }
@@ -51,12 +54,21 @@ class FarmController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Farm $farm): JsonResponse
+    public function archive(Request $request, Farm $farm): JsonResponse
     {
         $this->authorize('delete', $farm);
-        $this->farmService->delete($farm);
+        $this->farmService->archive($farm);
 
-        return response()->json(['message' => 'Farm removed successfully.']);
+        return response()->json(['message' => 'Farm archived successfully.']);
+    }
+
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $farm = Farm::withArchived()->findOrFail($id);
+        $this->authorize('delete', $farm);
+        $farm->unarchive();
+
+        return response()->json(['message' => 'Farm restored successfully.']);
     }
 
     public function storeBoundary(Request $request, Farm $farm): JsonResponse

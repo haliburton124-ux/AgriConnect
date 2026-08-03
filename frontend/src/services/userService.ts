@@ -7,6 +7,7 @@ export interface UserFilters {
   status?: string
   search?: string
   page?: number
+  archived?: boolean
 }
 
 export interface CreateStaffUserPayload {
@@ -21,7 +22,12 @@ export interface CreateStaffUserPayload {
 }
 
 function toParams(filters: UserFilters = {}) {
-  return Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''))
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => {
+      if (k === 'archived') return [k, v ? 1 : 0]
+      return [k, v]
+    }),
+  )
 }
 
 export const userService = {
@@ -29,5 +35,6 @@ export const userService = {
   create: (payload: CreateStaffUserPayload) => api.post<{ message: string; data: User }>('/admin/users', payload),
   updateStatus: (id: number, status: 'active' | 'inactive' | 'suspended') =>
     api.put<{ message: string; data: User }>(`/admin/users/${id}/status`, { status }),
-  remove: (id: number) => api.delete<{ message: string }>(`/admin/users/${id}`),
+  archive: (id: number) => api.post<{ message: string }>(`/admin/users/${id}/archive`),
+  restore: (id: number) => api.post<{ message: string }>(`/admin/users/${id}/restore`),
 }

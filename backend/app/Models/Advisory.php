@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Advisory extends Model
 {
+    use Archivable;
+
     protected $fillable = [
         'issued_by', 'title', 'content', 'type', 'severity',
         'municipality_id', 'valid_from', 'valid_until', 'is_published',

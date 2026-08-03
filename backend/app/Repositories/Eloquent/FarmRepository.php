@@ -30,16 +30,22 @@ class FarmRepository implements FarmRepositoryInterface
         return $farm->refresh();
     }
 
-    public function delete(Farm $farm): bool
+    public function archive(Farm $farm): bool
     {
-        return (bool) $farm->delete();
+        return (bool) $farm->archive();
     }
 
-    public function allForFarmer(User $farmer): Collection
+    public function allForFarmer(User $farmer, bool $archived = false): Collection
     {
-        return $this->model->with(['municipality', 'barangay', 'boundaries'])
-            ->where('farmer_id', $farmer->id)
-            ->latest()
-            ->get();
+        $query = $this->model->with(['municipality', 'barangay', 'boundaries'])
+            ->where('farmer_id', $farmer->id);
+
+        if ($archived) {
+            $query->onlyArchived()->latest('archived_at');
+        } else {
+            $query->latest();
+        }
+
+        return $query->get();
     }
 }

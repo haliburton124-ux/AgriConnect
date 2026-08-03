@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Sprout, Plus, MapPin, Pencil, Trash2, Ruler } from 'lucide-react'
+import { Sprout, Plus, MapPin, Pencil, Archive, RotateCcw, Ruler } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ArchivedFilterTabs } from '@/components/ui/ArchivedFilterTabs'
+import { ArchiveConfirmDialog } from '@/components/ui/ArchiveConfirmDialog'
 import { AddEditFarmModal } from '@/components/modals/AddEditFarmModal'
 import { FarmViewModal } from '@/components/modals/FarmViewModal'
 import { farmService } from '@/services/farmService'
@@ -14,13 +16,15 @@ import type { Farm } from '@/types'
 
 export function FarmerFarmsPage() {
   const [farms, setFarms] = useState<Farm[] | null>(null)
+  const [view, setView] = useState<'active' | 'archived'>('active')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null)
   const [viewingFarm, setViewingFarm] = useState<Farm | null>(null)
+  const [archiveTarget, setArchiveTarget] = useState<Farm | null>(null)
 
   const load = () => {
     setFarms(null)
-    farmService.list().then((res) => {
+    farmService.list(view === 'archived').then((res) => {
       const nextFarms = res.data.data
       setFarms(nextFarms)
       setViewingFarm((current) => {
@@ -30,7 +34,7 @@ export function FarmerFarmsPage() {
     })
   }
 
-  useEffect(load, [])
+  useEffect(load, [view])
 
   const openCreate = () => {
     setEditingFarm(null)
@@ -50,12 +54,23 @@ export function FarmerFarmsPage() {
     setViewingFarm(farm)
   }
 
-  const handleDelete = async (farm: Farm) => {
-    if (!window.confirm(`Remove "${farm.farm_name}"? This cannot be undone.`)) return
+  const handleArchive = async () => {
+    if (!archiveTarget) return
     try {
-      await farmService.remove(farm.id)
-      toast.success('Farm removed.')
-      if (viewingFarm?.id === farm.id) setViewingFarm(null)
+      await farmService.archive(archiveTarget.id)
+      toast.success('Farm archived.')
+      setArchiveTarget(null)
+      if (viewingFarm?.id === archiveTarget.id) setViewingFarm(null)
+      load()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const handleRestore = async (farm: Farm) => {
+    try {
+      await farmService.restore(farm.id)
+      toast.success('Farm restored.')
       load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -69,10 +84,14 @@ export function FarmerFarmsPage() {
           <h1 className="text-2xl font-bold text-ink">My Farms</h1>
           <p className="mt-1 text-sm text-muted-foreground">Register and manage the farms you report incidents from.</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" /> Register Farm
-        </Button>
+        {view === 'active' && (
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" /> Register Farm
+          </Button>
+        )}
       </div>
+
+      <ArchivedFilterTabs value={view} onChange={setView} />
 
       {farms === null ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,7 +100,13 @@ export function FarmerFarmsPage() {
       ) : farms.length === 0 ? (
         <Card>
           <CardContent className="p-6">
-            <EmptyState icon={Sprout} title="No farms registered yet" description="Register your first farm to start reporting incidents against it." actionLabel="Register Farm" onAction={openCreate} />
+            <EmptyState
+              icon={Sprout}
+              title={view === 'archived' ? 'No archived farms' : 'No farms registered yet'}
+              description={view === 'archived' ? 'Archived farms will appear here and can be restored.' : 'Register your first farm to start reporting incidents against it.'}
+              actionLabel={view === 'active' ? 'Register Farm' : undefined}
+              onAction={view === 'active' ? openCreate : undefined}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -114,28 +139,44 @@ export function FarmerFarmsPage() {
                       <Sprout className="h-5 w-5" />
                     </div>
                     <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Edit"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openEdit(farm)
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Remove"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleDelete(farm)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-danger" />
-                      </Button>
+                      {view === 'archived' ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Restore"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleRestore(farm)
+                          }}
+                        >
+                          <RotateCcw className="h-4 w-4 text-success" />
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Edit"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              openEdit(farm)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Archive"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setArchiveTarget(farm)
+                            }}
+                          >
+                            <Archive className="h-4 w-4 text-danger" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -163,13 +204,16 @@ export function FarmerFarmsPage() {
         </div>
       )}
 
-      <FarmViewModal
-        open={Boolean(viewingFarm)}
-        onClose={() => setViewingFarm(null)}
-        farm={viewingFarm}
-      />
+      <AddEditFarmModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={load} farm={editingFarm} />
+      <FarmViewModal open={Boolean(viewingFarm)} farm={viewingFarm} onClose={() => setViewingFarm(null)} />
 
-      <AddEditFarmModal open={modalOpen} onClose={() => setModalOpen(false)} farm={editingFarm} onSuccess={load} />
+      <ArchiveConfirmDialog
+        open={Boolean(archiveTarget)}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={handleArchive}
+        title="Archive farm?"
+        description={archiveTarget ? `Archive "${archiveTarget.farm_name}"? You can restore it later from the Archived tab.` : ''}
+      />
     </div>
   )
 }

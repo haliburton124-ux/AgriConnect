@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Content;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Content\StoreAnnouncementRequest;
 use App\Models\Announcement;
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
 {
+    use HandlesArchiving;
+
     /**
      * Publicly browsable (guests see general/province-wide announcements
      * only). Farmers/technicians additionally see anything scoped to their
@@ -19,7 +22,13 @@ class AnnouncementController extends Controller
     {
         $user = $request->user();
 
-        $query = Announcement::query()->where('is_published', true)->with('postedBy:id,first_name,last_name,role')->latest('published_at');
+        if ($request->boolean('archived') && $user?->hasRole(['municipal_office', 'provincial_office', 'admin'])) {
+            $query = Announcement::onlyArchived()
+                ->with('postedBy:id,first_name,last_name,role')
+                ->latest('archived_at');
+        } else {
+            $query = Announcement::query()->where('is_published', true)->with('postedBy:id,first_name,last_name,role')->latest('published_at');
+        }
 
         if (! $user) {
             $query->whereNull('municipality_id')->where('audience', 'all');
@@ -66,10 +75,13 @@ class AnnouncementController extends Controller
         return response()->json(['message' => 'Announcement posted successfully.', 'data' => $announcement], 201);
     }
 
-    public function destroy(Announcement $announcement): JsonResponse
+    public function archive(Announcement $announcement): JsonResponse
     {
-        $announcement->delete();
+        return $this->archiveModel($announcement, 'Announcement');
+    }
 
-        return response()->json(['message' => 'Announcement removed.']);
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(Announcement::class, $id, 'Announcement');
     }
 }

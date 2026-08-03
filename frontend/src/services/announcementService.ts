@@ -15,12 +15,18 @@ function basePath(role: UserRole): string {
 }
 
 export const announcementService = {
-  list: () => api.get<PaginatedResponse<Announcement>>('/announcements'),
+  list: (params?: { archived?: boolean }) =>
+    api.get<PaginatedResponse<Announcement>>('/announcements', {
+      params: params?.archived ? { archived: 1 } : undefined,
+    }),
 
   create: (role: UserRole, formData: FormData) =>
     api.post<{ message: string; data: Announcement }>(`${basePath(role)}/announcements`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  remove: (role: UserRole, id: number) => api.delete<{ message: string }>(`${basePath(role)}/announcements/${id}`),
+  archive: (role: UserRole, id: number) =>
+    api.post<{ message: string }>(`${basePath(role)}/announcements/${id}/archive`),
+  restore: (role: UserRole, id: number) =>
+    api.post<{ message: string }>(`${basePath(role)}/announcements/${id}/restore`),
 }

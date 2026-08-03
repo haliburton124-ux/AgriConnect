@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Sprout, Plus, Trash2 } from 'lucide-react'
+import { Sprout, Plus, Archive, RotateCcw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ArchivedFilterTabs } from '@/components/ui/ArchivedFilterTabs'
+import { ArchiveConfirmDialog } from '@/components/ui/ArchiveConfirmDialog'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { CreateCommunityPostModal } from '@/components/modals/CreateCommunityPostModal'
@@ -21,21 +23,34 @@ function rolePrefix(role: UserRole): 'mao' | 'ppo' | 'admin' {
 export function KnowledgeSharingPage() {
   const { user } = useAuthStore()
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
+  const [view, setView] = useState<'active' | 'archived'>('active')
   const [selected, setSelected] = useState<CommunityPost | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [archiveTarget, setArchiveTarget] = useState<CommunityPost | null>(null)
 
   const load = () => {
     setPosts(null)
-    communityService.list().then((res) => setPosts(res.data.data))
+    communityService.list({ archived: view === 'archived' }).then((res) => setPosts(res.data.data))
   }
 
-  useEffect(load, [])
+  useEffect(load, [view])
 
-  const handleDelete = async (post: CommunityPost) => {
-    if (!window.confirm(`Remove "${post.title}"?`)) return
+  const handleArchive = async () => {
+    if (!archiveTarget) return
     try {
-      await communityService.remove(post.id, rolePrefix(user!.role))
-      toast.success('Advisory removed.')
+      await communityService.archive(archiveTarget.id, rolePrefix(user!.role))
+      toast.success('Advisory archived.')
+      setArchiveTarget(null)
+      load()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const handleRestore = async (post: CommunityPost) => {
+    try {
+      await communityService.restore(post.id, rolePrefix(user!.role))
+      toast.success('Advisory restored.')
       load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -51,10 +66,14 @@ export function KnowledgeSharingPage() {
             Publish public agricultural advisories for farmers across Ilocos Norte.
           </p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4" /> Publish Advisory
-        </Button>
+        {view === 'active' && (
+          <Button onClick={() => setModalOpen(true)}>
+            <Plus className="h-4 w-4" /> Publish Advisory
+          </Button>
+        )}
       </div>
+
+      <ArchivedFilterTabs value={view} onChange={setView} />
 
       {posts === null ? (
         <div className="space-y-4">
@@ -65,10 +84,10 @@ export function KnowledgeSharingPage() {
           <CardContent className="p-6">
             <EmptyState
               icon={Sprout}
-              title="No public advisories yet"
-              description="Publish educational content for farmers — pesticide usage, crop disease treatment, planting calendars, and more."
-              actionLabel="Publish Advisory"
-              onAction={() => setModalOpen(true)}
+              title={view === 'archived' ? 'No archived advisories' : 'No public advisories yet'}
+              description={view === 'archived' ? 'Archived advisories will appear here.' : 'Publish educational content for farmers — pesticide usage, crop disease treatment, planting calendars, and more.'}
+              actionLabel={view === 'active' ? 'Publish Advisory' : undefined}
+              onAction={view === 'active' ? () => setModalOpen(true) : undefined}
             />
           </CardContent>
         </Card>
@@ -77,15 +96,27 @@ export function KnowledgeSharingPage() {
           {posts.map((post) => (
             <div key={post.id} className="relative">
               <PostCard post={post} onOpen={setSelected} compact />
-              <Button
-                size="icon"
-                variant="ghost"
-                className="absolute right-3 top-3"
-                title="Remove"
-                onClick={() => handleDelete(post)}
-              >
-                <Trash2 className="h-4 w-4 text-danger" />
-              </Button>
+              {view === 'archived' ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-3 top-3"
+                  title="Restore"
+                  onClick={() => handleRestore(post)}
+                >
+                  <RotateCcw className="h-4 w-4 text-success" />
+                </Button>
+              ) : (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-3 top-3"
+                  title="Archive"
+                  onClick={() => setArchiveTarget(post)}
+                >
+                  <Archive className="h-4 w-4 text-danger" />
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -106,6 +137,14 @@ export function KnowledgeSharingPage() {
           setSelected(updated)
         }}
         enableEngagement={false}
+      />
+
+      <ArchiveConfirmDialog
+        open={Boolean(archiveTarget)}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={handleArchive}
+        title="Archive advisory?"
+        description={archiveTarget ? `Archive "${archiveTarget.title}"? It will be hidden from farmers but can be restored.` : ''}
       />
     </div>
   )

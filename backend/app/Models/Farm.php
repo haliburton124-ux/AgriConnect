@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\Archivable;
 
 class Farm extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Archivable, HasFactory;
 
     protected $fillable = [
         'farmer_id', 'farm_name', 'municipality_id', 'barangay_id', 'address',

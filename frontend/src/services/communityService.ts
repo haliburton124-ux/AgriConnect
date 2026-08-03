@@ -4,8 +4,13 @@ import type { CommunityCategory, CommunityPost, CommunityPostComment, PaginatedR
 export const communityService = {
   categories: () => api.get<{ data: CommunityCategory[] }>('/community/categories'),
 
-  list: (params?: { category?: string; search?: string; municipality_id?: number; page?: number }) =>
-    api.get<PaginatedResponse<CommunityPost>>('/community/posts', { params }),
+  list: (params?: { category?: string; search?: string; municipality_id?: number; page?: number; archived?: boolean }) =>
+    api.get<PaginatedResponse<CommunityPost>>('/community/posts', {
+      params: {
+        ...params,
+        archived: params?.archived ? 1 : undefined,
+      },
+    }),
 
   feed: (params?: { category?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<CommunityPost>>('/community/feed', { params }),
@@ -33,6 +38,8 @@ export const communityService = {
   }, rolePrefix: 'mao' | 'ppo' | 'admin') =>
     api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, payload),
 
-  remove: (id: number, rolePrefix: 'mao' | 'ppo' | 'admin') =>
-    api.delete<{ message: string }>(`/${rolePrefix}/community/posts/${id}`),
+  archive: (id: number, rolePrefix: 'mao' | 'ppo' | 'admin') =>
+    api.post<{ message: string }>(`/${rolePrefix}/community/posts/${id}/archive`),
+  restore: (id: number, rolePrefix: 'mao' | 'ppo' | 'admin') =>
+    api.post<{ message: string }>(`/${rolePrefix}/community/posts/${id}/restore`),
 }

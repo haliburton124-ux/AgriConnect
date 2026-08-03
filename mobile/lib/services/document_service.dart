@@ -8,9 +8,9 @@ class DocumentService {
 
   final ApiClient _api;
 
-  Future<List<AppDocument>> list() {
+  Future<List<AppDocument>> list({bool archived = false}) {
     return _api.handle(
-      _api.get('/documents'),
+      _api.get('/documents', queryParameters: archived ? {'archived': 1} : null),
       (json) {
         final data = (json as Map<String, dynamic>)['data'] as List<dynamic>;
         return data.map((e) => AppDocument.fromJson(e as Map<String, dynamic>)).toList();
@@ -30,9 +30,16 @@ class DocumentService {
     );
   }
 
-  Future<void> remove(int id) {
+  Future<void> archive(int id) {
     return _api.handle(
-      _api.delete('/documents/$id'),
+      _api.post('/documents/$id/archive'),
+      (_) {},
+    );
+  }
+
+  Future<void> restore(int id) {
+    return _api.handle(
+      _api.post('/documents/$id/restore'),
       (_) {},
     );
   }

@@ -45,9 +45,9 @@ class FarmService {
 
   final ApiClient _api;
 
-  Future<List<Farm>> list() {
+  Future<List<Farm>> list({bool archived = false}) {
     return _api.handle(
-      _api.get('/farmer/farms'),
+      _api.get('/farmer/farms', queryParameters: archived ? {'archived': 1} : null),
       (json) {
         final data = (json as Map<String, dynamic>)['data'] as List<dynamic>;
         return data.map((item) => Farm.fromJson(item as Map<String, dynamic>)).toList();
@@ -76,9 +76,16 @@ class FarmService {
     );
   }
 
-  Future<void> remove(int id) {
+  Future<void> archive(int id) {
     return _api.handle(
-      _api.delete('/farmer/farms/$id'),
+      _api.post('/farmer/farms/$id/archive'),
+      (_) {},
+    );
+  }
+
+  Future<void> restore(int id) {
+    return _api.handle(
+      _api.post('/farmer/farms/$id/restore'),
       (_) {},
     );
   }

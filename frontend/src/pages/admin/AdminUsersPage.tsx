@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Users, Plus, Search, Ban, CheckCircle2, Trash2 } from 'lucide-react'
+import { Users, Plus, Search, Ban, CheckCircle2, Archive, RotateCcw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ArchivedFilterTabs } from '@/components/ui/ArchivedFilterTabs'
+import { ArchiveConfirmDialog } from '@/components/ui/ArchiveConfirmDialog'
 import { CreateStaffUserModal } from '@/components/modals/CreateStaffUserModal'
 import { userService } from '@/services/userService'
 import { getApiErrorMessage } from '@/lib/api'
@@ -32,16 +34,18 @@ export function AdminUsersPage() {
   const [users, setUsers] = useState<User[] | null>(null)
   const [role, setRole] = useState<UserRole | ''>('')
   const [search, setSearch] = useState('')
+  const [view, setView] = useState<'active' | 'archived'>('active')
   const [createOpen, setCreateOpen] = useState(false)
+  const [archiveTarget, setArchiveTarget] = useState<User | null>(null)
 
   const load = () => {
     setUsers(null)
-    userService.list({ role: role || undefined, search: search || undefined }).then((res) => {
+    userService.list({ role: role || undefined, search: search || undefined, archived: view === 'archived' }).then((res) => {
       setUsers(res.data.data)
     })
   }
 
-  useEffect(load, [role, search])
+  useEffect(load, [role, search, view])
 
   const handleStatusChange = async (user: User, status: 'active' | 'suspended') => {
     try {
@@ -53,11 +57,22 @@ export function AdminUsersPage() {
     }
   }
 
-  const handleDelete = async (user: User) => {
-    if (!window.confirm(`Remove ${user.full_name}'s account? This can be reversed by support if needed.`)) return
+  const handleArchive = async () => {
+    if (!archiveTarget) return
     try {
-      await userService.remove(user.id)
-      toast.success('Account removed.')
+      await userService.archive(archiveTarget.id)
+      toast.success('Account archived.')
+      setArchiveTarget(null)
+      load()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const handleRestore = async (user: User) => {
+    try {
+      await userService.restore(user.id)
+      toast.success('Account restored.')
       load()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
@@ -71,14 +86,17 @@ export function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-ink">Manage Users</h1>
           <p className="mt-1 text-sm text-muted-foreground">Provision staff accounts and manage every user on the platform.</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Staff Account
-        </Button>
+        {view === 'active' && (
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Staff Account
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {ROLE_TABS.map((tab) => (
+        <div className="flex flex-wrap items-center gap-3">
+          <ArchivedFilterTabs value={view} onChange={setView} />
+          {view === 'active' && ROLE_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setRole(tab.value)}
@@ -105,7 +123,11 @@ export function AdminUsersPage() {
             </div>
           ) : users.length === 0 ? (
             <div className="p-6">
-              <EmptyState icon={Users} title="No users found" description="Try a different filter, or add a new staff account." />
+              <EmptyState
+                icon={Users}
+                title={view === 'archived' ? 'No archived accounts' : 'No users found'}
+                description={view === 'archived' ? 'Archived accounts will appear here.' : 'Try a different filter, or add a new staff account.'}
+              />
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -133,18 +155,26 @@ export function AdminUsersPage() {
                       <td className="px-5 py-3.5 text-ink/60">{formatDate(u.created_at)}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex justify-end gap-1.5">
-                          {u.status === 'active' ? (
-                            <Button size="icon" variant="ghost" title="Suspend account" onClick={() => handleStatusChange(u, 'suspended')}>
-                              <Ban className="h-4 w-4 text-danger" />
+                          {view === 'archived' ? (
+                            <Button size="icon" variant="ghost" title="Restore account" onClick={() => handleRestore(u)}>
+                              <RotateCcw className="h-4 w-4 text-success" />
                             </Button>
                           ) : (
-                            <Button size="icon" variant="ghost" title="Activate account" onClick={() => handleStatusChange(u, 'active')}>
-                              <CheckCircle2 className="h-4 w-4 text-success" />
-                            </Button>
+                            <>
+                              {u.status === 'active' ? (
+                                <Button size="icon" variant="ghost" title="Suspend account" onClick={() => handleStatusChange(u, 'suspended')}>
+                                  <Ban className="h-4 w-4 text-danger" />
+                                </Button>
+                              ) : (
+                                <Button size="icon" variant="ghost" title="Activate account" onClick={() => handleStatusChange(u, 'active')}>
+                                  <CheckCircle2 className="h-4 w-4 text-success" />
+                                </Button>
+                              )}
+                              <Button size="icon" variant="ghost" title="Archive account" onClick={() => setArchiveTarget(u)}>
+                                <Archive className="h-4 w-4 text-danger" />
+                              </Button>
+                            </>
                           )}
-                          <Button size="icon" variant="ghost" title="Remove account" onClick={() => handleDelete(u)}>
-                            <Trash2 className="h-4 w-4 text-danger" />
-                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -157,6 +187,14 @@ export function AdminUsersPage() {
       </Card>
 
       <CreateStaffUserModal open={createOpen} onClose={() => setCreateOpen(false)} onSuccess={load} />
+
+      <ArchiveConfirmDialog
+        open={Boolean(archiveTarget)}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={handleArchive}
+        title="Archive account?"
+        description={archiveTarget ? `Archive ${archiveTarget.full_name}'s account? They will lose access but can be restored later.` : ''}
+      />
     </div>
   )
 }

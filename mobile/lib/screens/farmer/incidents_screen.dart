@@ -12,6 +12,7 @@ import '../../services/incident_service.dart';
 import '../../widgets/agri_map_view.dart';
 import '../../widgets/agri_page_header.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/evidence_gallery.dart';
 import '../../widgets/expandable_text.dart';
 import '../../widgets/loading_view.dart';
 import 'report_incident_screen.dart';
@@ -363,6 +364,10 @@ class _IncidentDetailSheetState extends State<_IncidentDetailSheet> {
                     if (incident.hasValidLocation) ...[
                       const SizedBox(height: 16),
                       AgriMapView(latitude: incident.latitude, longitude: incident.longitude, height: 200),
+                    ],
+                    if (incident.media.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      EvidenceGallery(media: incident.media),
                     ],
                     if (incident.recommendations.isNotEmpty) ...[
                       const SizedBox(height: 20),

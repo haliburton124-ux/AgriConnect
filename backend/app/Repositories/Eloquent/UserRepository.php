@@ -35,9 +35,9 @@ class UserRepository implements UserRepositoryInterface
         return $user->refresh();
     }
 
-    public function delete(User $user): bool
+    public function archive(User $user): bool
     {
-        return (bool) $user->delete();
+        return (bool) $user->archive();
     }
 
     public function paginateByRole(string $role, int $perPage = 15): LengthAwarePaginator

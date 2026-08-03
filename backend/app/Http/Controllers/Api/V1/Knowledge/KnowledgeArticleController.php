@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Knowledge;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Knowledge\StoreKnowledgeArticleRequest;
 use App\Models\KnowledgeArticle;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 
 class KnowledgeArticleController extends Controller
 {
+    use HandlesArchiving;
+
     /** Public knowledge base browse — available to every authenticated role. */
     public function index(Request $request): JsonResponse
     {
@@ -77,12 +80,18 @@ class KnowledgeArticleController extends Controller
         return response()->json(['message' => 'Article published successfully.', 'data' => $article], 201);
     }
 
-    public function destroy(Request $request, KnowledgeArticle $article): JsonResponse
+    public function archive(Request $request, KnowledgeArticle $article): JsonResponse
     {
         $this->authorizeManage($request);
-        $article->delete();
 
-        return response()->json(['message' => 'Article removed.']);
+        return $this->archiveModel($article, 'Article');
+    }
+
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $this->authorizeManage($request);
+
+        return $this->restoreModel(KnowledgeArticle::class, $id, 'Article');
     }
 
     protected function authorizeManage(Request $request): void

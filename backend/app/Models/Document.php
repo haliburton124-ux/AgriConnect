@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Document extends Model
 {
+    use Archivable;
+
     public const VISIBILITY_PERSONAL = 'personal';
     public const VISIBILITY_MUNICIPALITY = 'municipality_only';
 

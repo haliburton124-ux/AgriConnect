@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Api\V1\Shared;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function __construct(protected AuditLogger $audit)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -35,6 +40,7 @@ class NotificationController extends Controller
     {
         $item = $request->user()->notifications()->where('id', $notification)->firstOrFail();
         $item->markAsRead();
+        $this->audit->logNotification('notification.read', 'Marked a notification as read.');
 
         return response()->json([
             'message' => 'Notification marked as read.',
@@ -45,6 +51,7 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request): JsonResponse
     {
         $request->user()->unreadNotifications->markAsRead();
+        $this->audit->logNotification('notification.read_all', 'Marked all notifications as read.');
 
         return response()->json(['message' => 'All notifications marked as read.']);
     }

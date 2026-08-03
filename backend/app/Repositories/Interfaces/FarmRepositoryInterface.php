@@ -14,7 +14,7 @@ interface FarmRepositoryInterface
 
     public function update(Farm $farm, array $data): Farm;
 
-    public function delete(Farm $farm): bool;
+    public function archive(Farm $farm): bool;
 
-    public function allForFarmer(User $farmer): Collection;
+    public function allForFarmer(User $farmer, bool $archived = false): Collection;
 }

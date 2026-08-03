@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Content;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Content\StoreAdvisoryRequest;
 use App\Models\Advisory;
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;
 
 class AdvisoryController extends Controller
 {
+    use HandlesArchiving;
+
     /**
      * Publicly browsable (guests see general/province-wide advisories
      * only). Farmers/technicians additionally see anything scoped to
@@ -64,10 +67,13 @@ class AdvisoryController extends Controller
         return response()->json(['message' => 'Advisory issued successfully.', 'data' => $advisory], 201);
     }
 
-    public function destroy(Advisory $advisory): JsonResponse
+    public function archive(Advisory $advisory): JsonResponse
     {
-        $advisory->delete();
+        return $this->archiveModel($advisory, 'Advisory');
+    }
 
-        return response()->json(['message' => 'Advisory removed.']);
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(Advisory::class, $id, 'Advisory');
     }
 }

@@ -15,11 +15,13 @@ export interface FarmPayload {
 }
 
 export const farmService = {
-  list: () => api.get<{ data: Farm[] }>('/farmer/farms'),
+  list: (archived = false) =>
+    api.get<{ data: Farm[] }>('/farmer/farms', { params: archived ? { archived: 1 } : undefined }),
   get: (id: number) => api.get<{ data: Farm }>(`/farmer/farms/${id}`),
   create: (payload: FarmPayload) => api.post<{ message: string; data: Farm }>('/farmer/farms', payload),
   update: (id: number, payload: Partial<FarmPayload>) => api.put<{ message: string; data: Farm }>(`/farmer/farms/${id}`, payload),
-  remove: (id: number) => api.delete<{ message: string }>(`/farmer/farms/${id}`),
+  archive: (id: number) => api.post<{ message: string }>(`/farmer/farms/${id}/archive`),
+  restore: (id: number) => api.post<{ message: string }>(`/farmer/farms/${id}/restore`),
   saveBoundary: (id: number, geojson: GeoJSON.Polygon) =>
     api.post<{ message: string; data: Farm }>(`/farmer/farms/${id}/boundary`, geojson),
 }

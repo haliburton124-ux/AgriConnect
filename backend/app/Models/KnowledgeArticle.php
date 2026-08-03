@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KnowledgeArticle extends Model
 {
+    use Archivable;
+
     protected $fillable = [
         'category_id', 'title', 'slug', 'content', 'cover_image_path',
         'type', 'video_url', 'pdf_path', 'author_id', 'is_published', 'view_count',

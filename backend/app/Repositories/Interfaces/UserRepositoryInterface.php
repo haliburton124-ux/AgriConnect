@@ -15,7 +15,7 @@ interface UserRepositoryInterface
 
     public function update(User $user, array $data): User;
 
-    public function delete(User $user): bool;
+    public function archive(User $user): bool;
 
     public function paginateByRole(string $role, int $perPage = 15);
 

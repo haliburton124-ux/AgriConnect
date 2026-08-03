@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/agri_button.dart';
-import '../../widgets/brand_logo.dart';
+import '../../widgets/auth/auth_screen_shell.dart';
+import '../../widgets/auth/auth_text_field.dart';
 import '../farmer/farmer_shell_screen.dart';
 import 'register_screen.dart';
 
@@ -19,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -61,143 +61,71 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
-    return Scaffold(
-      backgroundColor: AgriColors.canvas,
-      body: SafeArea(
-        child: Stack(
+    return AuthScreenShell(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Positioned(
-              right: -80,
-              top: MediaQuery.of(context).size.height * 0.15,
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AgriColors.forest.withValues(alpha: 0.05),
+            const AuthHeader(
+              title: 'Welcome back',
+              subtitle: 'Sign in to continue to AgriConnect.',
+            ),
+            const SizedBox(height: 32),
+            AuthTextField(
+              label: 'Email address',
+              controller: _emailController,
+              hint: 'you@example.com',
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return 'Enter a valid email address';
+                if (!value.contains('@')) return 'Enter a valid email address';
+                return null;
+              },
+            ),
+            const SizedBox(height: 18),
+            AuthPasswordField(
+              label: 'Password',
+              controller: _passwordController,
+              autofillHints: const [AutofillHints.password],
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Password is required';
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Use the web app to reset your password for now.')),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AgriColors.forest,
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 ),
+                child: const Text('Forgot password?', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
-            Positioned(
-              left: -60,
-              bottom: MediaQuery.of(context).size.height * 0.2,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AgriColors.sky.withValues(alpha: 0.05),
-                ),
-              ),
+            const SizedBox(height: 12),
+            AgriButton(
+              label: 'Sign in',
+              icon: Icons.login_rounded,
+              loading: auth.isLoading,
+              onPressed: _submit,
             ),
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const BrandLogo(),
-                    const SizedBox(height: 32),
-                    Text(
-                      'Welcome back',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AgriColors.ink,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Sign in to continue to AgriConnect.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AgriColors.muted),
-                    ),
-                    const SizedBox(height: 28),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(
-                        labelText: 'Email address',
-                        hintText: 'you@example.com',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Enter a valid email address';
-                        if (!value.contains('@')) return 'Enter a valid email address';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: '••••••••',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            size: 20,
-                            color: AgriColors.muted,
-                          ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return 'Password is required';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Use the web app to reset your password for now.')),
-                          );
-                        },
-                        child: Text(
-                          'Forgot password?',
-                          style: TextStyle(
-                            color: AgriColors.forest,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    AgriButton(
-                      label: 'Sign in',
-                      icon: Icons.login,
-                      loading: auth.isLoading,
-                      onPressed: _submit,
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('New farmer? ', style: TextStyle(color: AgriColors.muted, fontSize: 14)),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                            );
-                          },
-                          child: Text(
-                            'Create an account',
-                            style: TextStyle(
-                              color: AgriColors.forest,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            const SizedBox(height: 28),
+            AuthFooterLink(
+              lead: 'New farmer? ',
+              action: 'Create an account',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                );
+              },
             ),
           ],
         ),

@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class AuditLog extends Model
 {
     protected $fillable = [
-        'user_id', 'action', 'auditable_type', 'auditable_id',
-        'old_values', 'new_values', 'ip_address', 'user_agent',
+        'user_id', 'user_role', 'municipality_id', 'action', 'module', 'description',
+        'auditable_type', 'auditable_id', 'old_values', 'new_values', 'ip_address', 'user_agent',
     ];
 
     protected $casts = [
@@ -21,6 +21,11 @@ class AuditLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function municipality(): BelongsTo
+    {
+        return $this->belongsTo(Municipality::class);
     }
 
     public function auditable(): MorphTo

@@ -27,6 +27,7 @@ class _FarmsScreenState extends State<FarmsScreen> {
   String? _error;
   bool _loading = true;
   bool _started = false;
+  bool _showArchived = false;
 
   @override
   void didChangeDependencies() {
@@ -44,7 +45,7 @@ class _FarmsScreenState extends State<FarmsScreen> {
     });
 
     try {
-      final farms = await _farmService!.list();
+      final farms = await _farmService!.list(archived: _showArchived);
       if (!mounted) return;
       setState(() {
         _farms = farms;
@@ -66,24 +67,36 @@ class _FarmsScreenState extends State<FarmsScreen> {
     if (saved == true) _load();
   }
 
-  Future<void> _deleteFarm(Farm farm) async {
+  Future<void> _archiveFarm(Farm farm) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove farm?'),
-        content: Text('Remove "${farm.farmName}"? This cannot be undone.'),
+        title: const Text('Archive farm?'),
+        content: Text('Archive "${farm.farmName}"? You can restore it later from the Archived tab.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove', style: TextStyle(color: AgriColors.danger))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Archive', style: TextStyle(color: AgriColors.danger))),
         ],
       ),
     );
     if (confirmed != true) return;
 
     try {
-      await _farmService!.remove(farm.id);
+      await _farmService!.archive(farm.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Farm removed.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Farm archived.')));
+      _load();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  Future<void> _restoreFarm(Farm farm) async {
+    try {
+      await _farmService!.restore(farm.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Farm restored.')));
       _load();
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -150,22 +163,47 @@ class _FarmsScreenState extends State<FarmsScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: AgriButton(
-                label: 'Register Farm',
-                icon: Icons.add,
-                onPressed: () => _openRegister(),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment(value: false, label: Text('Active')),
+                        ButtonSegment(value: true, label: Text('Archived')),
+                      ],
+                      selected: {_showArchived},
+                      onSelectionChanged: (selection) {
+                        setState(() => _showArchived = selection.first);
+                        _load();
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+          if (!_showArchived)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: AgriButton(
+                  label: 'Register Farm',
+                  icon: Icons.add,
+                  onPressed: () => _openRegister(),
+                ),
+              ),
+            ),
           if (farms.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
                 icon: Icons.eco,
-                title: 'No farms registered yet',
-                description: 'Register your first farm to start reporting incidents against it.',
-                actionLabel: 'Register Farm',
-                onAction: () => _openRegister(),
+                title: _showArchived ? 'No archived farms' : 'No farms registered yet',
+                description: _showArchived
+                    ? 'Archived farms will appear here and can be restored.'
+                    : 'Register your first farm to start reporting incidents against it.',
+                actionLabel: _showArchived ? null : 'Register Farm',
+                onAction: _showArchived ? null : () => _openRegister(),
               ),
             )
           else
@@ -179,8 +217,9 @@ class _FarmsScreenState extends State<FarmsScreen> {
                   return AgriFarmCard(
                     farm: farm,
                     onTap: () => _openFarm(farm),
-                    onEdit: () => _openRegister(farm: farm),
-                    onDelete: () => _deleteFarm(farm),
+                    onEdit: _showArchived ? null : () => _openRegister(farm: farm),
+                    onArchive: _showArchived ? null : () => _archiveFarm(farm),
+                    onRestore: _showArchived ? () => _restoreFarm(farm) : null,
                   );
                 },
               ),

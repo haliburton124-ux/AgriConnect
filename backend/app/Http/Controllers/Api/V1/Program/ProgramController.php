@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Program;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Program\StoreProgramRequest;
 use App\Models\Program;
@@ -10,9 +11,15 @@ use Illuminate\Http\Request;
 
 class ProgramController extends Controller
 {
+    use HandlesArchiving;
+
     public function index(Request $request): JsonResponse
     {
-        $query = Program::query()->where('is_active', true)->latest();
+        if ($request->boolean('archived') && $request->user()?->hasRole(['provincial_office', 'admin'])) {
+            $query = Program::onlyArchived()->latest('archived_at');
+        } else {
+            $query = Program::query()->where('is_active', true)->latest();
+        }
 
         if ($request->filled('category')) {
             $query->where('category', $request->query('category'));
@@ -55,10 +62,13 @@ class ProgramController extends Controller
         return response()->json(['message' => 'Program published successfully.', 'data' => $program], 201);
     }
 
-    public function destroy(Program $program): JsonResponse
+    public function archive(Program $program): JsonResponse
     {
-        $program->delete();
+        return $this->archiveModel($program, 'Program');
+    }
 
-        return response()->json(['message' => 'Program removed.']);
+    public function restore(int $id): JsonResponse
+    {
+        return $this->restoreModel(Program::class, $id, 'Program');
     }
 }

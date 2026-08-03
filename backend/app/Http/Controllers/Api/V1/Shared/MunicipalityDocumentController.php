@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Shared;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Document\StoreMunicipalityDocumentRequest;
 use App\Http\Resources\DocumentResource;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class MunicipalityDocumentController extends Controller
 {
+    use HandlesArchiving;
+
     /**
      * Municipality-only documents — memorandums, internal announcements,
      * reports, permits, and other confidential LGU files. Visible only
@@ -21,12 +24,13 @@ class MunicipalityDocumentController extends Controller
         $user = $request->user();
         abort_unless($user->municipality_id, 403, 'You are not assigned to a municipality.');
 
-        $documents = Document::query()
+        $query = Document::query()
             ->where('visibility', Document::VISIBILITY_MUNICIPALITY)
             ->where('municipality_id', $user->municipality_id)
             ->with(['municipality', 'user'])
-            ->latest()
-            ->get();
+            ->latest();
+
+        $documents = $this->applyArchiveScope($query, $request)->get();
 
         return response()->json(['data' => DocumentResource::collection($documents)]);
     }
@@ -61,7 +65,7 @@ class MunicipalityDocumentController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, Document $document): JsonResponse
+    public function archive(Request $request, Document $document): JsonResponse
     {
         abort_unless($document->isMunicipalityOnly(), 404);
         abort_unless(
@@ -73,8 +77,16 @@ class MunicipalityDocumentController extends Controller
             abort_unless($document->municipality_id === $request->user()->municipality_id, 403);
         }
 
-        $document->delete();
+        return $this->archiveModel($document, 'Municipality document');
+    }
 
-        return response()->json(['message' => 'Municipality document removed.']);
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        abort_unless(
+            $request->user()->hasRole(['municipal_office', 'provincial_office', 'admin']),
+            403,
+        );
+
+        return $this->restoreModel(Document::class, $id, 'Municipality document');
     }
 }

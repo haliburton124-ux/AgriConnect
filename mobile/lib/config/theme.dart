@@ -65,10 +65,10 @@ class AgriTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         labelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AgriColors.ink),
         hintStyle: GoogleFonts.poppins(fontSize: 14, color: AgriColors.muted),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E6DE), width: 2)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E6DE), width: 2)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AgriColors.forestLight, width: 2)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AgriColors.danger, width: 2)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE8EEE6), width: 1.5)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE8EEE6), width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: AgriColors.forest.withValues(alpha: 0.55), width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AgriColors.danger, width: 1.5)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

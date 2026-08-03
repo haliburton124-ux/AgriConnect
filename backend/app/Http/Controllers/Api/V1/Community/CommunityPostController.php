@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Community;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Community\StoreCommunityPostCommentRequest;
 use App\Http\Requests\Community\StoreCommunityPostRequest;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 
 class CommunityPostController extends Controller
 {
+    use HandlesArchiving;
+
     public function __construct(protected CommunityNotificationService $communityNotifications)
     {
     }
@@ -111,7 +114,7 @@ class CommunityPostController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, CommunityPost $communityPost): JsonResponse
+    public function archive(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless(
             $request->user()->hasRole(['municipal_office', 'provincial_office', 'admin']),
@@ -122,9 +125,17 @@ class CommunityPostController extends Controller
             abort_unless($communityPost->municipality_id === $request->user()->municipality_id, 403);
         }
 
-        $communityPost->delete();
+        return $this->archiveModel($communityPost, 'Post');
+    }
 
-        return response()->json(['message' => 'Post removed.']);
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        abort_unless(
+            $request->user()->hasRole(['municipal_office', 'provincial_office', 'admin']),
+            403,
+        );
+
+        return $this->restoreModel(CommunityPost::class, $id, 'Post');
     }
 
     public function toggleLike(Request $request, CommunityPost $communityPost): JsonResponse
@@ -242,6 +253,14 @@ class CommunityPostController extends Controller
 
     protected function baseQuery(Request $request)
     {
+        if ($request->boolean('archived') && $request->user()?->hasRole(['municipal_office', 'provincial_office', 'admin'])) {
+            $query = CommunityPost::onlyArchived()
+                ->with(['municipality', 'author'])
+                ->latest('archived_at');
+
+            return $query;
+        }
+
         $query = CommunityPost::query()
             ->where('is_published', true)
             ->with(['municipality', 'author']);

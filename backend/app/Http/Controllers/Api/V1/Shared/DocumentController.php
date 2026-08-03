@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Shared;
 
+use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Document\StoreDocumentRequest;
 use App\Http\Resources\DocumentResource;
@@ -11,17 +12,20 @@ use Illuminate\Http\Request;
 
 class DocumentController extends Controller
 {
+    use HandlesArchiving;
+
     /** Farmer personal documents — land titles, IDs, permits, etc. */
     public function index(Request $request): JsonResponse
     {
-        $documents = Document::query()
+        $query = Document::query()
             ->where('user_id', $request->user()->id)
             ->where(function ($q) {
                 $q->where('visibility', Document::VISIBILITY_PERSONAL)
                     ->orWhereNull('visibility');
             })
-            ->latest()
-            ->get();
+            ->latest();
+
+        $documents = $this->applyArchiveScope($query, $request)->get();
 
         return response()->json(['data' => DocumentResource::collection($documents)]);
     }
@@ -47,11 +51,19 @@ class DocumentController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, Document $document): JsonResponse
+    public function archive(Request $request, Document $document): JsonResponse
     {
         abort_unless($document->user_id === $request->user()->id, 403);
-        $document->delete();
 
-        return response()->json(['message' => 'Document removed.']);
+        return $this->archiveModel($document, 'Document');
+    }
+
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $document = Document::withArchived()->findOrFail($id);
+        abort_unless($document->user_id === $request->user()->id, 403);
+        $document->unarchive();
+
+        return response()->json(['message' => 'Document restored.']);
     }
 }

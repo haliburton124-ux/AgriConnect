@@ -10,13 +10,15 @@ class AgriFarmCard extends StatelessWidget {
     required this.farm,
     required this.onTap,
     this.onEdit,
-    this.onDelete,
+    this.onArchive,
+    this.onRestore,
   });
 
   final Farm farm;
   final VoidCallback onTap;
   final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
+  final VoidCallback? onArchive;
+  final VoidCallback? onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -62,13 +64,17 @@ class AgriFarmCard extends StatelessWidget {
                       },
                       tooltip: 'Edit',
                     ),
-                  if (onDelete != null)
+                  if (onRestore != null)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20, color: AgriColors.danger),
-                      onPressed: () {
-                        onDelete!();
-                      },
-                      tooltip: 'Remove',
+                      icon: const Icon(Icons.restore, size: 20, color: AgriColors.forest),
+                      onPressed: onRestore,
+                      tooltip: 'Restore',
+                    ),
+                  if (onArchive != null)
+                    IconButton(
+                      icon: const Icon(Icons.archive_outlined, size: 20, color: AgriColors.danger),
+                      onPressed: onArchive,
+                      tooltip: 'Archive',
                     ),
                   Icon(Icons.chevron_right, color: AgriColors.muted.withValues(alpha: 0.6)),
                 ],

@@ -87,7 +87,8 @@ Route::prefix('v1')->group(function () {
 
         // Knowledge Center — write access restricted inside the request/controller
         Route::post('knowledge/articles', [KnowledgeArticleController::class, 'store']);
-        Route::delete('knowledge/articles/{article}', [KnowledgeArticleController::class, 'destroy']);
+        Route::post('knowledge/articles/{article}/archive', [KnowledgeArticleController::class, 'archive']);
+        Route::post('knowledge/articles/{id}/restore', [KnowledgeArticleController::class, 'restore']);
 
         // Community knowledge sharing — engagement (auth required)
         Route::get('community/feed', [CommunityPostController::class, 'feed']);
@@ -113,12 +114,14 @@ Route::prefix('v1')->group(function () {
         // Documents — every role can manage their own uploaded files
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);
-        Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
+        Route::post('documents/{document}/archive', [DocumentController::class, 'archive']);
+        Route::post('documents/{id}/restore', [DocumentController::class, 'restore']);
 
         // ── Farmer-only routes ────────────────────────────────────
         Route::middleware('role:farmer')->prefix('farmer')->group(function () {
             Route::apiResource('farms', FarmController::class)->except(['destroy'])->parameters(['farms' => 'farm']);
-            Route::delete('farms/{farm}', [FarmController::class, 'destroy']);
+            Route::post('farms/{farm}/archive', [FarmController::class, 'archive']);
+            Route::post('farms/{id}/restore', [FarmController::class, 'restore']);
             Route::post('farms/{farm}/boundary', [FarmController::class, 'storeBoundary']);
 
             Route::get('incidents', [FarmerIncidentController::class, 'index']);
@@ -158,14 +161,18 @@ Route::prefix('v1')->group(function () {
             Route::get('farmers/{farmer}', [MaoFarmerController::class, 'show']);
 
             Route::post('announcements', [AnnouncementController::class, 'store']);
-            Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+            Route::post('announcements/{announcement}/archive', [AnnouncementController::class, 'archive']);
+            Route::post('announcements/{id}/restore', [AnnouncementController::class, 'restore']);
             Route::post('advisories', [AdvisoryController::class, 'store']);
-            Route::delete('advisories/{advisory}', [AdvisoryController::class, 'destroy']);
+            Route::post('advisories/{advisory}/archive', [AdvisoryController::class, 'archive']);
+            Route::post('advisories/{id}/restore', [AdvisoryController::class, 'restore']);
 
             Route::post('community/posts', [CommunityPostController::class, 'store']);
-            Route::delete('community/posts/{communityPost}', [CommunityPostController::class, 'destroy']);
+            Route::post('community/posts/{communityPost}/archive', [CommunityPostController::class, 'archive']);
+            Route::post('community/posts/{id}/restore', [CommunityPostController::class, 'restore']);
             Route::post('municipality-documents', [MunicipalityDocumentController::class, 'store']);
-            Route::delete('municipality-documents/{document}', [MunicipalityDocumentController::class, 'destroy']);
+            Route::post('municipality-documents/{document}/archive', [MunicipalityDocumentController::class, 'archive']);
+            Route::post('municipality-documents/{id}/restore', [MunicipalityDocumentController::class, 'restore']);
 
             Route::put('program-applications/{application}/status', [ProgramApplicationController::class, 'updateStatus']);
             Route::post('reports/incidents/export', [ReportController::class, 'exportIncidents']);
@@ -181,17 +188,22 @@ Route::prefix('v1')->group(function () {
             Route::get('municipalities/{municipality}', [PpoMunicipalityController::class, 'show']);
 
             Route::post('announcements', [AnnouncementController::class, 'store']);
-            Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+            Route::post('announcements/{announcement}/archive', [AnnouncementController::class, 'archive']);
+            Route::post('announcements/{id}/restore', [AnnouncementController::class, 'restore']);
             Route::post('advisories', [AdvisoryController::class, 'store']);
-            Route::delete('advisories/{advisory}', [AdvisoryController::class, 'destroy']);
+            Route::post('advisories/{advisory}/archive', [AdvisoryController::class, 'archive']);
+            Route::post('advisories/{id}/restore', [AdvisoryController::class, 'restore']);
 
             Route::post('community/posts', [CommunityPostController::class, 'store']);
-            Route::delete('community/posts/{communityPost}', [CommunityPostController::class, 'destroy']);
+            Route::post('community/posts/{communityPost}/archive', [CommunityPostController::class, 'archive']);
+            Route::post('community/posts/{id}/restore', [CommunityPostController::class, 'restore']);
             Route::post('municipality-documents', [MunicipalityDocumentController::class, 'store']);
-            Route::delete('municipality-documents/{document}', [MunicipalityDocumentController::class, 'destroy']);
+            Route::post('municipality-documents/{document}/archive', [MunicipalityDocumentController::class, 'archive']);
+            Route::post('municipality-documents/{id}/restore', [MunicipalityDocumentController::class, 'restore']);
 
             Route::post('programs', [ProgramController::class, 'store']);
-            Route::delete('programs/{program}', [ProgramController::class, 'destroy']);
+            Route::post('programs/{program}/archive', [ProgramController::class, 'archive']);
+            Route::post('programs/{id}/restore', [ProgramController::class, 'restore']);
             Route::put('program-applications/{application}/status', [ProgramApplicationController::class, 'updateStatus']);
 
             Route::post('reports/incidents/export', [ReportController::class, 'exportIncidents']);
@@ -207,22 +219,30 @@ Route::prefix('v1')->group(function () {
             Route::post('users', [AdminUserController::class, 'store']);
             Route::get('users/{user}', [AdminUserController::class, 'show']);
             Route::put('users/{user}/status', [AdminUserController::class, 'updateStatus']);
-            Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
+            Route::post('users/{user}/archive', [AdminUserController::class, 'archive']);
+            Route::post('users/{id}/restore', [AdminUserController::class, 'restore']);
 
             Route::get('audit-logs', [AuditLogController::class, 'index']);
+            Route::get('audit-logs/filters', [AuditLogController::class, 'filters']);
+            Route::get('audit-logs/export', [AuditLogController::class, 'export']);
 
             Route::post('announcements', [AnnouncementController::class, 'store']);
-            Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+            Route::post('announcements/{announcement}/archive', [AnnouncementController::class, 'archive']);
+            Route::post('announcements/{id}/restore', [AnnouncementController::class, 'restore']);
             Route::post('advisories', [AdvisoryController::class, 'store']);
-            Route::delete('advisories/{advisory}', [AdvisoryController::class, 'destroy']);
+            Route::post('advisories/{advisory}/archive', [AdvisoryController::class, 'archive']);
+            Route::post('advisories/{id}/restore', [AdvisoryController::class, 'restore']);
 
             Route::post('community/posts', [CommunityPostController::class, 'store']);
-            Route::delete('community/posts/{communityPost}', [CommunityPostController::class, 'destroy']);
+            Route::post('community/posts/{communityPost}/archive', [CommunityPostController::class, 'archive']);
+            Route::post('community/posts/{id}/restore', [CommunityPostController::class, 'restore']);
             Route::post('municipality-documents', [MunicipalityDocumentController::class, 'store']);
-            Route::delete('municipality-documents/{document}', [MunicipalityDocumentController::class, 'destroy']);
+            Route::post('municipality-documents/{document}/archive', [MunicipalityDocumentController::class, 'archive']);
+            Route::post('municipality-documents/{id}/restore', [MunicipalityDocumentController::class, 'restore']);
 
             Route::post('programs', [ProgramController::class, 'store']);
-            Route::delete('programs/{program}', [ProgramController::class, 'destroy']);
+            Route::post('programs/{program}/archive', [ProgramController::class, 'archive']);
+            Route::post('programs/{id}/restore', [ProgramController::class, 'restore']);
             Route::put('program-applications/{application}/status', [ProgramApplicationController::class, 'updateStatus']);
 
             Route::post('reports/incidents/export', [ReportController::class, 'exportIncidents']);

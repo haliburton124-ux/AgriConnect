@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CommunityPost extends Model
 {
+    use Archivable;
+
     public const CATEGORIES = [
         'pesticide_usage',
         'crop_disease',

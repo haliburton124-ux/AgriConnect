@@ -2,10 +2,12 @@ import { api } from '@/lib/api'
 import type { AppDocument } from '@/types'
 
 export const documentService = {
-  list: () => api.get<{ data: AppDocument[] }>('/documents'),
+  list: (archived = false) =>
+    api.get<{ data: AppDocument[] }>('/documents', { params: archived ? { archived: 1 } : undefined }),
   upload: (formData: FormData) =>
     api.post<{ message: string; data: AppDocument }>('/documents', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
-  remove: (id: number) => api.delete<{ message: string }>(`/documents/${id}`),
+  archive: (id: number) => api.post<{ message: string }>(`/documents/${id}/archive`),
+  restore: (id: number) => api.post<{ message: string }>(`/documents/${id}/restore`),
 }

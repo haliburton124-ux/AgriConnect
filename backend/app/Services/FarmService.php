@@ -13,9 +13,9 @@ class FarmService
     {
     }
 
-    public function listForFarmer(User $farmer)
+    public function listForFarmer(User $farmer, bool $archived = false)
     {
-        return $this->farms->allForFarmer($farmer);
+        return $this->farms->allForFarmer($farmer, $archived);
     }
 
     public function register(User $farmer, array $data): Farm
@@ -52,9 +52,9 @@ class FarmService
         return $this->farms->update($farm, $data);
     }
 
-    public function delete(Farm $farm): bool
+    public function archive(Farm $farm): bool
     {
-        return $this->farms->delete($farm);
+        return $this->farms->archive($farm);
     }
 
     public function attachBoundary(Farm $farm, array $geojson): void

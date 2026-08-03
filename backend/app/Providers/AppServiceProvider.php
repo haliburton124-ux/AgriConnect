@@ -2,8 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Advisory;
+use App\Models\Announcement;
+use App\Models\CommunityPost;
+use App\Models\Document;
 use App\Models\Farm;
 use App\Models\Incident;
+use App\Models\KnowledgeArticle;
+use App\Models\Program;
 use App\Models\User;
 use App\Policies\FarmPolicy;
 use App\Policies\IncidentPolicy;
@@ -12,6 +18,7 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Events\IncidentAssigned;
 use App\Events\IncidentStatusChanged;
+use App\Listeners\LogAuditEvents;
 use App\Listeners\SendIncidentAssignedNotification;
 use App\Listeners\SendIncidentStatusNotification;
 use Illuminate\Support\Facades\Event;
@@ -54,15 +61,23 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(IncidentStatusChanged::class, SendIncidentStatusNotification::class);
         Event::listen(IncidentAssigned::class, SendIncidentAssignedNotification::class);
+        Event::listen(IncidentStatusChanged::class, [LogAuditEvents::class, 'handleStatusChanged']);
+        Event::listen(IncidentAssigned::class, [LogAuditEvents::class, 'handleAssigned']);
 
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(Farm::class, FarmPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
-        // Audit trail — logs create/update/delete for models where
-        // government accountability requires a full change history.
-        User::observe(\App\Observers\AuditableObserver::class);
-        Incident::observe(\App\Observers\AuditableObserver::class);
-        Farm::observe(\App\Observers\AuditableObserver::class);
+        // Audit trail — logs create/update/delete/archive for accountable records.
+        $observer = \App\Observers\AuditableObserver::class;
+        User::observe($observer);
+        Incident::observe($observer);
+        Farm::observe($observer);
+        Announcement::observe($observer);
+        Advisory::observe($observer);
+        CommunityPost::observe($observer);
+        Document::observe($observer);
+        KnowledgeArticle::observe($observer);
+        Program::observe($observer);
     }
 }

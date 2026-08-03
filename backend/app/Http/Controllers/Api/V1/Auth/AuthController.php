@@ -11,6 +11,7 @@ use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Services\AuditLogger;
 use App\Services\AuthService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class AuthController extends Controller
     public function __construct(
         protected AuthService $authService,
         protected UserRepositoryInterface $users,
+        protected AuditLogger $audit,
     ) {
     }
 
@@ -59,6 +61,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('agriri-device')->plainTextToken;
 
+        $this->audit->logAuth($user, 'auth.registered', "{$user->full_name} verified email and completed farmer registration.");
+
         return response()->json([
             'message' => 'Account verified successfully.',
             'token' => $token,
@@ -92,6 +96,8 @@ class AuthController extends Controller
             $request->validated('device_name'),
         );
 
+        $this->audit->logAuth($result['user'], 'auth.login', "{$result['user']->full_name} signed in.");
+
         return response()->json([
             'message' => 'Login successful.',
             'token' => $result['token'],
@@ -101,14 +107,18 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $this->authService->logout($request->user());
+        $user = $request->user();
+        $this->audit->logAuth($user, 'auth.logout', "{$user->full_name} signed out.");
+        $this->authService->logout($user);
 
         return response()->json(['message' => 'Logged out successfully.']);
     }
 
     public function logoutAllDevices(Request $request): JsonResponse
     {
-        $this->authService->logout($request->user(), everywhere: true);
+        $user = $request->user();
+        $this->audit->logAuth($user, 'auth.logout_all', "{$user->full_name} signed out from all devices.");
+        $this->authService->logout($user, everywhere: true);
 
         return response()->json(['message' => 'Logged out from all devices.']);
     }
@@ -155,7 +165,9 @@ class AuthController extends Controller
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
-        $this->authService->changePassword($request->user(), $request->validated('password'));
+        $user = $request->user();
+        $this->authService->changePassword($user, $request->validated('password'));
+        $this->audit->logAuth($user, 'auth.password_changed', "{$user->full_name} changed their password.");
 
         return response()->json(['message' => 'Password changed successfully. Please log in again.']);
     }

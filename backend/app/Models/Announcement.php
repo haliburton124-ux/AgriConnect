@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Announcement extends Model
 {
+    use Archivable;
+
     protected $fillable = [
         'posted_by', 'title', 'content', 'cover_image_path',
         'municipality_id', 'audience', 'is_published', 'published_at',

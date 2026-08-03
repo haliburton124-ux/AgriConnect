@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Program extends Model
 {
+    use Archivable;
+
     protected $fillable = [
         'title', 'description', 'cover_image_path', 'category',
         'application_start', 'application_end', 'eligibility_criteria',

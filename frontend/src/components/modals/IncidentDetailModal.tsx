@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { AgriMap } from '@/components/map'
+import { EvidenceGallery } from '@/components/incident/EvidenceGallery'
 import { isValidMapCoords } from '@/lib/mapConfig'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import type { Incident } from '@/types'
@@ -124,17 +125,7 @@ export function IncidentDetailModal({ open, onClose, incident, loading, footer }
               <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink">
                 <ImageIcon className="h-4 w-4" /> Evidence
               </h4>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {incident.media.map((m) => (
-                  <a key={m.id} href={m.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-black/5">
-                    {m.type === 'photo' ? (
-                      <img src={m.url} alt="Incident evidence" className="h-20 w-full object-cover transition-transform hover:scale-105" />
-                    ) : (
-                      <div className="flex h-20 w-full items-center justify-center bg-ink/5 text-xs text-muted-foreground">Video</div>
-                    )}
-                  </a>
-                ))}
-              </div>
+              <EvidenceGallery media={incident.media} />
             </div>
           )}
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../config/theme.dart';
+import '../config/api_config.dart';
 import '../utils/community_utils.dart';
 import '../models/community_post.dart';
 import 'expandable_text.dart';
@@ -61,6 +62,22 @@ class AdvisoryPostCard extends StatelessWidget {
                 style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AgriColors.ink),
               ),
             ),
+            if (post.imagePath != null) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: onOpen,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    ApiConfig.storageUrl(post.imagePath!),
+                    width: double.infinity,
+                    height: 180,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             ExpandableText(text: post.content),
             const SizedBox(height: 12),

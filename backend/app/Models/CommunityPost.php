@@ -26,7 +26,7 @@ class CommunityPost extends Model
     ];
 
     protected $fillable = [
-        'municipality_id', 'author_id', 'title', 'content', 'category',
+        'municipality_id', 'author_id', 'title', 'content', 'image_path', 'category',
         'is_published', 'likes_count', 'comments_count', 'shares_count',
     ];
 

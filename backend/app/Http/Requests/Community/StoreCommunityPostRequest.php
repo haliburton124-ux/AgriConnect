@@ -21,6 +21,7 @@ class StoreCommunityPostRequest extends FormRequest
             'category' => ['required', Rule::in(CommunityPost::CATEGORIES)],
             'is_published' => ['boolean'],
             'municipality_id' => ['nullable', 'exists:municipalities,id'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 }

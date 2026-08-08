@@ -99,11 +99,16 @@ class CommunityPostController extends Controller
 
         abort_unless($municipalityId, 422, 'A municipality must be specified for this post.');
 
+        $imagePath = $request->hasFile('image')
+            ? $request->file('image')->store('community-posts', 'public')
+            : null;
+
         $post = CommunityPost::create([
             'municipality_id' => $municipalityId,
             'author_id' => $user->id,
             'title' => $request->validated('title'),
             'content' => $request->validated('content'),
+            'image_path' => $imagePath,
             'category' => $request->validated('category'),
             'is_published' => $request->boolean('is_published', true),
         ]);

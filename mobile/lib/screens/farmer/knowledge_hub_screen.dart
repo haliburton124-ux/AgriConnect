@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../config/api_config.dart';
 import '../../core/api/api_exception.dart';
 import '../../models/community_post.dart';
 import '../../models/post_comment.dart';
@@ -566,6 +567,18 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
                       style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
                     ),
+                    if (post.imagePath != null) ...[
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          ApiConfig.storageUrl(post.imagePath!),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     ExpandableText(text: post.content, maxLines: 20),
                     const SizedBox(height: 20),

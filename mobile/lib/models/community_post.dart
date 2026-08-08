@@ -9,6 +9,7 @@ class CommunityPost {
     required this.sharesCount,
     required this.createdAt,
     this.municipalityName,
+    this.imagePath,
     this.likedByMe = false,
     this.isSharedInFeed = false,
   });
@@ -24,6 +25,7 @@ class CommunityPost {
       commentsCount: json['comments_count'] as int? ?? 0,
       sharesCount: json['shares_count'] as int? ?? 0,
       municipalityName: municipality?['name'] as String?,
+      imagePath: json['image_path'] as String?,
       likedByMe: json['liked_by_me'] as bool? ?? false,
       isSharedInFeed: json['is_shared_in_feed'] as bool? ?? false,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
@@ -47,6 +49,7 @@ class CommunityPost {
       sharesCount: sharesCount ?? this.sharesCount,
       createdAt: createdAt,
       municipalityName: municipalityName,
+      imagePath: imagePath,
       likedByMe: likedByMe ?? this.likedByMe,
       isSharedInFeed: isSharedInFeed ?? this.isSharedInFeed,
     );
@@ -61,6 +64,7 @@ class CommunityPost {
   final int sharesCount;
   final DateTime createdAt;
   final String? municipalityName;
+  final String? imagePath;
   final bool likedByMe;
   final bool isSharedInFeed;
 }

@@ -19,3 +19,8 @@ export function formatDateTime(date: string | Date): string {
 export function initials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
 }
+
+export function storageUrl(path: string): string {
+  const base = import.meta.env.VITE_API_URL?.replace('/api/v1', '') ?? ''
+  return `${base}/storage/${path}`
+}

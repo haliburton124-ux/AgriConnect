@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { communityService } from '@/services/communityService'
 import { formatCategory } from '@/lib/community'
-import { formatDateTime, cn } from '@/lib/utils'
+import { formatDateTime, cn, storageUrl } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/api'
 import type { CommunityPost, CommunityPostComment } from '@/types'
 
@@ -227,6 +227,16 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
             {post.municipality?.name}
           </span>
         </div>
+
+        {post.image_path && (
+          <div className="overflow-hidden rounded-xl border border-black/5">
+            <img
+              src={storageUrl(post.image_path)}
+              alt=""
+              className="max-h-80 w-full object-cover"
+            />
+          </div>
+        )}
 
         <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{post.content}</div>
 

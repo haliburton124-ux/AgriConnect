@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { formatCategory } from '@/lib/community'
-import { formatDate } from '@/lib/utils'
+import { formatDate, storageUrl } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { CommunityPost } from '@/types'
 
@@ -31,6 +31,15 @@ export function PostCard({ post, onOpen, onLike, onShare, compact = false }: Pos
           <button type="button" onClick={() => onOpen(post)} className="w-full text-left">
             <h3 className="font-semibold text-ink hover:text-forest">{post.title}</h3>
           </button>
+          {post.image_path && (
+            <button type="button" onClick={() => onOpen(post)} className="mt-3 block w-full overflow-hidden rounded-xl border border-black/5">
+              <img
+                src={storageUrl(post.image_path)}
+                alt=""
+                className="max-h-56 w-full object-cover"
+              />
+            </button>
+          )}
           <ExpandableText text={post.content} className="mt-2 text-ink/70" />
         </div>
 

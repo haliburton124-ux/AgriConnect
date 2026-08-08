@@ -35,8 +35,26 @@ export const communityService = {
     category: string
     is_published?: boolean
     municipality_id?: number
-  }, rolePrefix: 'mao' | 'ppo' | 'admin') =>
-    api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, payload),
+    image?: File
+  }, rolePrefix: 'mao' | 'ppo' | 'admin') => {
+    if (payload.image) {
+      const formData = new FormData()
+      formData.append('title', payload.title)
+      formData.append('content', payload.content)
+      formData.append('category', payload.category)
+      formData.append('is_published', payload.is_published !== false ? '1' : '0')
+      if (payload.municipality_id != null) {
+        formData.append('municipality_id', String(payload.municipality_id))
+      }
+      formData.append('image', payload.image)
+      return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+
+    const { image: _, ...jsonPayload } = payload
+    return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, jsonPayload)
+  },
 
   archive: (id: number, rolePrefix: 'mao' | 'ppo' | 'admin') =>
     api.post<{ message: string }>(`/${rolePrefix}/community/posts/${id}/archive`),

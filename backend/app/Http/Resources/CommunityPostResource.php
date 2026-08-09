@@ -4,20 +4,25 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class CommunityPostResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $user = $request->user();
+        $imagePaths = $this->images->pluck('path')->values()->all()
+            ?: ($this->image_path ? [$this->image_path] : []);
 
         return [
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
             'image_path' => $this->image_path ?? $this->images->first()?->path,
-            'image_paths' => $this->images->pluck('path')->values()->all()
-                ?: ($this->image_path ? [$this->image_path] : []),
+            'image_paths' => $imagePaths,
+            'image_urls' => collect($imagePaths)
+                ->map(fn (string $path) => Storage::disk('public')->url($path))
+                ->values()
+                ->all(),
             'category' => $this->category,
             'is_published' => $this->is_published,
             'likes_count' => $this->likes_count,

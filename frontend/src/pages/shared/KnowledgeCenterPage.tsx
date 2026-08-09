@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
+import { SharePostModal } from '@/components/modals/SharePostModal'
 import { knowledgeService } from '@/services/knowledgeService'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
@@ -35,6 +36,7 @@ export function KnowledgeCenterPage() {
   const [search, setSearch] = useState('')
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null)
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null)
+  const [shareTarget, setShareTarget] = useState<CommunityPost | null>(null)
 
   useEffect(() => {
     knowledgeService.categories().then((res) => setCategories(res.data.data))
@@ -64,16 +66,6 @@ export function KnowledgeCenterPage() {
     try {
       const { data } = await communityService.like(post.id)
       updatePost(data.data)
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
-
-  const handleShare = async (post: CommunityPost) => {
-    try {
-      const { data } = await communityService.share(post.id)
-      updatePost(data.data)
-      toast.success('Shared to your feed.')
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
@@ -179,7 +171,7 @@ export function KnowledgeCenterPage() {
                 post={post}
                 onOpen={setSelectedPost}
                 onLike={handleLike}
-                onShare={handleShare}
+                onShare={setShareTarget}
               />
             ))}
           </div>
@@ -222,6 +214,12 @@ export function KnowledgeCenterPage() {
         post={selectedPost}
         onClose={() => setSelectedPost(null)}
         onUpdate={updatePost}
+      />
+
+      <SharePostModal
+        post={shareTarget}
+        onClose={() => setShareTarget(null)}
+        onSuccess={updatePost}
       />
 
       <Modal open={Boolean(selectedArticle)} onClose={() => setSelectedArticle(null)} title={selectedArticle?.title ?? ''} size="lg">

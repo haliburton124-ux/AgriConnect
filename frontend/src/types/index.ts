@@ -238,6 +238,8 @@ export interface CommunityPost {
   shared_by_me?: boolean
   shared_at?: string
   is_shared_in_feed?: boolean
+  share_caption?: string | null
+  shared_by?: { id: number; full_name: string; role: UserRole }
   created_at: string
 }
 

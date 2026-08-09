@@ -36,6 +36,16 @@ class CommunityPostResource extends JsonResource
             'shared_by_me' => filter_var($this->shared_by_me ?? false, FILTER_VALIDATE_BOOLEAN),
             'shared_at' => $this->when(isset($this->shared_at), $this->shared_at),
             'is_shared_in_feed' => $this->when(isset($this->is_shared_in_feed), (bool) $this->is_shared_in_feed),
+            'share_caption' => $this->when(isset($this->share_caption), $this->share_caption),
+            'shared_by' => $this->when(isset($this->shared_by), function () {
+                $sharer = $this->shared_by;
+
+                return [
+                    'id' => $sharer->id,
+                    'full_name' => $sharer->full_name,
+                    'role' => $sharer->role,
+                ];
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

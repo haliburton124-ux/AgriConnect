@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Community;
 
 use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Community\ShareCommunityPostRequest;
 use App\Http\Requests\Community\StoreCommunityPostCommentRequest;
 use App\Http\Requests\Community\StoreCommunityPostRequest;
 use App\Http\Resources\CommunityPostCommentResource;
@@ -58,16 +59,17 @@ class CommunityPostController extends Controller
         $user = $request->user();
         abort_unless($user && $user->hasRole('farmer'), 403);
 
-        $sharedIds = CommunityPostShare::where('user_id', $user->id)
-            ->pluck('created_at', 'community_post_id');
+        $shares = CommunityPostShare::where('user_id', $user->id)
+            ->with('user')
+            ->get()
+            ->keyBy('community_post_id');
 
         $posts = $this->baseQuery($request)
             ->latest()
             ->paginate($request->integer('per_page', 15))
-            ->through(function (CommunityPost $post) use ($sharedIds) {
-                if ($sharedIds->has($post->id)) {
-                    $post->is_shared_in_feed = true;
-                    $post->shared_at = $sharedIds[$post->id];
+            ->through(function (CommunityPost $post) use ($shares) {
+                if ($shares->has($post->id)) {
+                    $this->applyShareContext($post, $shares[$post->id]);
                 }
 
                 return $post;
@@ -81,6 +83,7 @@ class CommunityPostController extends Controller
         abort_unless($communityPost->is_published, 404);
 
         $this->applyEngagementFlags($request, collect([$communityPost]));
+        $this->applyUserShareContext($request, $communityPost);
 
         return response()->json([
             'data' => new CommunityPostResource(
@@ -194,18 +197,28 @@ class CommunityPostController extends Controller
         ]);
     }
 
-    public function share(Request $request, CommunityPost $communityPost): JsonResponse
+    public function share(ShareCommunityPostRequest $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
 
         $user = $request->user();
+        $caption = $request->validated('caption');
 
-        $share = CommunityPostShare::firstOrCreate([
-            'community_post_id' => $communityPost->id,
-            'user_id' => $user->id,
-        ]);
+        $existing = CommunityPostShare::where('community_post_id', $communityPost->id)
+            ->where('user_id', $user->id)
+            ->first();
 
-        if ($share->wasRecentlyCreated) {
+        $share = CommunityPostShare::updateOrCreate(
+            [
+                'community_post_id' => $communityPost->id,
+                'user_id' => $user->id,
+            ],
+            [
+                'caption' => $caption,
+            ],
+        );
+
+        if (! $existing) {
             $communityPost->increment('shares_count');
             $this->communityNotifications->notifyShare(
                 $communityPost->loadMissing('author'),
@@ -215,12 +228,11 @@ class CommunityPostController extends Controller
 
         $communityPost->refresh();
         $post = $communityPost->load(['municipality', 'author', 'images']);
-        $post->is_shared_in_feed = true;
-        $post->shared_at = $share->created_at;
+        $this->applyShareContext($post, $share->load('user'));
         $this->applyEngagementFlags($request, collect([$post]));
 
         return response()->json([
-            'message' => 'Post shared to your feed.',
+            'message' => $existing ? 'Share updated.' : 'Post shared to your feed.',
             'data' => new CommunityPostResource($post),
         ]);
     }
@@ -296,6 +308,31 @@ class CommunityPostController extends Controller
         $this->applyEngagementFlags($request, null, $query);
 
         return $query;
+    }
+
+    protected function applyShareContext(CommunityPost $post, CommunityPostShare $share): void
+    {
+        $post->is_shared_in_feed = true;
+        $post->shared_at = $share->created_at;
+        $post->share_caption = $share->caption;
+        $post->shared_by = $share->relationLoaded('user') ? $share->user : $share->user()->first();
+    }
+
+    protected function applyUserShareContext(Request $request, CommunityPost $post): void
+    {
+        $user = $request->user();
+        if (! $user) {
+            return;
+        }
+
+        $share = CommunityPostShare::where('community_post_id', $post->id)
+            ->where('user_id', $user->id)
+            ->with('user')
+            ->first();
+
+        if ($share) {
+            $this->applyShareContext($post, $share);
+        }
     }
 
     protected function applyEngagementFlags(Request $request, $collection = null, $query = null): void

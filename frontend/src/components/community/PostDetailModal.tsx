@@ -4,12 +4,15 @@ import { Heart, Share2, MapPin, Reply, Send } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { SharePostModal } from '@/components/modals/SharePostModal'
+import { SharedPostPreview } from '@/components/community/SharedPostPreview'
+import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { communityService } from '@/services/communityService'
 import { formatCategory } from '@/lib/community'
 import { getCommunityPostImages } from '@/lib/communityPostImages'
 import { formatDateTime, cn } from '@/lib/utils'
-import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { getApiErrorMessage } from '@/lib/api'
+import { useAuthStore } from '@/store/authStore'
 import type { CommunityPost, CommunityPostComment } from '@/types'
 
 interface PostDetailModalProps {
@@ -125,6 +128,8 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
   const [body, setBody] = useState('')
   const [replyTo, setReplyTo] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
     if (!post) {
@@ -163,6 +168,9 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
   if (!post) return null
 
   const images = getCommunityPostImages(post)
+  const sharerLabel = post.shared_by?.id === user?.id
+    ? 'You'
+    : post.shared_by?.full_name ?? 'Someone'
 
   const handleLike = async () => {
     try {
@@ -174,14 +182,8 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
     }
   }
 
-  const handleShare = async () => {
-    try {
-      const { data } = await communityService.share(post.id)
-      onUpdate(data.data)
-      toast.success('Shared to your feed.')
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
+  const handleShare = () => {
+    setShareOpen(true)
   }
 
   const handleComment = async () => {
@@ -204,12 +206,17 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
   }
 
   return (
+    <>
     <Modal
       open={Boolean(post)}
       onClose={onClose}
       title={post.title}
       size="lg"
-      description={post.is_shared_in_feed ? `Originally posted by ${post.municipality?.name}` : undefined}
+      description={
+        post.is_shared_in_feed && post.shared_at
+          ? `${sharerLabel} shared · ${formatDateTime(post.shared_at)}`
+          : undefined
+      }
       footer={
         enableEngagement ? (
           <CommentComposer
@@ -224,19 +231,29 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
       }
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="validated">{formatCategory(post.category)}</Badge>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 text-forest" />
-            {post.municipality?.name}
-          </span>
-        </div>
-
-        {images.length > 0 && (
-          <PostPhotoGrid paths={images} variant="detail" enableLightbox />
+        {post.is_shared_in_feed && post.share_caption?.trim() && (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{post.share_caption}</p>
         )}
 
-        <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{post.content}</div>
+        {post.is_shared_in_feed ? (
+          <SharedPostPreview post={post} />
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="validated">{formatCategory(post.category)}</Badge>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 text-forest" />
+                {post.municipality?.name}
+              </span>
+            </div>
+
+            {images.length > 0 && (
+              <PostPhotoGrid paths={images} variant="detail" enableLightbox />
+            )}
+
+            <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{post.content}</div>
+          </>
+        )}
 
         {enableEngagement && (
           <div className="flex flex-wrap gap-2 border-y border-black/5 py-3">
@@ -244,8 +261,8 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
               <Heart className={cn('h-4 w-4', post.liked_by_me && 'fill-current')} />
               {post.likes_count} Likes
             </Button>
-            <Button size="sm" variant="outline" onClick={handleShare}>
-              <Share2 className="h-4 w-4" /> {post.shares_count} Shares
+            <Button size="sm" variant={post.shared_by_me ? 'primary' : 'outline'} onClick={handleShare}>
+              <Share2 className="h-4 w-4" /> {post.shared_by_me ? 'Shared' : 'Share'}
             </Button>
           </div>
         )}
@@ -271,5 +288,12 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
         </div>
       </div>
     </Modal>
+
+    <SharePostModal
+      post={shareOpen ? post : null}
+      onClose={() => setShareOpen(false)}
+      onSuccess={onUpdate}
+    />
+    </>
   )
 }

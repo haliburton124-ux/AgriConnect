@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
+import { SharePostModal } from '@/components/modals/SharePostModal'
 import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { communityService } from '@/services/communityService'
 import { useAuthStore } from '@/store/authStore'
@@ -32,6 +33,7 @@ export function KnowledgeHubSection() {
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<CommunityPost | null>(null)
+  const [shareTarget, setShareTarget] = useState<CommunityPost | null>(null)
 
   useEffect(() => {
     setPosts(null)
@@ -76,15 +78,7 @@ export function KnowledgeHubSection() {
   }
 
   const handleShare = (post: CommunityPost) => {
-    requireAuth(async () => {
-      try {
-        const { data } = await communityService.share(post.id)
-        updatePost(data.data)
-        toast.success('Shared to your feed.')
-      } catch (error) {
-        toast.error(getApiErrorMessage(error))
-      }
-    })
+    requireAuth(() => setShareTarget(post))
   }
 
   const enableEngagement = isAuthenticated
@@ -260,6 +254,12 @@ export function KnowledgeHubSection() {
         onClose={() => setSelected(null)}
         onUpdate={updatePost}
         enableEngagement={enableEngagement}
+      />
+
+      <SharePostModal
+        post={shareTarget}
+        onClose={() => setShareTarget(null)}
+        onSuccess={updatePost}
       />
     </section>
   )

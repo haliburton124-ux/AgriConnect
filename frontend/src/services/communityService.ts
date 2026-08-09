@@ -19,7 +19,10 @@ export const communityService = {
 
   like: (id: number) => api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/like`),
 
-  share: (id: number) => api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/share`),
+  share: (id: number, caption?: string) =>
+    api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/share`, {
+      caption: caption ?? null,
+    }),
 
   comments: (id: number) => api.get<{ data: CommunityPostComment[] }>(`/community/posts/${id}/comments`),
 

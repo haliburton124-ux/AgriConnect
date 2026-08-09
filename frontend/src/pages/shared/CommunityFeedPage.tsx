@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
+import { SharePostModal } from '@/components/modals/SharePostModal'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
 import { buildCommunityListParams } from '@/lib/communityQuery'
@@ -14,6 +15,7 @@ import type { CommunityPost } from '@/types'
 export function CommunityFeedPage() {
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
   const [selected, setSelected] = useState<CommunityPost | null>(null)
+  const [shareTarget, setShareTarget] = useState<CommunityPost | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -35,16 +37,6 @@ export function CommunityFeedPage() {
     try {
       const { data } = await communityService.like(post.id)
       updatePost(data.data)
-    } catch (error) {
-      toast.error(getApiErrorMessage(error))
-    }
-  }
-
-  const handleShare = async (post: CommunityPost) => {
-    try {
-      const { data } = await communityService.share(post.id)
-      updatePost(data.data)
-      toast.success('Shared to your feed.')
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
@@ -89,7 +81,7 @@ export function CommunityFeedPage() {
               post={post}
               onOpen={setSelected}
               onLike={handleLike}
-              onShare={handleShare}
+              onShare={setShareTarget}
             />
           ))}
         </div>
@@ -99,6 +91,12 @@ export function CommunityFeedPage() {
         post={selected}
         onClose={() => setSelected(null)}
         onUpdate={updatePost}
+      />
+
+      <SharePostModal
+        post={shareTarget}
+        onClose={() => setShareTarget(null)}
+        onSuccess={updatePost}
       />
     </div>
   )

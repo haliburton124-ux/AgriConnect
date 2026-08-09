@@ -3,9 +3,10 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { ExpandableText } from '@/components/ui/ExpandableText'
+import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { formatCategory } from '@/lib/community'
-import { formatDate, storageUrl } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { getCommunityPostImages } from '@/lib/communityPostImages'
+import { formatDate, cn } from '@/lib/utils'
 import type { CommunityPost } from '@/types'
 
 interface PostCardProps {
@@ -17,6 +18,8 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onOpen, onLike, onShare, compact = false }: PostCardProps) {
+  const images = getCommunityPostImages(post)
+
   return (
     <Card className="transition-shadow hover:shadow-glass">
       <CardContent className={cn('space-y-3', compact ? 'p-4' : 'p-5')}>
@@ -31,14 +34,14 @@ export function PostCard({ post, onOpen, onLike, onShare, compact = false }: Pos
           <button type="button" onClick={() => onOpen(post)} className="w-full text-left">
             <h3 className="font-semibold text-ink hover:text-forest">{post.title}</h3>
           </button>
-          {post.image_path && (
-            <button type="button" onClick={() => onOpen(post)} className="mt-3 block w-full overflow-hidden rounded-xl border border-black/5">
-              <img
-                src={storageUrl(post.image_path)}
-                alt=""
-                className="max-h-56 w-full object-cover"
+          {images.length > 0 && (
+            <div className="mt-3">
+              <PostPhotoGrid
+                paths={images}
+                variant="compact"
+                onClick={() => onOpen(post)}
               />
-            </button>
+            </div>
           )}
           <ExpandableText text={post.content} className="mt-2 text-ink/70" />
         </div>

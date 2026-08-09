@@ -36,8 +36,11 @@ export const communityService = {
     is_published?: boolean
     municipality_id?: number
     image?: File
+    images?: File[]
   }, rolePrefix: 'mao' | 'ppo' | 'admin') => {
-    if (payload.image) {
+    const files = payload.images?.length ? payload.images : payload.image ? [payload.image] : []
+
+    if (files.length > 0) {
       const formData = new FormData()
       formData.append('title', payload.title)
       formData.append('content', payload.content)
@@ -46,13 +49,13 @@ export const communityService = {
       if (payload.municipality_id != null) {
         formData.append('municipality_id', String(payload.municipality_id))
       }
-      formData.append('image', payload.image)
+      files.forEach((file) => formData.append('images[]', file))
       return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
     }
 
-    const { image: _, ...jsonPayload } = payload
+    const { image: _, images: __, ...jsonPayload } = payload
     return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, jsonPayload)
   },
 

@@ -226,6 +226,7 @@ export interface CommunityPost {
   title: string
   content: string
   image_path: string | null
+  image_paths?: string[]
   category: CommunityPostCategory
   is_published: boolean
   likes_count: number

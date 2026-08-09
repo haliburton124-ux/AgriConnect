@@ -15,7 +15,9 @@ class CommunityPostResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
-            'image_path' => $this->image_path,
+            'image_path' => $this->image_path ?? $this->images->first()?->path,
+            'image_paths' => $this->images->pluck('path')->values()->all()
+                ?: ($this->image_path ? [$this->image_path] : []),
             'category' => $this->category,
             'is_published' => $this->is_published,
             'likes_count' => $this->likes_count,

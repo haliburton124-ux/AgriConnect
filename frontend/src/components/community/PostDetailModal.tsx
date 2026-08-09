@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { communityService } from '@/services/communityService'
 import { formatCategory } from '@/lib/community'
-import { formatDateTime, cn, storageUrl } from '@/lib/utils'
+import { getCommunityPostImages } from '@/lib/communityPostImages'
+import { formatDateTime, cn } from '@/lib/utils'
+import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { getApiErrorMessage } from '@/lib/api'
 import type { CommunityPost, CommunityPostComment } from '@/types'
 
@@ -160,6 +162,8 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
 
   if (!post) return null
 
+  const images = getCommunityPostImages(post)
+
   const handleLike = async () => {
     try {
       const { data } = await communityService.like(post.id)
@@ -228,14 +232,8 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
           </span>
         </div>
 
-        {post.image_path && (
-          <div className="overflow-hidden rounded-xl border border-black/5">
-            <img
-              src={storageUrl(post.image_path)}
-              alt=""
-              className="max-h-80 w-full object-cover"
-            />
-          </div>
+        {images.length > 0 && (
+          <PostPhotoGrid paths={images} variant="detail" enableLightbox />
         )}
 
         <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{post.content}</div>

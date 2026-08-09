@@ -84,7 +84,7 @@ class CommunityPostController extends Controller
 
         return response()->json([
             'data' => new CommunityPostResource(
-                $communityPost->load(['municipality', 'author']),
+                $communityPost->load(['municipality', 'author', 'images']),
             ),
         ]);
     }
@@ -99,23 +99,36 @@ class CommunityPostController extends Controller
 
         abort_unless($municipalityId, 422, 'A municipality must be specified for this post.');
 
-        $imagePath = $request->hasFile('image')
-            ? $request->file('image')->store('community-posts', 'public')
-            : null;
+        $storedPaths = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $storedPaths[] = $file->store('community-posts', 'public');
+            }
+        } elseif ($request->hasFile('image')) {
+            $storedPaths[] = $request->file('image')->store('community-posts', 'public');
+        }
 
         $post = CommunityPost::create([
             'municipality_id' => $municipalityId,
             'author_id' => $user->id,
             'title' => $request->validated('title'),
             'content' => $request->validated('content'),
-            'image_path' => $imagePath,
+            'image_path' => $storedPaths[0] ?? null,
             'category' => $request->validated('category'),
             'is_published' => $request->boolean('is_published', true),
         ]);
 
+        foreach ($storedPaths as $index => $path) {
+            $post->images()->create([
+                'path' => $path,
+                'sort_order' => $index,
+            ]);
+        }
+
         return response()->json([
             'message' => 'Agricultural advisory published successfully.',
-            'data' => new CommunityPostResource($post->load(['municipality', 'author'])),
+            'data' => new CommunityPostResource($post->load(['municipality', 'author', 'images'])),
         ], 201);
     }
 
@@ -177,7 +190,7 @@ class CommunityPostController extends Controller
 
         return response()->json([
             'message' => $existing ? 'Like removed.' : 'Post liked.',
-            'data' => new CommunityPostResource($communityPost->load(['municipality', 'author'])),
+            'data' => new CommunityPostResource($communityPost->load(['municipality', 'author', 'images'])),
         ]);
     }
 
@@ -201,7 +214,7 @@ class CommunityPostController extends Controller
         }
 
         $communityPost->refresh();
-        $post = $communityPost->load(['municipality', 'author']);
+        $post = $communityPost->load(['municipality', 'author', 'images']);
         $post->is_shared_in_feed = true;
         $post->shared_at = $share->created_at;
         $this->applyEngagementFlags($request, collect([$post]));
@@ -260,7 +273,7 @@ class CommunityPostController extends Controller
     {
         if ($request->boolean('archived') && $request->user()?->hasRole(['municipal_office', 'provincial_office', 'admin'])) {
             $query = CommunityPost::onlyArchived()
-                ->with(['municipality', 'author'])
+                ->with(['municipality', 'author', 'images'])
                 ->latest('archived_at');
 
             return $query;
@@ -268,7 +281,7 @@ class CommunityPostController extends Controller
 
         $query = CommunityPost::query()
             ->where('is_published', true)
-            ->with(['municipality', 'author']);
+            ->with(['municipality', 'author', 'images']);
 
         CommunityPostSearch::apply(
             $query,

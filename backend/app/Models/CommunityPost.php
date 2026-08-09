@@ -61,4 +61,9 @@ class CommunityPost extends Model
     {
         return $this->hasMany(CommunityPostShare::class);
     }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(CommunityPostImage::class)->orderBy('sort_order');
+    }
 }

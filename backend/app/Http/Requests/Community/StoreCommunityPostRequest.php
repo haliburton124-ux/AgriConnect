@@ -22,6 +22,8 @@ class StoreCommunityPostRequest extends FormRequest
             'is_published' => ['boolean'],
             'municipality_id' => ['nullable', 'exists:municipalities,id'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images' => ['nullable', 'array', 'max:10'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 }

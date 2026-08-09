@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CommunityPostImage extends Model
 {
-    protected $fillable = ['community_post_id', 'path', 'sort_order'];
+    protected $fillable = ['community_post_id', 'path', 'url', 'sort_order'];
 
     public function post(): BelongsTo
     {

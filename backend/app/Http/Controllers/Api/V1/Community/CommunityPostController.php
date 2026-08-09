@@ -14,6 +14,7 @@ use App\Models\CommunityPostComment;
 use App\Models\CommunityPostLike;
 use App\Models\CommunityPostShare;
 use App\Services\CommunityNotificationService;
+use App\Services\PublicMediaStorage;
 use App\Support\CommunityPostSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,8 +24,10 @@ class CommunityPostController extends Controller
 {
     use HandlesArchiving;
 
-    public function __construct(protected CommunityNotificationService $communityNotifications)
-    {
+    public function __construct(
+        protected CommunityNotificationService $communityNotifications,
+        protected PublicMediaStorage $mediaStorage,
+    ) {
     }
 
     public function categories(): JsonResponse
@@ -102,14 +105,14 @@ class CommunityPostController extends Controller
 
         abort_unless($municipalityId, 422, 'A municipality must be specified for this post.');
 
-        $storedPaths = [];
+        $storedImages = [];
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
-                $storedPaths[] = $file->store('community-posts', 'public');
+                $storedImages[] = $this->mediaStorage->storeUpload($file, 'community-posts');
             }
         } elseif ($request->hasFile('image')) {
-            $storedPaths[] = $request->file('image')->store('community-posts', 'public');
+            $storedImages[] = $this->mediaStorage->storeUpload($request->file('image'), 'community-posts');
         }
 
         $post = CommunityPost::create([
@@ -117,14 +120,15 @@ class CommunityPostController extends Controller
             'author_id' => $user->id,
             'title' => $request->validated('title'),
             'content' => $request->validated('content'),
-            'image_path' => $storedPaths[0] ?? null,
+            'image_path' => $storedImages[0]['path'] ?? null,
             'category' => $request->validated('category'),
             'is_published' => $request->boolean('is_published', true),
         ]);
 
-        foreach ($storedPaths as $index => $path) {
+        foreach ($storedImages as $index => $image) {
             $post->images()->create([
-                'path' => $path,
+                'path' => $image['path'],
+                'url' => $image['url'],
                 'sort_order' => $index,
             ]);
         }

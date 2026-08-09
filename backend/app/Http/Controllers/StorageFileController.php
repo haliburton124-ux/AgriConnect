@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PublicMediaStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StorageFileController extends Controller
 {
     /**
-     * Serve files from the public disk. Used in production where the
-     * public/storage symlink may be unavailable (e.g. Docker on Railway).
+     * Serve files from the public media disk. Used when MEDIA_DISK=public
+     * (local dev or Railway with a persistent volume).
      */
     public function show(Request $request, string $path): StreamedResponse
     {
@@ -20,7 +20,7 @@ class StorageFileController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('public');
+        $disk = app(PublicMediaStorage::class)->disk();
 
         if (! $disk->exists($path)) {
             abort(404);

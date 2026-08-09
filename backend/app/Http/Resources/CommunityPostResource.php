@@ -2,16 +2,27 @@
 
 namespace App\Http\Resources;
 
+use App\Services\PublicMediaStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class CommunityPostResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $mediaStorage = app(PublicMediaStorage::class);
+
         $imagePaths = $this->images->pluck('path')->values()->all()
             ?: ($this->image_path ? [$this->image_path] : []);
+
+        $storedUrls = $this->images->pluck('url')->filter()->values()->all();
+
+        $imageUrls = $storedUrls !== []
+            ? $storedUrls
+            : collect($imagePaths)
+                ->map(fn (string $path) => $mediaStorage->urlForPath($path))
+                ->values()
+                ->all();
 
         return [
             'id' => $this->id,
@@ -19,10 +30,7 @@ class CommunityPostResource extends JsonResource
             'content' => $this->content,
             'image_path' => $this->image_path ?? $this->images->first()?->path,
             'image_paths' => $imagePaths,
-            'image_urls' => collect($imagePaths)
-                ->map(fn (string $path) => Storage::disk('public')->url($path))
-                ->values()
-                ->all(),
+            'image_urls' => $imageUrls,
             'category' => $this->category,
             'is_published' => $this->is_published,
             'likes_count' => $this->likes_count,

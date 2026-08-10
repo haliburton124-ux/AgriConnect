@@ -43,6 +43,20 @@ class CommunityActivityNotification extends Notification
         ];
     }
 
+    protected function commentMessage(string $action): string
+    {
+        $actor = $this->actor->full_name;
+        $title = $this->post->title;
+        $suffix = $this->commentHasPhoto() ? ' with a photo' : '';
+
+        return "{$actor} {$action} \"{$title}\"{$suffix}.";
+    }
+
+    protected function commentHasPhoto(): bool
+    {
+        return filled($this->comment?->image_path) || filled($this->comment?->image_url);
+    }
+
     protected function buildMessage(): string
     {
         $actor = $this->actor->full_name;
@@ -53,9 +67,9 @@ class CommunityActivityNotification extends Notification
             'share' => filled($this->shareCaption)
                 ? "{$actor} shared your advisory \"{$title}\" with a caption: \"{$this->shareCaption}\"."
                 : "{$actor} shared your advisory \"{$title}\".",
-            'comment' => "{$actor} commented on \"{$title}\".",
-            'reply' => "{$actor} replied to your comment on \"{$title}\".",
-            'mention' => "{$actor} mentioned you on \"{$title}\".",
+            'comment' => $this->commentMessage('commented on'),
+            'reply' => $this->commentMessage('replied to your comment on'),
+            'mention' => $this->commentMessage('mentioned you on'),
             default => "{$actor} interacted with \"{$title}\".",
         };
     }

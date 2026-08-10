@@ -15,6 +15,8 @@ import '../../widgets/agri_page_header.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/expandable_text.dart';
 import '../../widgets/loading_view.dart';
+import '../../widgets/comment_composer.dart';
+import '../../widgets/comment_thread.dart';
 import '../../widgets/shared_post_banner.dart';
 import '../../widgets/shared_post_preview.dart';
 
@@ -608,7 +610,7 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
   List<PostComment>? _comments;
   bool _loadingComments = true;
   bool _posting = false;
-  final _commentController = TextEditingController();
+  int? _replyToId;
 
   @override
   void initState() {
@@ -618,7 +620,6 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
 
   @override
   void dispose() {
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -639,13 +640,18 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
     }
   }
 
-  Future<void> _submitComment() async {
-    final body = _commentController.text.trim();
-    if (body.isEmpty) return;
+  Future<void> _submitComment(String body, String? imagePath) async {
+    if (body.isEmpty && (imagePath == null || imagePath.isEmpty)) return;
     setState(() => _posting = true);
     try {
-      await widget.community.addComment(widget.post.id, body);
-      _commentController.clear();
+      await widget.community.addComment(
+        widget.post.id,
+        body: body.isEmpty ? null : body,
+        parentId: _replyToId,
+        imagePath: imagePath,
+      );
+      if (!mounted) return;
+      setState(() => _replyToId = null);
       await _loadComments();
     } catch (e) {
       if (!mounted) return;
@@ -661,6 +667,7 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
     final viewerId = context.watch<AuthProvider>().user?.id;
     final images = post.displayImageUrls;
     final isSharedView = post.hasSharedPostContext;
+    final galleryComments = _comments == null ? <PostComment>[] : collectCommentImages(_comments!);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -714,7 +721,12 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       ExpandableText(text: post.content, maxLines: 20),
                     ],
                     const SizedBox(height: 20),
-                    Text('Comments', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    Text('Community Discussion', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Farmer comments and replies appear below the original municipal advisory.',
+                      style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
+                    ),
                     const SizedBox(height: 8),
                     if (_loadingComments)
                       const Padding(
@@ -725,56 +737,20 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       Text('No comments yet. Be the first to comment.', style: GoogleFonts.poppins(fontSize: 13, color: AgriColors.muted))
                     else
                       ..._comments!.map(
-                        (c) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AgriColors.canvas,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(c.authorName, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 4),
-                                Text(c.body, style: GoogleFonts.poppins(fontSize: 13)),
-                              ],
-                            ),
-                          ),
+                        (comment) => CommentThread(
+                          comment: comment,
+                          galleryComments: galleryComments,
+                          onReply: (id) => setState(() => _replyToId = id),
                         ),
                       ),
                   ],
                 ),
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _commentController,
-                          decoration: InputDecoration(
-                            hintText: 'Write a comment…',
-                            filled: true,
-                            fillColor: AgriColors.canvas,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _posting ? null : _submitComment,
-                        icon: _posting
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.send, color: AgriColors.forest),
-                      ),
-                    ],
-                  ),
-                ),
+              CommentComposer(
+                replyToId: _replyToId,
+                submitting: _posting,
+                onCancelReply: () => setState(() => _replyToId = null),
+                onSubmit: _submitComment,
               ),
             ],
           ),

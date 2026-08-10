@@ -13,6 +13,12 @@ class CommunityPostCommentResource extends JsonResource
             'id' => $this->id,
             'body' => $this->body,
             'parent_id' => $this->parent_id,
+            'image_path' => $this->image_path,
+            'image_url' => $this->image_url ?: (
+                $this->image_path
+                    ? app(\App\Services\PublicMediaStorage::class)->urlForPath($this->image_path)
+                    : null
+            ),
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
                 'full_name' => $this->user->full_name,

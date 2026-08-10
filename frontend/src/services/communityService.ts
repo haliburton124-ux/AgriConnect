@@ -27,11 +27,30 @@ export const communityService = {
 
   comments: (id: number) => api.get<{ data: CommunityPostComment[] }>(`/community/posts/${id}/comments`),
 
-  addComment: (id: number, body: string, parentId?: number) =>
-    api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, {
-      body,
-      parent_id: parentId,
-    }),
+  addComment: (
+    id: number,
+    payload: { body?: string; parentId?: number; image?: File },
+  ) => {
+    const trimmedBody = payload.body?.trim() ?? ''
+    const hasImage = Boolean(payload.image)
+
+    if (hasImage) {
+      const formData = new FormData()
+      if (trimmedBody) formData.append('body', trimmedBody)
+      if (payload.parentId != null) formData.append('parent_id', String(payload.parentId))
+      formData.append('image', payload.image!)
+      return api.post<{ message: string; data: CommunityPostComment }>(
+        `/community/posts/${id}/comments`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+    }
+
+    return api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, {
+      body: trimmedBody,
+      parent_id: payload.parentId,
+    })
+  },
 
   create: (payload: {
     title: string

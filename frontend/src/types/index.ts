@@ -249,6 +249,8 @@ export interface CommunityPostComment {
   id: number
   body: string
   parent_id: number | null
+  image_path?: string | null
+  image_url?: string | null
   user?: { id: number; full_name: string; role: UserRole }
   replies?: CommunityPostComment[]
   created_at: string

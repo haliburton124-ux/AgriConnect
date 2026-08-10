@@ -280,7 +280,8 @@ class CommunityPostController extends Controller
         $comment = $communityPost->allComments()->create([
             'user_id' => $request->user()->id,
             'parent_id' => $request->validated('parent_id'),
-            'body' => $request->validated('body'),
+            'body' => trim((string) $request->input('body', '')),
+            ...$this->storeCommentImage($request),
         ]);
 
         $communityPost->increment('comments_count');
@@ -324,6 +325,20 @@ class CommunityPostController extends Controller
         $this->applyEngagementFlags($request, null, $query);
 
         return $query;
+    }
+
+    protected function storeCommentImage(Request $request): array
+    {
+        if (! $request->hasFile('image')) {
+            return ['image_path' => null, 'image_url' => null];
+        }
+
+        $stored = $this->mediaStorage->storeUpload($request->file('image'), 'community-comment-images');
+
+        return [
+            'image_path' => $stored['path'],
+            'image_url' => $stored['url'],
+        ];
     }
 
     protected function applyShareContext(CommunityPost $post, CommunityPostShare $share): void

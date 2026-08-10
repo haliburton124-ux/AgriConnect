@@ -46,7 +46,7 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL'),
+            'url' => env('DB_URL') && ! str_contains((string) env('DB_URL'), '${{') ? env('DB_URL') : null,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -59,9 +59,27 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ], fn ($value) => $value !== null) : [],
+            'options' => (function (): array {
+                if (! extension_loaded('pdo_mysql')) {
+                    return [];
+                }
+
+                $options = [];
+                $sslCa = env('MYSQL_ATTR_SSL_CA');
+
+                if ($sslCa) {
+                    $options[PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+                }
+
+                $verify = env('MYSQL_SSL_VERIFY_SERVER_CERT');
+                if ($verify !== null) {
+                    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = filter_var($verify, FILTER_VALIDATE_BOOLEAN);
+                } elseif (str_contains((string) env('DB_HOST', ''), 'tidbcloud.com')) {
+                    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+                }
+
+                return $options;
+            })(),
         ],
 
         'mariadb' => [

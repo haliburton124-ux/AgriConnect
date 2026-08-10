@@ -1,3 +1,5 @@
+import '../config/api_config.dart';
+
 class PostComment {
   const PostComment({
     required this.id,
@@ -7,6 +9,7 @@ class PostComment {
     this.parentId,
     this.authorRole,
     this.imageUrl,
+    this.imagePath,
     this.replies = const [],
   });
 
@@ -20,14 +23,21 @@ class PostComment {
       parentId: json['parent_id'] as int?,
       authorName: user?['full_name'] as String? ?? 'Farmer',
       authorRole: user?['role'] as String?,
-      imageUrl: json['image_url'] as String?,
+      imageUrl: _resolveImageUrl(json),
+      imagePath: json['image_path'] as String?,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
       replies: repliesRaw?.map((e) => PostComment.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
     );
   }
 
   bool get hasBody => body.trim().isNotEmpty;
-  bool get hasImage => imageUrl != null && imageUrl!.isNotEmpty;
+  bool get hasImage => displayImageUrl != null;
+
+  String? get displayImageUrl {
+    if (imageUrl != null && imageUrl!.isNotEmpty) return imageUrl;
+    if (imagePath != null && imagePath!.isNotEmpty) return ApiConfig.storageUrl(imagePath!);
+    return null;
+  }
 
   final int id;
   final String body;
@@ -35,8 +45,17 @@ class PostComment {
   final String authorName;
   final String? authorRole;
   final String? imageUrl;
+  final String? imagePath;
   final DateTime createdAt;
   final List<PostComment> replies;
+}
+
+String? _resolveImageUrl(Map<String, dynamic> json) {
+  final url = json['image_url'] as String?;
+  if (url != null && url.isNotEmpty) return url;
+  final path = json['image_path'] as String?;
+  if (path != null && path.isNotEmpty) return ApiConfig.storageUrl(path);
+  return null;
 }
 
 List<PostComment> collectCommentImages(List<PostComment> comments) {

@@ -1,9 +1,21 @@
 import type { CommunityPostComment } from '@/types'
+import { storageUrl } from '@/lib/utils'
 
 export interface CommentGalleryImage {
   id: number
   url: string
   alt: string
+}
+
+/** Resolve a display URL for a comment photo (API url, stored path, or null). */
+export function getCommentImageUrl(comment: CommunityPostComment): string | null {
+  if (comment.image_url) return comment.image_url
+  if (comment.image_path) return storageUrl(comment.image_path)
+  return null
+}
+
+export function commentHasImage(comment: CommunityPostComment): boolean {
+  return Boolean(getCommentImageUrl(comment))
 }
 
 function commentReplies(comment: CommunityPostComment): CommunityPostComment[] {
@@ -19,10 +31,11 @@ export function collectCommentImages(comments: CommunityPostComment[]): CommentG
 
   const walk = (items: CommunityPostComment[]) => {
     for (const comment of items) {
-      if (comment.image_url) {
+      const url = getCommentImageUrl(comment)
+      if (url) {
         images.push({
           id: comment.id,
-          url: comment.image_url,
+          url,
           alt: comment.user?.full_name ? `Photo by ${comment.user.full_name}` : 'Comment photo',
         })
       }

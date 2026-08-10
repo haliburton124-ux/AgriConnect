@@ -1,6 +1,6 @@
 import { Reply } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
-import { commentRepliesList, type CommentGalleryImage } from '@/lib/commentImages'
+import { commentRepliesList, getCommentImageUrl, commentHasImage, type CommentGalleryImage } from '@/lib/commentImages'
 import { formatDateTime, cn } from '@/lib/utils'
 import type { CommunityPostComment, UserRole } from '@/types'
 
@@ -15,6 +15,7 @@ interface CommentThreadProps {
   galleryImages: CommentGalleryImage[]
   onReply: (parentId: number) => void
   onImageClick: (commentId: number) => void
+  canReply?: boolean
   depth?: number
 }
 
@@ -23,11 +24,13 @@ export function CommentThread({
   galleryImages,
   onReply,
   onImageClick,
+  canReply = true,
   depth = 0,
 }: CommentThreadProps) {
   const badge = authorBadgeLabel(comment.user?.role)
   const hasBody = Boolean(comment.body?.trim())
-  const hasImage = Boolean(comment.image_url)
+  const imageUrl = getCommentImageUrl(comment)
+  const hasImage = commentHasImage(comment)
 
   return (
     <div className={cn('space-y-3', depth > 0 && 'ml-6 border-l-2 border-forest/10 pl-4')}>
@@ -48,14 +51,14 @@ export function CommentThread({
           <p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">{comment.body}</p>
         )}
 
-        {hasImage && (
+        {hasImage && imageUrl && (
           <button
             type="button"
             onClick={() => onImageClick(comment.id)}
             className="mt-3 block overflow-hidden rounded-xl border border-black/5 transition hover:border-forest/20"
           >
             <img
-              src={comment.image_url!}
+              src={imageUrl}
               alt={comment.user?.full_name ? `Photo by ${comment.user.full_name}` : 'Comment photo'}
               className="max-h-72 w-full object-cover"
               loading="lazy"
@@ -63,13 +66,19 @@ export function CommentThread({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={() => onReply(comment.id)}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-forest hover:underline"
-        >
-          <Reply className="h-3 w-3" /> Reply
-        </button>
+        {!hasBody && hasImage && (
+          <p className="mt-2 text-xs text-muted-foreground">Shared a photo</p>
+        )}
+
+        {canReply && (
+          <button
+            type="button"
+            onClick={() => onReply(comment.id)}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-forest hover:underline"
+          >
+            <Reply className="h-3 w-3" /> Reply
+          </button>
+        )}
       </div>
 
       {commentRepliesList(comment).map((reply) => (
@@ -79,6 +88,7 @@ export function CommentThread({
           galleryImages={galleryImages}
           onReply={onReply}
           onImageClick={onImageClick}
+          canReply={canReply}
           depth={depth + 1}
         />
       ))}

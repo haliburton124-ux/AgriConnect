@@ -29,7 +29,7 @@ class CommentThread extends StatelessWidget {
 
   void _openImage(BuildContext context) {
     final images = galleryComments
-        .map((item) => IncidentMedia(id: item.id, url: item.imageUrl!, type: 'photo'))
+        .map((item) => IncidentMedia(id: item.id, url: item.displayImageUrl!, type: 'photo'))
         .toList();
     final index = galleryComments.indexWhere((item) => item.id == comment.id);
     if (index < 0) return;
@@ -98,7 +98,7 @@ class CommentThread extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Image.network(
-                      comment.imageUrl!,
+                      comment.displayImageUrl!,
                       width: double.infinity,
                       height: 180,
                       fit: BoxFit.cover,

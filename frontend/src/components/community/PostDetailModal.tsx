@@ -233,6 +233,7 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
                     galleryImages={galleryImages}
                     onReply={setReplyTo}
                     onImageClick={handleCommentImageClick}
+                    canReply={enableEngagement}
                   />
                 ))
               )}

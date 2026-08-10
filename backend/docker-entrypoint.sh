@@ -17,7 +17,7 @@ chmod -R 775 bootstrap/cache storage
 php artisan storage:link 2>/dev/null || true
 
 # Ensure upload directories exist on the mounted volume
-mkdir -p storage/app/public/community-posts
+mkdir -p storage/app/public/community-posts storage/app/public/community-comment-images
 
 # Run migrations when DB is available
 echo "Running migrations..."

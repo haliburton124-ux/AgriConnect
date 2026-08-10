@@ -72,7 +72,14 @@ class AuthController extends Controller
 
     public function resendOtp(ForgotPasswordRequest $request): JsonResponse
     {
-        $user = $this->users->findByEmail($request->validated('email'));
+        $user = $this->users->findByEmail($request->validated('email'), includeArchived: true);
+
+        if (! $user?->isPendingVerification()) {
+            return response()->json([
+                'message' => 'If a pending registration exists for this email, a new verification code has been sent.',
+            ]);
+        }
+
         $result = $this->authService->issueOtp($user);
 
         $payload = [

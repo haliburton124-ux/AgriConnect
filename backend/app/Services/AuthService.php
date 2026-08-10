@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Notifications\OtpNotification;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +20,7 @@ class AuthService
 
     public function register(array $data): array
     {
-        $existing = $this->users->findByEmail($data['email']);
+        $existing = $this->users->findByEmail($data['email'], includeArchived: true);
         $resumed = false;
 
         $profile = [
@@ -55,9 +56,19 @@ class AuthService
             ]));
             $resumed = true;
         } else {
-            $user = $this->users->create(array_merge($profile, [
-                'email' => $data['email'],
-            ]));
+            try {
+                $user = $this->users->create(array_merge($profile, [
+                    'email' => $data['email'],
+                ]));
+            } catch (QueryException $e) {
+                if ($this->isDuplicateEmailError($e)) {
+                    throw ValidationException::withMessages([
+                        'email' => ['This email is already registered. Please sign in instead.'],
+                    ]);
+                }
+
+                throw $e;
+            }
         }
 
         $otpDelivery = $this->issueOtp($user);
@@ -104,10 +115,19 @@ class AuthService
     {
         $otp = (string) random_int(100000, 999999);
 
-        $user->forceFill([
-            'otp_code' => Hash::make($otp),
-            'otp_expires_at' => now()->addMinutes(10),
-        ])->save();
+        try {
+            $user->forceFill([
+                'otp_code' => Hash::make($otp),
+                'otp_expires_at' => now()->addMinutes(10),
+            ])->save();
+        } catch (QueryException $e) {
+            report($e);
+            logger()->error("Failed to store OTP for {$user->email}: {$e->getMessage()}");
+
+            throw ValidationException::withMessages([
+                'email' => ['Registration could not be completed due to a server database issue. Please try again or contact support.'],
+            ]);
+        }
 
         $delivered = $this->deliverOtpEmail($user, $otp);
 
@@ -120,10 +140,18 @@ class AuthService
     protected function deliverOtpEmail(User $user, string $otp): bool
     {
         $subject = 'Verify your AgriConnect account';
-        $html = view('mail.otp', [
-            'firstName' => $user->first_name,
-            'otp' => $otp,
-        ])->render();
+
+        try {
+            $html = view('mail.otp', [
+                'firstName' => $user->first_name,
+                'otp' => $otp,
+            ])->render();
+        } catch (\Throwable $e) {
+            report($e);
+            logger()->error("OTP email template failed for {$user->email}: {$e->getMessage()}");
+
+            return false;
+        }
 
         if ($this->gmailApi->isConfigured()) {
             try {
@@ -234,5 +262,15 @@ class AuthService
     {
         $user->forceFill(['password' => $newPassword])->save();
         $user->tokens()->delete();
+    }
+
+    protected function isDuplicateEmailError(QueryException $e): bool
+    {
+        $sqlState = $e->errorInfo[0] ?? '';
+        $message = $e->getMessage();
+
+        return in_array($sqlState, ['23000', '23505'], true)
+            || str_contains($message, 'Duplicate entry')
+            || str_contains($message, 'duplicate key');
     }
 }

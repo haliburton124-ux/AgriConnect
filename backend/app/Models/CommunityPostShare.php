@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CommunityPostShare extends Model
 {
-    protected $fillable = ['community_post_id', 'user_id', 'caption'];
+    protected $fillable = ['community_post_id', 'user_id'];
 
     public function post(): BelongsTo
     {

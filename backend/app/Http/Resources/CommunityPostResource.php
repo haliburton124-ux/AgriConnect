@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Services\PublicMediaStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -10,27 +9,13 @@ class CommunityPostResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $mediaStorage = app(PublicMediaStorage::class);
-
-        $imagePaths = $this->images->pluck('path')->values()->all()
-            ?: ($this->image_path ? [$this->image_path] : []);
-
-        $storedUrls = $this->images->pluck('url')->filter()->values()->all();
-
-        $imageUrls = $storedUrls !== []
-            ? $storedUrls
-            : collect($imagePaths)
-                ->map(fn (string $path) => $mediaStorage->urlForPath($path))
-                ->values()
-                ->all();
+        $user = $request->user();
 
         return [
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
-            'image_path' => $this->image_path ?? $this->images->first()?->path,
-            'image_paths' => $imagePaths,
-            'image_urls' => $imageUrls,
+            'image_path' => $this->image_path,
             'category' => $this->category,
             'is_published' => $this->is_published,
             'likes_count' => $this->likes_count,
@@ -49,17 +34,6 @@ class CommunityPostResource extends JsonResource
             'shared_by_me' => filter_var($this->shared_by_me ?? false, FILTER_VALIDATE_BOOLEAN),
             'shared_at' => $this->when(isset($this->shared_at), $this->shared_at),
             'is_shared_in_feed' => $this->when(isset($this->is_shared_in_feed), (bool) $this->is_shared_in_feed),
-            'share_caption' => $this->when(isset($this->share_caption), $this->share_caption),
-            'share_id' => $this->when(isset($this->share_id), $this->share_id),
-            'shared_by' => $this->when(isset($this->shared_by), function () {
-                $sharer = $this->shared_by;
-
-                return [
-                    'id' => $sharer->id,
-                    'full_name' => $sharer->full_name,
-                    'role' => $sharer->role,
-                ];
-            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 
 class CommunityPostComment extends Model
 {
-    protected $fillable = ['community_post_id', 'user_id', 'parent_id', 'body', 'image_path', 'image_url'];
+    protected $fillable = ['community_post_id', 'user_id', 'parent_id', 'body'];
 
     public function post(): BelongsTo
     {

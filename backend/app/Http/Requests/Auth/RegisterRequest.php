@@ -41,7 +41,7 @@ class RegisterRequest extends FormRequest
                 'email',
                 'max:255',
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    $user = User::where('email', $value)->first();
+                    $user = User::withArchived()->where('email', $value)->first();
 
                     if ($user?->hasVerifiedEmail()) {
                         $fail('This email is already registered. Please sign in instead.');

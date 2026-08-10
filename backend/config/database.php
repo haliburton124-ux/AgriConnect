@@ -3,6 +3,16 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
+if (! function_exists('env_db')) {
+    /** Trim whitespace and stray quotes from Render / .env imports. */
+    function env_db(string $key, mixed $default = ''): mixed
+    {
+        $value = env($key, $default);
+
+        return is_string($value) ? trim($value, " \t\n\r\0\x0B\"'") : $value;
+    }
+}
+
 return [
 
     /*
@@ -46,12 +56,12 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL') && ! str_contains((string) env('DB_URL'), '${{') ? env('DB_URL') : null,
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'url' => (($url = env_db('DB_URL')) && str_starts_with((string) $url, 'mysql://')) ? $url : null,
+            'host' => env_db('DB_HOST', '127.0.0.1'),
+            'port' => env_db('DB_PORT', '3306'),
+            'database' => env_db('DB_DATABASE', 'laravel'),
+            'username' => env_db('DB_USERNAME', 'root'),
+            'password' => env_db('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -65,7 +75,7 @@ return [
                 }
 
                 $options = [];
-                $sslCa = env('MYSQL_ATTR_SSL_CA');
+                $sslCa = env_db('MYSQL_ATTR_SSL_CA');
 
                 if ($sslCa) {
                     $options[PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
@@ -74,7 +84,7 @@ return [
                 $verify = env('MYSQL_SSL_VERIFY_SERVER_CERT');
                 if ($verify !== null) {
                     $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = filter_var($verify, FILTER_VALIDATE_BOOLEAN);
-                } elseif (str_contains((string) env('DB_HOST', ''), 'tidbcloud.com')) {
+                } elseif (str_contains((string) env_db('DB_HOST', ''), 'tidbcloud.com')) {
                     $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
                 }
 

@@ -8,8 +8,3 @@ healthcheckPath = "/up"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-# Persist uploaded photos/documents across redeploys (create volume in Railway dashboard if needed).
-[[deploy.volumes]]
-mountPath = "/app/storage/app/public"
-name = "agriconnect-public-storage"

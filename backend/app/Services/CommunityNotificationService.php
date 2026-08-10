@@ -20,20 +20,14 @@ class CommunityNotificationService
         $recipient->notify(new CommunityActivityNotification('like', $post, $actor));
     }
 
-    public function notifyShare(CommunityPost $post, User $actor, ?string $caption = null, ?int $shareId = null): void
+    public function notifyShare(CommunityPost $post, User $actor): void
     {
         $recipient = $post->author;
         if (! $recipient || $recipient->id === $actor->id) {
             return;
         }
 
-        $recipient->notify(new CommunityActivityNotification(
-            'share',
-            $post,
-            $actor,
-            shareCaption: $caption,
-            shareId: $shareId,
-        ));
+        $recipient->notify(new CommunityActivityNotification('share', $post, $actor));
     }
 
     public function notifyComment(CommunityPost $post, CommunityPostComment $comment, User $actor): void

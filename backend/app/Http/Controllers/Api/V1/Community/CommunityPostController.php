@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1\Community;
 
 use App\Http\Controllers\Concerns\HandlesArchiving;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Community\ShareCommunityPostRequest;
 use App\Http\Requests\Community\StoreCommunityPostCommentRequest;
 use App\Http\Requests\Community\StoreCommunityPostRequest;
 use App\Http\Resources\CommunityPostCommentResource;
@@ -14,7 +13,6 @@ use App\Models\CommunityPostComment;
 use App\Models\CommunityPostLike;
 use App\Models\CommunityPostShare;
 use App\Services\CommunityNotificationService;
-use App\Services\PublicMediaStorage;
 use App\Support\CommunityPostSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,10 +22,8 @@ class CommunityPostController extends Controller
 {
     use HandlesArchiving;
 
-    public function __construct(
-        protected CommunityNotificationService $communityNotifications,
-        protected PublicMediaStorage $mediaStorage,
-    ) {
+    public function __construct(protected CommunityNotificationService $communityNotifications)
+    {
     }
 
     public function categories(): JsonResponse
@@ -62,22 +58,16 @@ class CommunityPostController extends Controller
         $user = $request->user();
         abort_unless($user && $user->hasRole('farmer'), 403);
 
-        $shares = CommunityPostShare::where('user_id', $user->id)
-            ->with('user')
-            ->get()
-            ->keyBy('community_post_id');
+        $sharedIds = CommunityPostShare::where('user_id', $user->id)
+            ->pluck('created_at', 'community_post_id');
 
         $posts = $this->baseQuery($request)
-            ->leftJoin('community_post_shares as user_share', function ($join) use ($user) {
-                $join->on('user_share.community_post_id', '=', 'community_posts.id')
-                    ->where('user_share.user_id', '=', $user->id);
-            })
-            ->select('community_posts.*')
-            ->orderByDesc(DB::raw('COALESCE(user_share.updated_at, community_posts.created_at)'))
+            ->latest()
             ->paginate($request->integer('per_page', 15))
-            ->through(function (CommunityPost $post) use ($shares) {
-                if ($shares->has($post->id)) {
-                    $this->applyShareContext($post, $shares[$post->id]);
+            ->through(function (CommunityPost $post) use ($sharedIds) {
+                if ($sharedIds->has($post->id)) {
+                    $post->is_shared_in_feed = true;
+                    $post->shared_at = $sharedIds[$post->id];
                 }
 
                 return $post;
@@ -92,15 +82,9 @@ class CommunityPostController extends Controller
 
         $this->applyEngagementFlags($request, collect([$communityPost]));
 
-        if ($request->filled('share_id')) {
-            $this->applyShareContextById($request, $communityPost, $request->integer('share_id'));
-        } else {
-            $this->applyUserShareContext($request, $communityPost);
-        }
-
         return response()->json([
             'data' => new CommunityPostResource(
-                $communityPost->load(['municipality', 'author', 'images']),
+                $communityPost->load(['municipality', 'author']),
             ),
         ]);
     }
@@ -115,37 +99,23 @@ class CommunityPostController extends Controller
 
         abort_unless($municipalityId, 422, 'A municipality must be specified for this post.');
 
-        $storedImages = [];
-
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $file) {
-                $storedImages[] = $this->mediaStorage->storeUpload($file, 'community-posts');
-            }
-        } elseif ($request->hasFile('image')) {
-            $storedImages[] = $this->mediaStorage->storeUpload($request->file('image'), 'community-posts');
-        }
+        $imagePath = $request->hasFile('image')
+            ? $request->file('image')->store('community-posts', 'public')
+            : null;
 
         $post = CommunityPost::create([
             'municipality_id' => $municipalityId,
             'author_id' => $user->id,
             'title' => $request->validated('title'),
             'content' => $request->validated('content'),
-            'image_path' => $storedImages[0]['path'] ?? null,
+            'image_path' => $imagePath,
             'category' => $request->validated('category'),
             'is_published' => $request->boolean('is_published', true),
         ]);
 
-        foreach ($storedImages as $index => $image) {
-            $post->images()->create([
-                'path' => $image['path'],
-                'url' => $image['url'],
-                'sort_order' => $index,
-            ]);
-        }
-
         return response()->json([
             'message' => 'Agricultural advisory published successfully.',
-            'data' => new CommunityPostResource($post->load(['municipality', 'author', 'images'])),
+            'data' => new CommunityPostResource($post->load(['municipality', 'author'])),
         ], 201);
     }
 
@@ -207,48 +177,37 @@ class CommunityPostController extends Controller
 
         return response()->json([
             'message' => $existing ? 'Like removed.' : 'Post liked.',
-            'data' => new CommunityPostResource($communityPost->load(['municipality', 'author', 'images'])),
+            'data' => new CommunityPostResource($communityPost->load(['municipality', 'author'])),
         ]);
     }
 
-    public function share(ShareCommunityPostRequest $request, CommunityPost $communityPost): JsonResponse
+    public function share(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
 
         $user = $request->user();
-        $caption = $request->validated('caption');
 
-        $existing = CommunityPostShare::where('community_post_id', $communityPost->id)
-            ->where('user_id', $user->id)
-            ->first();
+        $share = CommunityPostShare::firstOrCreate([
+            'community_post_id' => $communityPost->id,
+            'user_id' => $user->id,
+        ]);
 
-        $share = CommunityPostShare::updateOrCreate(
-            [
-                'community_post_id' => $communityPost->id,
-                'user_id' => $user->id,
-            ],
-            [
-                'caption' => $caption,
-            ],
-        );
-
-        if (! $existing) {
+        if ($share->wasRecentlyCreated) {
             $communityPost->increment('shares_count');
             $this->communityNotifications->notifyShare(
                 $communityPost->loadMissing('author'),
                 $user,
-                $share->caption,
-                $share->id,
             );
         }
 
         $communityPost->refresh();
-        $post = $communityPost->load(['municipality', 'author', 'images']);
-        $this->applyShareContext($post, $share->load('user'));
+        $post = $communityPost->load(['municipality', 'author']);
+        $post->is_shared_in_feed = true;
+        $post->shared_at = $share->created_at;
         $this->applyEngagementFlags($request, collect([$post]));
 
         return response()->json([
-            'message' => $existing ? 'Share updated.' : 'Post shared to your feed.',
+            'message' => 'Post shared to your feed.',
             'data' => new CommunityPostResource($post),
         ]);
     }
@@ -280,8 +239,7 @@ class CommunityPostController extends Controller
         $comment = $communityPost->allComments()->create([
             'user_id' => $request->user()->id,
             'parent_id' => $request->validated('parent_id'),
-            'body' => trim((string) $request->input('body', '')),
-            ...$this->storeCommentImage($request),
+            'body' => $request->validated('body'),
         ]);
 
         $communityPost->increment('comments_count');
@@ -302,7 +260,7 @@ class CommunityPostController extends Controller
     {
         if ($request->boolean('archived') && $request->user()?->hasRole(['municipal_office', 'provincial_office', 'admin'])) {
             $query = CommunityPost::onlyArchived()
-                ->with(['municipality', 'author', 'images'])
+                ->with(['municipality', 'author'])
                 ->latest('archived_at');
 
             return $query;
@@ -310,7 +268,7 @@ class CommunityPostController extends Controller
 
         $query = CommunityPost::query()
             ->where('is_published', true)
-            ->with(['municipality', 'author', 'images']);
+            ->with(['municipality', 'author']);
 
         CommunityPostSearch::apply(
             $query,
@@ -325,66 +283,6 @@ class CommunityPostController extends Controller
         $this->applyEngagementFlags($request, null, $query);
 
         return $query;
-    }
-
-    protected function storeCommentImage(Request $request): array
-    {
-        if (! $request->hasFile('image')) {
-            return ['image_path' => null, 'image_url' => null];
-        }
-
-        $stored = $this->mediaStorage->storeUpload($request->file('image'), 'community-comment-images');
-
-        return [
-            'image_path' => $stored['path'],
-            'image_url' => $stored['url'],
-        ];
-    }
-
-    protected function applyShareContext(CommunityPost $post, CommunityPostShare $share): void
-    {
-        $post->share_id = $share->id;
-        $post->is_shared_in_feed = true;
-        $post->shared_at = $share->updated_at;
-        $post->share_caption = $share->caption;
-        $post->shared_by = $share->relationLoaded('user') ? $share->user : $share->user()->first();
-    }
-
-    protected function applyShareContextById(Request $request, CommunityPost $post, int $shareId): void
-    {
-        $share = CommunityPostShare::where('id', $shareId)
-            ->where('community_post_id', $post->id)
-            ->with('user')
-            ->firstOrFail();
-
-        $user = $request->user();
-        abort_unless($user, 401);
-
-        $canView = $user->id === $share->user_id
-            || $user->id === $post->author_id
-            || ($user->hasRole('municipal_office') && $user->municipality_id === $post->municipality_id)
-            || $user->hasRole(['provincial_office', 'admin']);
-
-        abort_unless($canView, 403);
-
-        $this->applyShareContext($post, $share);
-    }
-
-    protected function applyUserShareContext(Request $request, CommunityPost $post): void
-    {
-        $user = $request->user();
-        if (! $user) {
-            return;
-        }
-
-        $share = CommunityPostShare::where('community_post_id', $post->id)
-            ->where('user_id', $user->id)
-            ->with('user')
-            ->first();
-
-        if ($share) {
-            $this->applyShareContext($post, $share);
-        }
     }
 
     protected function applyEngagementFlags(Request $request, $collection = null, $query = null): void

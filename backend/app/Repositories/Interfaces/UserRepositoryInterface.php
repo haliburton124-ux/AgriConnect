@@ -9,7 +9,7 @@ interface UserRepositoryInterface
 {
     public function find(int $id): ?User;
 
-    public function findByEmail(string $email): ?User;
+    public function findByEmail(string $email, bool $includeArchived = false): ?User;
 
     public function create(array $data): User;
 

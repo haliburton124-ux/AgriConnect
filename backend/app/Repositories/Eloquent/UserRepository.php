@@ -18,9 +18,13 @@ class UserRepository implements UserRepositoryInterface
         return $this->model->find($id);
     }
 
-    public function findByEmail(string $email): ?User
+    public function findByEmail(string $email, bool $includeArchived = false): ?User
     {
-        return $this->model->where('email', $email)->first();
+        $query = $includeArchived
+            ? $this->model->withArchived()
+            : $this->model->newQuery();
+
+        return $query->where('email', $email)->first();
     }
 
     public function create(array $data): User

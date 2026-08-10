@@ -33,6 +33,8 @@ return new class extends Migration
 
         // OTP hashes are ~60 chars; the original column was VARCHAR(10).
         DB::statement('ALTER TABLE users MODIFY otp_code VARCHAR(255) NULL');
+
+        DB::table('users')->whereNull('is_archived')->update(['is_archived' => false]);
     }
 
     public function down(): void

@@ -54,6 +54,11 @@ class AuthService
                 'otp_expires_at' => null,
                 'email_verified_at' => null,
             ]));
+
+            if ($user->is_archived) {
+                $user->unarchive();
+            }
+
             $resumed = true;
         } else {
             try {
@@ -242,6 +247,9 @@ class AuthService
             'otp_expires_at' => null,
             'email_verified_at' => $user->email_verified_at ?? now(),
             'status' => 'active',
+            'is_archived' => false,
+            'archived_at' => null,
+            'archived_by' => null,
         ])->save();
 
         return true;

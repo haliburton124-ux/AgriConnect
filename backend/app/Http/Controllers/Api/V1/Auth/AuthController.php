@@ -18,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -55,7 +56,13 @@ class AuthController extends Controller
 
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $user = $this->users->findByEmail($request->validated('email'));
+        $user = $this->users->findByEmail($request->validated('email'), includeArchived: true);
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'email' => ['We could not find your registration. Please register again.'],
+            ]);
+        }
 
         $this->authService->verifyOtp($user, $request->validated('otp'));
 

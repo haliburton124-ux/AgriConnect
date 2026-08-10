@@ -240,6 +240,7 @@ export interface CommunityPost {
   shared_at?: string
   is_shared_in_feed?: boolean
   share_caption?: string | null
+  share_id?: number
   shared_by?: { id: number; full_name: string; role: UserRole }
   created_at: string
 }
@@ -268,6 +269,8 @@ export interface AppNotification {
   actor_id: number | null
   actor_name: string | null
   post_title: string | null
+  share_id: number | null
+  share_caption: string | null
   read_at: string | null
   created_at: string
 }

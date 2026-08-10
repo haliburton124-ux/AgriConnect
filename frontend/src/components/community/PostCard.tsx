@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { SharedPostPreview } from '@/components/community/SharedPostPreview'
+import { SharedPostBanner, hasSharedPostContext } from '@/components/community/SharedPostBanner'
 import { formatCategory } from '@/lib/community'
 import { getCommunityPostImages } from '@/lib/communityPostImages'
 import { formatDate, cn } from '@/lib/utils'
@@ -69,28 +70,14 @@ function EngagementBar({
 export function PostCard({ post, onOpen, onLike, onShare, compact = false }: PostCardProps) {
   const user = useAuthStore((s) => s.user)
   const images = getCommunityPostImages(post)
-  const isSharedLayout = Boolean(post.is_shared_in_feed && post.shared_at)
-  const sharerLabel = post.shared_by?.id === user?.id
-    ? 'You'
-    : post.shared_by?.full_name ?? 'Someone'
+  const isSharedLayout = hasSharedPostContext(post)
 
   if (isSharedLayout) {
     return (
       <Card className="transition-shadow hover:shadow-glass">
         <CardContent className={cn('space-y-3', compact ? 'p-4' : 'p-5')}>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Share2 className="h-4 w-4 shrink-0 text-forest" />
-            <span className="font-medium text-ink">{sharerLabel} shared</span>
-            <span>·</span>
-            <span>{formatDate(post.shared_at!)}</span>
-          </div>
-
-          {post.share_caption?.trim() && (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{post.share_caption}</p>
-          )}
-
+          <SharedPostBanner post={post} viewerId={user?.id} viewerRole={user?.role} />
           <SharedPostPreview post={post} onOpen={() => onOpen(post)} compact={compact} />
-
           <EngagementBar post={post} onOpen={onOpen} onLike={onLike} onShare={onShare} />
         </CardContent>
       </Card>

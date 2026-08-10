@@ -50,6 +50,7 @@ class CommunityPostResource extends JsonResource
             'shared_at' => $this->when(isset($this->shared_at), $this->shared_at),
             'is_shared_in_feed' => $this->when(isset($this->is_shared_in_feed), (bool) $this->is_shared_in_feed),
             'share_caption' => $this->when(isset($this->share_caption), $this->share_caption),
+            'share_id' => $this->when(isset($this->share_id), $this->share_id),
             'shared_by' => $this->when(isset($this->shared_by), function () {
                 $sharer = $this->shared_by;
 

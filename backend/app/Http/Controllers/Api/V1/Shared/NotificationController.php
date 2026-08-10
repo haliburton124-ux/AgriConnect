@@ -70,6 +70,8 @@ class NotificationController extends Controller
             'actor_id' => $data['actor_id'] ?? null,
             'actor_name' => $data['actor_name'] ?? null,
             'post_title' => $data['post_title'] ?? null,
+            'share_id' => $data['share_id'] ?? null,
+            'share_caption' => $data['share_caption'] ?? null,
             'read_at' => $notification->read_at,
             'created_at' => $notification->created_at,
         ];

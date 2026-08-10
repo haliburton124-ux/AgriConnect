@@ -77,6 +77,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   actorId: item.actorId,
                   actorName: item.actorName,
                   postTitle: item.postTitle,
+                  shareId: item.shareId,
+                  shareCaption: item.shareCaption,
                   readAt: DateTime.now().toIso8601String(),
                   createdAt: item.createdAt,
                 ) : item)
@@ -90,7 +92,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => KnowledgeHubScreen(initialPostId: notification.postId),
+        builder: (_) => KnowledgeHubScreen(
+          initialPostId: notification.postId,
+          initialShareId: notification.shareId,
+        ),
       ),
     );
     if (mounted) _load();

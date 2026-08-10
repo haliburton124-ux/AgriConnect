@@ -17,6 +17,8 @@ class CommunityActivityNotification extends Notification
         protected CommunityPost $post,
         protected User $actor,
         protected ?CommunityPostComment $comment = null,
+        protected ?string $shareCaption = null,
+        protected ?int $shareId = null,
     ) {
     }
 
@@ -35,6 +37,8 @@ class CommunityActivityNotification extends Notification
             'parent_comment_id' => $this->comment?->parent_id,
             'actor_id' => $this->actor->id,
             'actor_name' => $this->actor->full_name,
+            'share_id' => $this->shareId,
+            'share_caption' => $this->shareCaption,
             'message' => $this->buildMessage(),
         ];
     }
@@ -46,7 +50,9 @@ class CommunityActivityNotification extends Notification
 
         return match ($this->activityType) {
             'like' => "{$actor} liked your advisory \"{$title}\".",
-            'share' => "{$actor} shared your advisory \"{$title}\".",
+            'share' => filled($this->shareCaption)
+                ? "{$actor} shared your advisory \"{$title}\" with a caption: \"{$this->shareCaption}\"."
+                : "{$actor} shared your advisory \"{$title}\".",
             'comment' => "{$actor} commented on \"{$title}\".",
             'reply' => "{$actor} replied to your comment on \"{$title}\".",
             'mention' => "{$actor} mentioned you on \"{$title}\".",

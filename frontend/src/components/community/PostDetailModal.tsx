@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { SharePostModal } from '@/components/modals/SharePostModal'
+import { SharedPostBanner, hasSharedPostContext } from '@/components/community/SharedPostBanner'
 import { SharedPostPreview } from '@/components/community/SharedPostPreview'
 import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { communityService } from '@/services/communityService'
@@ -145,7 +146,7 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
     setReplyTo(null)
 
     communityService
-      .get(postId)
+      .get(postId, post.share_id ? { share_id: post.share_id } : undefined)
       .then((res) => {
         if (!cancelled) onUpdate(res.data.data)
       })
@@ -163,14 +164,12 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
     return () => {
       cancelled = true
     }
-  }, [post?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [post?.id, post?.share_id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!post) return null
 
   const images = getCommunityPostImages(post)
-  const sharerLabel = post.shared_by?.id === user?.id
-    ? 'You'
-    : post.shared_by?.full_name ?? 'Someone'
+  const isSharedView = hasSharedPostContext(post)
 
   const handleLike = async () => {
     try {
@@ -213,8 +212,8 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
       title={post.title}
       size="lg"
       description={
-        post.is_shared_in_feed && post.shared_at
-          ? `${sharerLabel} shared · ${formatDateTime(post.shared_at)}`
+        isSharedView && post.shared_at
+          ? `Shared by ${post.shared_by?.id === user?.id ? 'you' : post.shared_by?.full_name ?? 'a farmer'} · ${formatDateTime(post.shared_at)}`
           : undefined
       }
       footer={
@@ -231,12 +230,11 @@ export function PostDetailModal({ post, onClose, onUpdate, enableEngagement = tr
       }
     >
       <div className="space-y-5">
-        {post.is_shared_in_feed && post.share_caption?.trim() && (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{post.share_caption}</p>
-        )}
-
-        {post.is_shared_in_feed ? (
-          <SharedPostPreview post={post} />
+        {isSharedView ? (
+          <>
+            <SharedPostBanner post={post} viewerId={user?.id} viewerRole={user?.role} />
+            <SharedPostPreview post={post} label="Original advisory" />
+          </>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">

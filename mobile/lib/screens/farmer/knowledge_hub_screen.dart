@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
-import '../../config/api_config.dart';
 import '../../core/api/api_exception.dart';
 import '../../models/community_post.dart';
 import '../../models/post_comment.dart';
@@ -16,14 +15,22 @@ import '../../widgets/agri_page_header.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/expandable_text.dart';
 import '../../widgets/loading_view.dart';
+import '../../widgets/shared_post_banner.dart';
+import '../../widgets/shared_post_preview.dart';
 
 enum KnowledgeView { advisories, myFeed }
 
 class KnowledgeHubScreen extends StatefulWidget {
-  const KnowledgeHubScreen({super.key, this.initialView = KnowledgeView.advisories, this.initialPostId});
+  const KnowledgeHubScreen({
+    super.key,
+    this.initialView = KnowledgeView.advisories,
+    this.initialPostId,
+    this.initialShareId,
+  });
 
   final KnowledgeView initialView;
   final int? initialPostId;
+  final int? initialShareId;
 
   @override
   State<KnowledgeHubScreen> createState() => _KnowledgeHubScreenState();
@@ -96,14 +103,16 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
     _openedInitialPost = true;
 
     CommunityPost? post;
-    for (final item in posts) {
-      if (item.id == postId) {
-        post = item;
-        break;
+    if (widget.initialShareId == null) {
+      for (final item in posts) {
+        if (item.id == postId) {
+          post = item;
+          break;
+        }
       }
     }
 
-    post ??= await _community.getPost(postId);
+    post ??= await _community.getPost(postId, shareId: widget.initialShareId);
     if (!mounted) return;
     _openPost(post);
   }
@@ -180,13 +189,23 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
   }
 
   Future<void> _share(CommunityPost post) async {
+    final caption = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _SharePostSheet(post: post),
+    );
+    if (caption == null || !mounted) return;
+
     try {
-      final updated = await _community.share(post.id);
+      final updated = await _community.share(post.id, caption: caption.isEmpty ? null : caption);
       setState(() {
         _posts = _posts?.map((p) => p.id == updated.id ? updated : p).toList();
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shared to your feed.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(post.sharedByMe ? 'Share updated.' : 'Shared to your feed.')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -471,6 +490,109 @@ class _CategoryPickerSheet extends StatelessWidget {
   }
 }
 
+class _SharePostSheet extends StatefulWidget {
+  const _SharePostSheet({required this.post});
+
+  final CommunityPost post;
+
+  @override
+  State<_SharePostSheet> createState() => _SharePostSheetState();
+}
+
+class _SharePostSheetState extends State<_SharePostSheet> {
+  late final TextEditingController _captionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _captionController = TextEditingController(text: widget.post.shareCaption ?? '');
+  }
+
+  @override
+  void dispose() {
+    _captionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.72,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Share Post', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  'Add an optional caption before sharing this advisory to your feed.',
+                  style: GoogleFonts.poppins(fontSize: 13, color: AgriColors.muted),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Your caption (optional)',
+                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _captionController,
+                  maxLength: 500,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Say something about this post…',
+                    filled: true,
+                    fillColor: AgriColors.canvas,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SharedPostPreview(post: widget.post, label: 'Original post'),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(context, _captionController.text.trim()),
+                        style: FilledButton.styleFrom(backgroundColor: AgriColors.forest),
+                        child: Text(widget.post.sharedByMe ? 'Update share' : 'Share'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _PostDetailSheet extends StatefulWidget {
   const _PostDetailSheet({required this.post, required this.community});
 
@@ -535,6 +657,9 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
+    final viewerId = context.watch<AuthProvider>().user?.id;
+    final images = post.displayImageUrls;
+    final isSharedView = post.hasSharedPostContext;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -561,26 +686,32 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(post.title, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
-                      style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
-                    ),
-                    if (post.imagePath != null) ...[
+                    if (isSharedView) ...[
+                      SharedPostBanner(post: post, viewerId: viewerId),
                       const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          ApiConfig.storageUrl(post.imagePath!),
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
+                      SharedPostPreview(post: post, label: 'Original advisory'),
+                    ] else ...[
+                      Text(post.title, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
+                        style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
                       ),
+                      if (images.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            images.first,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      ExpandableText(text: post.content, maxLines: 20),
                     ],
-                    const SizedBox(height: 16),
-                    ExpandableText(text: post.content, maxLines: 20),
                     const SizedBox(height: 20),
                     Text('Comments', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),

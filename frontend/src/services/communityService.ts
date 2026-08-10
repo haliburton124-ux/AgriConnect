@@ -15,7 +15,8 @@ export const communityService = {
   feed: (params?: { category?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<CommunityPost>>('/community/feed', { params }),
 
-  get: (id: number) => api.get<{ data: CommunityPost }>(`/community/posts/${id}`),
+  get: (id: number, params?: { share_id?: number }) =>
+    api.get<{ data: CommunityPost }>(`/community/posts/${id}`, { params }),
 
   like: (id: number) => api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/like`),
 

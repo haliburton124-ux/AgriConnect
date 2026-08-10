@@ -61,7 +61,7 @@ export function SharePostModal({ post, onClose, onSuccess }: SharePostModalProps
         <div className="space-y-4">
           <div>
             <label htmlFor="share-caption" className="mb-1.5 block text-sm font-medium text-ink">
-              Your message <span className="font-normal text-muted-foreground">(optional)</span>
+              Your caption <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
             <textarea
               id="share-caption"

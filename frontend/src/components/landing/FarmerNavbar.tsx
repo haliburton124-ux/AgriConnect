@@ -72,9 +72,9 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
     }
   }
 
-  const handleOpenNotificationPost = async (postId: number) => {
+  const handleOpenNotificationPost = async (postId: number, shareId?: number) => {
     try {
-      const { data } = await communityService.get(postId)
+      const { data } = await communityService.get(postId, shareId ? { share_id: shareId } : undefined)
       setNotificationPost(data.data)
     } catch {
       toast.error('Could not open this advisory.')

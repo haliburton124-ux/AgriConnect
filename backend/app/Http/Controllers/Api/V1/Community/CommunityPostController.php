@@ -86,7 +86,12 @@ class CommunityPostController extends Controller
         abort_unless($communityPost->is_published, 404);
 
         $this->applyEngagementFlags($request, collect([$communityPost]));
-        $this->applyUserShareContext($request, $communityPost);
+
+        if ($request->filled('share_id')) {
+            $this->applyShareContextById($request, $communityPost, $request->integer('share_id'));
+        } else {
+            $this->applyUserShareContext($request, $communityPost);
+        }
 
         return response()->json([
             'data' => new CommunityPostResource(
@@ -227,6 +232,8 @@ class CommunityPostController extends Controller
             $this->communityNotifications->notifyShare(
                 $communityPost->loadMissing('author'),
                 $user,
+                $share->caption,
+                $share->id,
             );
         }
 
@@ -316,10 +323,31 @@ class CommunityPostController extends Controller
 
     protected function applyShareContext(CommunityPost $post, CommunityPostShare $share): void
     {
+        $post->share_id = $share->id;
         $post->is_shared_in_feed = true;
         $post->shared_at = $share->created_at;
         $post->share_caption = $share->caption;
         $post->shared_by = $share->relationLoaded('user') ? $share->user : $share->user()->first();
+    }
+
+    protected function applyShareContextById(Request $request, CommunityPost $post, int $shareId): void
+    {
+        $share = CommunityPostShare::where('id', $shareId)
+            ->where('community_post_id', $post->id)
+            ->with('user')
+            ->firstOrFail();
+
+        $user = $request->user();
+        abort_unless($user, 401);
+
+        $canView = $user->id === $share->user_id
+            || $user->id === $post->author_id
+            || ($user->hasRole('municipal_office') && $user->municipality_id === $post->municipality_id)
+            || $user->hasRole(['provincial_office', 'admin']);
+
+        abort_unless($canView, 403);
+
+        $this->applyShareContext($post, $share);
     }
 
     protected function applyUserShareContext(Request $request, CommunityPost $post): void

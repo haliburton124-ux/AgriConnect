@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
-import '../config/api_config.dart';
 import '../utils/community_utils.dart';
 import '../models/community_post.dart';
+import '../providers/auth_provider.dart';
 import 'expandable_text.dart';
+import 'shared_post_banner.dart';
+import 'shared_post_preview.dart';
 
 class AdvisoryPostCard extends StatelessWidget {
   const AdvisoryPostCard({
@@ -23,6 +26,10 @@ class AdvisoryPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewerId = context.watch<AuthProvider>().user?.id;
+    final images = post.displayImageUrls;
+    final isSharedLayout = post.hasSharedPostContext;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -35,64 +42,58 @@ class AdvisoryPostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _CategoryBadge(label: formatCategory(post.category)),
-                if (post.isSharedInFeed)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AgriColors.gold.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Text(
-                      'Shared to your feed',
-                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: AgriColors.gold),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: onOpen,
-              child: Text(
-                post.title,
-                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AgriColors.ink),
+            if (isSharedLayout) ...[
+              SharedPostBanner(post: post, viewerId: viewerId),
+              const SizedBox(height: 14),
+              SharedPostPreview(post: post, onTap: onOpen),
+            ] else ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _CategoryBadge(label: formatCategory(post.category)),
+                ],
               ),
-            ),
-            if (post.imagePath != null) ...[
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: onOpen,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    ApiConfig.storageUrl(post.imagePath!),
-                    width: double.infinity,
-                    height: 180,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
+                child: Text(
+                  post.title,
+                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AgriColors.ink),
                 ),
               ),
-            ],
-            const SizedBox(height: 8),
-            ExpandableText(text: post.content),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 14, color: AgriColors.forest),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
-                    style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
+              if (images.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: onOpen,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      images.first,
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 8),
+              ExpandableText(text: post.content),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 14, color: AgriColors.forest),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
+                      style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const Divider(height: 24),
             Row(
               children: [
@@ -113,7 +114,12 @@ class AdvisoryPostCard extends StatelessWidget {
                 _ActionChip(icon: Icons.chat_bubble_outline, label: 'Comment', onTap: onOpen),
                 if (onShare != null) ...[
                   const SizedBox(width: 4),
-                  _ActionChip(icon: Icons.share_outlined, label: 'Share', onTap: onShare!),
+                  _ActionChip(
+                    icon: Icons.share_outlined,
+                    label: post.sharedByMe ? 'Shared' : 'Share',
+                    active: post.sharedByMe,
+                    onTap: onShare!,
+                  ),
                 ],
               ],
             ),

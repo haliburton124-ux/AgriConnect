@@ -40,16 +40,20 @@ class CommunityService {
     );
   }
 
-  Future<CommunityPost> share(int id) {
+  Future<CommunityPost> share(int id, {String? caption}) {
     return _api.handle(
-      _api.post('/community/posts/$id/share'),
+      _api.post('/community/posts/$id/share', data: {
+        if (caption != null && caption.isNotEmpty) 'caption': caption,
+      }),
       (json) => CommunityPost.fromJson((json as Map<String, dynamic>)['data'] as Map<String, dynamic>),
     );
   }
 
-  Future<CommunityPost> getPost(int id) {
+  Future<CommunityPost> getPost(int id, {int? shareId}) {
     return _api.handle(
-      _api.get('/community/posts/$id'),
+      _api.get('/community/posts/$id', queryParameters: {
+        if (shareId != null) 'share_id': shareId,
+      }),
       (json) => CommunityPost.fromJson((json as Map<String, dynamic>)['data'] as Map<String, dynamic>),
     );
   }

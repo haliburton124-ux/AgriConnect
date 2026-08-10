@@ -68,7 +68,12 @@ class CommunityPostController extends Controller
             ->keyBy('community_post_id');
 
         $posts = $this->baseQuery($request)
-            ->latest()
+            ->leftJoin('community_post_shares as user_share', function ($join) use ($user) {
+                $join->on('user_share.community_post_id', '=', 'community_posts.id')
+                    ->where('user_share.user_id', '=', $user->id);
+            })
+            ->select('community_posts.*')
+            ->orderByDesc(DB::raw('COALESCE(user_share.updated_at, community_posts.created_at)'))
             ->paginate($request->integer('per_page', 15))
             ->through(function (CommunityPost $post) use ($shares) {
                 if ($shares->has($post->id)) {
@@ -325,7 +330,7 @@ class CommunityPostController extends Controller
     {
         $post->share_id = $share->id;
         $post->is_shared_in_feed = true;
-        $post->shared_at = $share->created_at;
+        $post->shared_at = $share->updated_at;
         $post->share_caption = $share->caption;
         $post->shared_by = $share->relationLoaded('user') ? $share->user : $share->user()->first();
     }

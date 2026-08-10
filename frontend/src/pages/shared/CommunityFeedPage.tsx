@@ -10,6 +10,7 @@ import { SharePostModal } from '@/components/modals/SharePostModal'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
 import { buildCommunityListParams } from '@/lib/communityQuery'
+import { sortCommunityFeed } from '@/lib/communityFeedSort'
 import type { CommunityPost } from '@/types'
 
 export function CommunityFeedPage() {
@@ -24,12 +25,12 @@ export function CommunityFeedPage() {
     setPosts(null)
     communityService
       .feed(buildCommunityListParams({ category: activeCategory, search }))
-      .then((res) => setPosts(res.data.data))
+      .then((res) => setPosts(sortCommunityFeed(res.data.data)))
       .catch(() => setPosts([]))
   }, [activeCategory, search])
 
   const updatePost = (updated: CommunityPost) => {
-    setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
+    setPosts((current) => sortCommunityFeed(current?.map((p) => (p.id === updated.id ? updated : p)) ?? []))
     setSelected((current) => (current?.id === updated.id ? updated : current))
   }
 

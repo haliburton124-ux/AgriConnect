@@ -83,10 +83,10 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
           : await _community.listPosts(category: _category, search: searchParam);
       if (!mounted) return;
       setState(() {
-        _posts = posts;
+        _posts = _view == KnowledgeView.myFeed ? sortCommunityFeed(posts) : posts;
         _loading = false;
       });
-      _maybeOpenInitialPost(posts);
+      _maybeOpenInitialPost(_posts!);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -200,7 +200,8 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
     try {
       final updated = await _community.share(post.id, caption: caption.isEmpty ? null : caption);
       setState(() {
-        _posts = _posts?.map((p) => p.id == updated.id ? updated : p).toList();
+        final next = _posts?.map((p) => p.id == updated.id ? updated : p).toList() ?? [];
+        _posts = _view == KnowledgeView.myFeed ? sortCommunityFeed(next) : next;
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

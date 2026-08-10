@@ -16,6 +16,7 @@ import { communityService } from '@/services/communityService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
 import { buildCommunityListParams } from '@/lib/communityQuery'
+import { sortCommunityFeed } from '@/lib/communityFeedSort'
 import { cn } from '@/lib/utils'
 import type { CommunityPost } from '@/types'
 
@@ -46,7 +47,10 @@ export function KnowledgeHubSection() {
         : communityService.list(params)
 
     request
-      .then((res) => setPosts(res.data.data))
+      .then((res) => {
+        const data = view === 'my-feed' && isFarmer ? sortCommunityFeed(res.data.data) : res.data.data
+        setPosts(data)
+      })
       .catch((error) => {
         setPosts([])
         setLoadError(getApiErrorMessage(error))
@@ -54,7 +58,11 @@ export function KnowledgeHubSection() {
   }, [view, activeCategory, search, isFarmer])
 
   const updatePost = (updated: CommunityPost) => {
-    setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
+    setPosts((current) => {
+      const next = current?.map((p) => (p.id === updated.id ? updated : p)) ?? null
+      if (next && view === 'my-feed') return sortCommunityFeed(next)
+      return next
+    })
     setSelected((current) => (current?.id === updated.id ? updated : current))
   }
 

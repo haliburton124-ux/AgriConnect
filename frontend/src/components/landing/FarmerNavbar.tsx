@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sprout, Menu, X, MessageSquare, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Gift } from 'lucide-react'
+import { Sprout, Menu, X, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Gift } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
@@ -9,6 +9,7 @@ import { communityService } from '@/services/communityService'
 import { PUBLIC_NAV_LINKS } from '@/config/farmerPublicNav'
 import { toast } from 'sonner'
 import { NotificationBell } from '@/components/community/NotificationPanel'
+import { MessengerBell } from '@/components/messages/MessengerPanel'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { useNotifications } from '@/hooks/useNotifications'
 import type { CommunityPost } from '@/types'
@@ -40,6 +41,7 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [messagesOpen, setMessagesOpen] = useState(false)
   const [notificationPost, setNotificationPost] = useState<CommunityPost | null>(null)
   const { user, isAuthenticated, clearSession } = useAuthStore()
   const { unreadCount, notifications, loading, load, markAsRead, markAllAsRead } = useNotifications()
@@ -135,7 +137,7 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
               <NotificationBell
                 unreadCount={unreadCount}
                 open={notificationsOpen}
-                onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false) }}
+                onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false); setMessagesOpen(false) }}
                 onOpenPost={handleOpenNotificationPost}
                 tone={isTransparent ? 'transparent' : 'default'}
                 notifications={notifications}
@@ -144,17 +146,16 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
                 onMarkAsRead={markAsRead}
                 onMarkAllAsRead={markAllAsRead}
               />
-              <Link
-                to="/farmer/messages"
-                className={cn('rounded-full p-2.5 transition-colors', isTransparent ? 'text-white hover:bg-white/10' : 'text-ink/70 hover:bg-forest/5')}
-                aria-label="Messages"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Link>
+              <MessengerBell
+                open={messagesOpen}
+                onToggle={() => { setMessagesOpen((v) => !v); setProfileOpen(false); setNotificationsOpen(false) }}
+                tone={isTransparent ? 'transparent' : 'default'}
+                messagesPath="/farmer/messages"
+              />
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => { setProfileOpen((v) => !v); setNotificationsOpen(false) }}
+                  onClick={() => { setProfileOpen((v) => !v); setNotificationsOpen(false); setMessagesOpen(false) }}
                   className={cn('flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 transition-colors', isTransparent ? 'hover:bg-white/10' : 'hover:bg-forest/5')}
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-primary text-xs font-semibold text-white">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sprout, Menu, X, MessageSquare, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Newspaper, BookOpen, Gift, Megaphone } from 'lucide-react'
+import { Sprout, Menu, X, MessageSquare, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Gift } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
@@ -17,11 +17,7 @@ const ACCOUNT_LINKS = [
   { label: 'My Farms', path: '/farmer/farms', icon: MapPin },
   { label: 'My Reports', path: '/farmer/incidents', icon: AlertTriangle },
   { label: 'Appointments', path: '/farmer/appointments', icon: Calendar },
-  { label: 'Messages', path: '/farmer/messages', icon: MessageSquare },
-  { label: 'News Feed', path: '/farmer/feed', icon: Newspaper },
-  { label: 'Knowledge Hub', path: '/farmer/knowledge', icon: BookOpen },
   { label: 'Programs', path: '/farmer/programs', icon: Gift },
-  { label: 'Announcements', path: '/farmer/announcements', icon: Megaphone },
   { label: 'Documents', path: '/farmer/documents', icon: FileText },
   { label: 'Settings', path: '/farmer/settings', icon: SettingsIcon },
 ]
@@ -72,9 +68,9 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
     }
   }
 
-  const handleOpenNotificationPost = async (postId: number, shareId?: number) => {
+  const handleOpenNotificationPost = async (postId: number) => {
     try {
-      const { data } = await communityService.get(postId, shareId ? { share_id: shareId } : undefined)
+      const { data } = await communityService.get(postId)
       setNotificationPost(data.data)
     } catch {
       toast.error('Could not open this advisory.')
@@ -155,7 +151,6 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
               >
                 <MessageSquare className="h-5 w-5" />
               </Link>
-
               <div className="relative">
                 <button
                   type="button"

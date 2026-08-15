@@ -85,39 +85,43 @@ class _FarmerShellScreenState extends State<FarmerShellScreen> {
 
   Widget _buildBody() {
     switch (_selectedIndex) {
-      case 0:
+      case farmerShellHome:
         return HomeScreen(
           onOpenKnowledgeHub: _goToKnowledgeHub,
           onExploreServices: _goToKnowledgeHub,
-          onReportIncident: () => setState(() => _selectedIndex = 2),
+          onReportIncident: () => setState(() => _selectedIndex = farmerShellIncidents),
         );
-      case 1:
+      case farmerShellFarms:
         return const FarmsScreen();
-      case 2:
+      case farmerShellIncidents:
         return const IncidentsScreen();
-      case 3:
+      case farmerShellAppointments:
         return const AppointmentsScreen();
-      case 4:
+      case farmerShellMessages:
         return const MessagesScreen();
-      case 5:
+      case farmerShellPrograms:
         return const ProgramsScreen();
-      case knowledgeHubNavIndex:
+      case farmerShellKnowledgeHub:
         return const KnowledgeHubScreen();
-      case 7:
+      case farmerShellAnnouncements:
         return const AnnouncementsScreen();
-      case 8:
+      case farmerShellDocuments:
         return const DocumentsScreen();
-      case 9:
+      case farmerShellSettings:
         return const SettingsScreen();
       default:
-        return const HomeScreen();
+        return HomeScreen(
+          onOpenKnowledgeHub: _goToKnowledgeHub,
+          onExploreServices: _goToKnowledgeHub,
+          onReportIncident: () => setState(() => _selectedIndex = farmerShellIncidents),
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    final hideAppBar = _selectedIndex == 0;
+    final hideAppBar = _selectedIndex == farmerShellHome;
 
     return Scaffold(
       backgroundColor: AgriColors.canvas,
@@ -164,13 +168,13 @@ class _FarmerShellScreenState extends State<FarmerShellScreen> {
                 ),
                 IconButton(
                   tooltip: 'Messages',
-                  onPressed: () => setState(() => _selectedIndex = 4),
+                  onPressed: () => setState(() => _selectedIndex = farmerShellMessages),
                   icon: const Icon(Icons.chat_bubble_outline),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedIndex = 9),
+                    onTap: () => setState(() => _selectedIndex = farmerShellSettings),
                     child: CircleAvatar(
                       radius: 16,
                       backgroundColor: AgriColors.forest,
@@ -194,11 +198,11 @@ class _FarmerShellScreenState extends State<FarmerShellScreen> {
           setState(() {
             switch (index) {
               case 0:
-                _selectedIndex = 0;
+                _selectedIndex = farmerShellHome;
               case 1:
-                _selectedIndex = 1;
+                _selectedIndex = farmerShellFarms;
               case 2:
-                _selectedIndex = 2;
+                _selectedIndex = farmerShellIncidents;
               case 3:
                 _selectedIndex = knowledgeHubNavIndex;
             }
@@ -215,9 +219,9 @@ class _FarmerShellScreenState extends State<FarmerShellScreen> {
   }
 
   int get _bottomNavIndex {
-    if (_selectedIndex == 0) return 0;
-    if (_selectedIndex == 1) return 1;
-    if (_selectedIndex == 2) return 2;
+    if (_selectedIndex == farmerShellHome) return 0;
+    if (_selectedIndex == farmerShellFarms) return 1;
+    if (_selectedIndex == farmerShellIncidents) return 2;
     if (_selectedIndex == knowledgeHubNavIndex) return 3;
     return 0;
   }
@@ -267,10 +271,10 @@ class _FarmerDrawer extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: farmerNavItems.length,
+              itemCount: farmerDrawerDestinations.length,
               itemBuilder: (context, index) {
-                final item = farmerNavItems[index];
-                final selected = index == selectedIndex;
+                final item = farmerDrawerDestinations[index];
+                final selected = item.shellIndex == selectedIndex;
                 return ListTile(
                   leading: Icon(
                     selected ? item.selectedIcon : item.icon,
@@ -286,7 +290,7 @@ class _FarmerDrawer extends StatelessWidget {
                   selected: selected,
                   selectedTileColor: AgriColors.forest.withValues(alpha: 0.08),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  onTap: () => onSelect(index),
+                  onTap: () => onSelect(item.shellIndex),
                 );
               },
             ),

@@ -15,40 +15,30 @@ export const communityService = {
   feed: (params?: { category?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<CommunityPost>>('/community/feed', { params }),
 
-  get: (id: number, params?: { share_id?: number }) =>
-    api.get<{ data: CommunityPost }>(`/community/posts/${id}`, { params }),
+  get: (id: number) => api.get<{ data: CommunityPost }>(`/community/posts/${id}`),
 
   like: (id: number) => api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/like`),
 
-  share: (id: number, caption?: string) =>
-    api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/share`, {
-      caption: caption ?? null,
-    }),
+  share: (id: number) => api.post<{ message: string; data: CommunityPost }>(`/community/posts/${id}/share`),
 
   comments: (id: number) => api.get<{ data: CommunityPostComment[] }>(`/community/posts/${id}/comments`),
 
-  addComment: (
-    id: number,
-    payload: { body?: string; parentId?: number; image?: File },
-  ) => {
-    const trimmedBody = payload.body?.trim() ?? ''
-    const hasImage = Boolean(payload.image)
-
-    if (hasImage) {
+  addComment: (id: number, body: string, parentId?: number, image?: File) => {
+    if (image) {
       const formData = new FormData()
-      if (trimmedBody) formData.append('body', trimmedBody)
-      if (payload.parentId != null) formData.append('parent_id', String(payload.parentId))
-      formData.append('image', payload.image!)
-      return api.post<{ message: string; data: CommunityPostComment }>(
-        `/community/posts/${id}/comments`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-      )
+      formData.append('body', body)
+      if (parentId != null) {
+        formData.append('parent_id', String(parentId))
+      }
+      formData.append('image', image)
+      return api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
     }
 
     return api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, {
-      body: trimmedBody,
-      parent_id: payload.parentId,
+      body,
+      parent_id: parentId,
     })
   },
 
@@ -59,11 +49,8 @@ export const communityService = {
     is_published?: boolean
     municipality_id?: number
     image?: File
-    images?: File[]
   }, rolePrefix: 'mao' | 'ppo' | 'admin') => {
-    const files = payload.images?.length ? payload.images : payload.image ? [payload.image] : []
-
-    if (files.length > 0) {
+    if (payload.image) {
       const formData = new FormData()
       formData.append('title', payload.title)
       formData.append('content', payload.content)
@@ -72,13 +59,13 @@ export const communityService = {
       if (payload.municipality_id != null) {
         formData.append('municipality_id', String(payload.municipality_id))
       }
-      files.forEach((file) => formData.append('images[]', file))
+      formData.append('image', payload.image)
       return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
     }
 
-    const { image: _, images: __, ...jsonPayload } = payload
+    const { image: _, ...jsonPayload } = payload
     return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, jsonPayload)
   },
 

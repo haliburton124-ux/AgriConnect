@@ -236,10 +236,15 @@ class CommunityPostController extends Controller
             abort_unless($parent->community_post_id === $communityPost->id, 422);
         }
 
+        $imagePath = $request->hasFile('image')
+            ? $request->file('image')->store('community-comments', 'public')
+            : null;
+
         $comment = $communityPost->allComments()->create([
             'user_id' => $request->user()->id,
             'parent_id' => $request->validated('parent_id'),
-            'body' => $request->validated('body'),
+            'body' => trim((string) ($request->validated('body') ?? '')),
+            'image_path' => $imagePath,
         ]);
 
         $communityPost->increment('comments_count');

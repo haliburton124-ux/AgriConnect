@@ -23,6 +23,10 @@ class CommunityPostCommentResource extends JsonResource
                 fn () => CommunityPostCommentResource::collection($this->replies)->resolve(),
                 [],
             ),
+            'image_path' => $this->image_path,
+            'image_url' => $this->image_path
+                ? asset('storage/'.$this->image_path)
+                : $this->image_url,
             'created_at' => $this->created_at,
         ];
     }

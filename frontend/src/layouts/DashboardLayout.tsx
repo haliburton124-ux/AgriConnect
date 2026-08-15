@@ -38,9 +38,9 @@ export function DashboardLayout() {
     }
   }
 
-  const handleOpenNotificationPost = async (postId: number, shareId?: number) => {
+  const handleOpenNotificationPost = async (postId: number) => {
     try {
-      const { data } = await communityService.get(postId, shareId ? { share_id: shareId } : undefined)
+      const { data } = await communityService.get(postId)
       setNotificationPost(data.data)
     } catch {
       toast.error('Could not open this advisory.')

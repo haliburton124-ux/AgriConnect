@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,13 +7,9 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { PostPhotoGrid } from '@/components/community/PostPhotoGrid'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
 import type { CommunityPostCategory, UserRole } from '@/types'
-
-const MAX_PHOTOS = 10
-const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 const schema = z.object({
   title: z.string().min(5, 'Enter a title'),
@@ -38,54 +34,46 @@ function rolePrefix(role: UserRole): 'mao' | 'ppo' | 'admin' {
 
 export function CreateCommunityPostModal({ open, onClose, onSuccess, role }: CreateCommunityPostModalProps) {
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([])
-  const [photos, setPhotos] = useState<File[]>([])
+  const [image, setImage] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
-
-  const previewUrls = useMemo(
-    () => photos.map((file) => URL.createObjectURL(file)),
-    [photos],
-  )
-
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [previewUrls])
 
   useEffect(() => {
     if (!open) return
     communityService.categories().then((res) => setCategories(res.data.data))
     reset({ category: 'general' })
-    setPhotos([])
+    setImage(null)
+    setPreviewUrl(null)
   }, [open, reset])
 
-  const handlePhotoSelect = (files: FileList | null) => {
-    if (!files?.length) return
-
-    const valid: File[] = []
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select image files only.')
-        return
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error('Each image must be 5 MB or smaller.')
-        return
-      }
-      valid.push(file)
+  useEffect(() => {
+    if (!image) {
+      setPreviewUrl(null)
+      return
     }
+    const url = URL.createObjectURL(image)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [image])
 
-    setPhotos((prev) => [...prev, ...valid].slice(0, MAX_PHOTOS))
-  }
-
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
+  const handleImageSelect = (files: FileList | null) => {
+    if (!files?.length) return
+    const file = files[0]
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be 5 MB or smaller.')
+      return
+    }
+    setImage(file)
   }
 
   const handleClose = () => {
-    setPhotos([])
+    setImage(null)
     onClose()
   }
 
@@ -96,7 +84,7 @@ export function CreateCommunityPostModal({ open, onClose, onSuccess, role }: Cre
           ...values,
           category: values.category as CommunityPostCategory,
           is_published: true,
-          images: photos.length > 0 ? photos : undefined,
+          image: image ?? undefined,
         },
         rolePrefix(role),
       )
@@ -145,63 +133,40 @@ export function CreateCommunityPostModal({ open, onClose, onSuccess, role }: Cre
           {errors.content && <p className="mt-1 text-xs text-danger">{errors.content.message}</p>}
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-ink">
-            Photos (optional{photos.length > 0 ? ` · ${photos.length}/${MAX_PHOTOS}` : ''})
-          </label>
-
-          {previewUrls.length > 0 ? (
-            <div className="space-y-3">
-              <PostPhotoGrid paths={previewUrls} variant="detail" />
-              <div className="flex flex-wrap gap-2">
-                {photos.length < MAX_PHOTOS && (
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-forest/20 bg-forest/[0.04] px-3 py-1.5 text-xs font-medium text-forest hover:bg-forest/[0.08]">
-                    <Upload className="h-3.5 w-3.5" />
-                    Add more
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => handlePhotoSelect(e.target.files)}
-                    />
-                  </label>
-                )}
+          <label className="mb-1.5 block text-sm font-medium text-ink">Photo (optional)</label>
+          {previewUrl ? (
+            <div className="relative overflow-hidden rounded-xl border border-black/10">
+              <img src={previewUrl} alt="Post preview" className="max-h-64 w-full object-cover" />
+              <div className="absolute right-2 top-2 flex gap-2">
+                <label className="cursor-pointer rounded-full bg-ink/60 px-3 py-1.5 text-xs font-medium text-white hover:bg-ink/80">
+                  Replace
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => handleImageSelect(e.target.files)}
+                  />
+                </label>
                 <button
                   type="button"
-                  onClick={() => setPhotos([])}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-black/[0.04]"
+                  onClick={() => setImage(null)}
+                  className="rounded-full bg-ink/60 p-1.5 text-white hover:bg-ink/80"
+                  aria-label="Remove photo"
                 >
-                  <X className="h-3.5 w-3.5" />
-                  Remove all
+                  <X className="h-4 w-4" />
                 </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {photos.map((file, index) => (
-                  <div key={`${file.name}-${index}`} className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-2 py-1 text-xs">
-                    <span className="max-w-[140px] truncate text-ink/70">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="text-muted-foreground hover:text-danger"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
               </div>
             </div>
           ) : (
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-forest-light/40 bg-forest/[0.02] px-4 py-6 text-center hover:border-forest-light">
               <Upload className="h-6 w-6 text-forest" />
-              <span className="mt-2 text-sm text-muted-foreground">Tap to upload photos</span>
-              <span className="mt-1 text-xs text-muted-foreground">JPG, PNG, or WebP · up to {MAX_PHOTOS} photos · max 5 MB each</span>
+              <span className="mt-2 text-sm text-muted-foreground">Tap to upload a photo</span>
+              <span className="mt-1 text-xs text-muted-foreground">JPG, PNG, or WebP · max 5 MB</span>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                multiple
                 className="hidden"
-                onChange={(e) => handlePhotoSelect(e.target.files)}
+                onChange={(e) => handleImageSelect(e.target.files)}
               />
             </label>
           )}

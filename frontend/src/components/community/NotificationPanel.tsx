@@ -19,7 +19,7 @@ interface NotificationPanelProps {
   onRefresh: () => void
   onMarkAsRead: (id: string) => Promise<void>
   onMarkAllAsRead: () => Promise<void>
-  onOpenPost: (postId: number, shareId?: number) => void
+  onOpenPost: (postId: number) => void
 }
 
 export function NotificationPanel({
@@ -38,7 +38,7 @@ export function NotificationPanel({
       await onMarkAsRead(notification.id)
     }
     if (notification.post_id) {
-      onOpenPost(notification.post_id, notification.share_id ?? undefined)
+      onOpenPost(notification.post_id)
       onClose()
     }
   }
@@ -142,7 +142,7 @@ export function NotificationBell({
   unreadCount: number
   open: boolean
   onToggle: () => void
-  onOpenPost: (postId: number, shareId?: number) => void
+  onOpenPost: (postId: number) => void
   tone?: 'default' | 'transparent'
   notifications: AppNotification[]
   loading: boolean

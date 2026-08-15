@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sprout, Menu, X, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Gift } from 'lucide-react'
+import { Sprout, Menu, X, ChevronDown, LogOut, MapPin, AlertTriangle, Calendar, FileText, Settings as SettingsIcon, Gift, User } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
@@ -15,6 +15,7 @@ import { useNotifications } from '@/hooks/useNotifications'
 import type { CommunityPost } from '@/types'
 
 const ACCOUNT_LINKS = [
+  { label: 'My Profile', path: '/farmer/profile', icon: User },
   { label: 'My Farms', path: '/farmer/farms', icon: MapPin },
   { label: 'My Reports', path: '/farmer/incidents', icon: AlertTriangle },
   { label: 'Appointments', path: '/farmer/appointments', icon: Calendar },

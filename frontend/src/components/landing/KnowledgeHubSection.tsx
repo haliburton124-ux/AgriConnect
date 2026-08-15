@@ -3,66 +3,49 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import {
-  Sprout, Lock, ShieldAlert, ArrowRight, Newspaper, BookOpen,
+  Lock, ShieldAlert, Sprout,
 } from 'lucide-react'
 import { SectionHeading } from '@/components/landing/SectionHeading'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
-import { SharePostModal } from '@/components/modals/SharePostModal'
+import { FarmerProfileCard } from '@/components/community/FarmerProfileCard'
 import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
 import { communityService } from '@/services/communityService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
 import { buildCommunityListParams } from '@/lib/communityQuery'
-import { sortCommunityFeed } from '@/lib/communityFeedSort'
 import { cn } from '@/lib/utils'
 import type { CommunityPost } from '@/types'
-
-type FeedView = 'advisories' | 'my-feed'
 
 export function KnowledgeHubSection() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
   const isFarmer = isAuthenticated && user?.role === 'farmer'
 
-  const [view, setView] = useState<FeedView>('advisories')
   const [searchOpen, setSearchOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<CommunityPost | null>(null)
-  const [shareTarget, setShareTarget] = useState<CommunityPost | null>(null)
 
   useEffect(() => {
     setPosts(null)
     setLoadError(null)
     const params = buildCommunityListParams({ category: activeCategory, search })
 
-    const request =
-      view === 'my-feed' && isFarmer
-        ? communityService.feed(params)
-        : communityService.list(params)
-
-    request
-      .then((res) => {
-        const data = view === 'my-feed' && isFarmer ? sortCommunityFeed(res.data.data) : res.data.data
-        setPosts(data)
-      })
+    communityService.list(params)
+      .then((res) => setPosts(res.data.data))
       .catch((error) => {
         setPosts([])
         setLoadError(getApiErrorMessage(error))
       })
-  }, [view, activeCategory, search, isFarmer])
+  }, [activeCategory, search])
 
   const updatePost = (updated: CommunityPost) => {
-    setPosts((current) => {
-      const next = current?.map((p) => (p.id === updated.id ? updated : p)) ?? null
-      if (next && view === 'my-feed') return sortCommunityFeed(next)
-      return next
-    })
+    setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
     setSelected((current) => (current?.id === updated.id ? updated : current))
   }
 
@@ -86,7 +69,15 @@ export function KnowledgeHubSection() {
   }
 
   const handleShare = (post: CommunityPost) => {
-    requireAuth(() => setShareTarget(post))
+    requireAuth(async () => {
+      try {
+        const { data } = await communityService.share(post.id)
+        updatePost(data.data)
+        toast.success('Shared to your profile.')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error))
+      }
+    })
   }
 
   const enableEngagement = isAuthenticated
@@ -109,30 +100,9 @@ export function KnowledgeHubSection() {
               !searchOpen && 'rounded-2xl bg-white p-4 shadow-soft ring-1 ring-black/[0.03] sm:p-5',
             )}>
               {!searchOpen && (
-                <div className="flex rounded-xl border border-black/5 bg-canvas p-1 w-fit">
-                  <button
-                    type="button"
-                    onClick={() => setView('advisories')}
-                    className={cn(
-                      'rounded-lg px-4 py-2 text-xs font-semibold transition-colors',
-                      view === 'advisories' ? 'bg-gradient-primary text-white shadow-card' : 'text-ink/60 hover:bg-forest/5',
-                    )}
-                  >
-                    Public Advisories
-                  </button>
-                  {isFarmer && (
-                    <button
-                      type="button"
-                      onClick={() => setView('my-feed')}
-                      className={cn(
-                        'rounded-lg px-4 py-2 text-xs font-semibold transition-colors',
-                        view === 'my-feed' ? 'bg-gradient-primary text-white shadow-card' : 'text-ink/60 hover:bg-forest/5',
-                      )}
-                    >
-                      My Feed
-                    </button>
-                  )}
-                </div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-forest/80">
+                  Public Advisories
+                </p>
               )}
 
               <AdvisorySearchPanel
@@ -185,40 +155,11 @@ export function KnowledgeHubSection() {
                 ))}
               </div>
             )}
-
-            {isFarmer && (
-              <div className="flex justify-center pt-2">
-                <Link to="/farmer/feed">
-                  <Button variant="outline">
-                    <Newspaper className="h-4 w-4" /> View full news feed
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
 
-          {/* Sidebar — content types */}
+          {/* Sidebar */}
           <aside className="space-y-5">
-            <Card className="overflow-hidden border-forest/10 bg-gradient-to-br from-forest/[0.04] to-sky/[0.04]">
-              <CardContent className="space-y-4 p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary text-white shadow-card">
-                  <Sprout className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-ink">Public Agricultural Advisories</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                    Educational posts from every municipality — visible to all registered farmers province-wide.
-                    Share knowledge and join the discussion.
-                  </p>
-                </div>
-                <Link
-                  to={isFarmer ? '/farmer/knowledge' : '/knowledge-center'}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-forest hover:underline"
-                >
-                  <BookOpen className="h-4 w-4" /> Browse knowledge hub <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </CardContent>
-            </Card>
+            <FarmerProfileCard />
 
             <Card className="overflow-hidden border-gold/20 bg-gold/[0.04]">
               <CardContent className="space-y-4 p-6">
@@ -262,12 +203,6 @@ export function KnowledgeHubSection() {
         onClose={() => setSelected(null)}
         onUpdate={updatePost}
         enableEngagement={enableEngagement}
-      />
-
-      <SharePostModal
-        post={shareTarget}
-        onClose={() => setShareTarget(null)}
-        onSuccess={updatePost}
       />
     </section>
   )

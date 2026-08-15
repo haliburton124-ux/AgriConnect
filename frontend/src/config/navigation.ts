@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, MapPin, AlertTriangle, Users, FileBarChart, Megaphone,
   BookOpen, Gift, Calendar, MessageSquare, FileText, Settings, ShieldCheck,
-  Map as MapIcon, UserCog, ClipboardList, Newspaper, Share2,
+  Map as MapIcon, UserCog, ClipboardList, Share2, User,
 } from 'lucide-react'
 import type { UserRole } from '@/types'
 import type { LucideIcon } from 'lucide-react'
@@ -20,7 +20,7 @@ export const NAVIGATION: Record<UserRole, NavItem[]> = {
     { label: 'Appointments', path: '/farmer/appointments', icon: Calendar },
     { label: 'Messages', path: '/farmer/messages', icon: MessageSquare },
     { label: 'Programs', path: '/farmer/programs', icon: Gift },
-    { label: 'News Feed', path: '/farmer/feed', icon: Newspaper },
+    { label: 'My Profile', path: '/farmer/profile', icon: User },
     { label: 'Knowledge Hub', path: '/farmer/knowledge', icon: BookOpen },
     { label: 'Announcements', path: '/farmer/announcements', icon: Megaphone },
     { label: 'Documents', path: '/farmer/documents', icon: FileText },

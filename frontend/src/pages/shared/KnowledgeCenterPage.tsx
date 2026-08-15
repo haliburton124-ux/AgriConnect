@@ -6,9 +6,9 @@ import { Input } from '@/components/ui/Input'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { AdvisorySearchPanel } from '@/components/community/AdvisorySearchPanel'
+import { FarmerProfileCard } from '@/components/community/FarmerProfileCard'
 import { PostCard } from '@/components/community/PostCard'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
-import { SharePostModal } from '@/components/modals/SharePostModal'
 import { knowledgeService } from '@/services/knowledgeService'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
@@ -36,7 +36,6 @@ export function KnowledgeCenterPage() {
   const [search, setSearch] = useState('')
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null)
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null)
-  const [shareTarget, setShareTarget] = useState<CommunityPost | null>(null)
 
   useEffect(() => {
     knowledgeService.categories().then((res) => setCategories(res.data.data))
@@ -66,6 +65,16 @@ export function KnowledgeCenterPage() {
     try {
       const { data } = await communityService.like(post.id)
       updatePost(data.data)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const handleShare = async (post: CommunityPost) => {
+    try {
+      const { data } = await communityService.share(post.id)
+      updatePost(data.data)
+      toast.success('Shared to your profile.')
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
@@ -109,13 +118,45 @@ export function KnowledgeCenterPage() {
       </div>
 
       {tab === 'advisories' ? (
-        <AdvisorySearchPanel
-          open={searchOpen}
-          onOpenChange={setSearchOpen}
-          search={search}
-          onSearchChange={setSearch}
-          onCategoryChange={setActivePostCategory}
-        />
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_280px]">
+          <div className="space-y-6">
+            <AdvisorySearchPanel
+              open={searchOpen}
+              onOpenChange={setSearchOpen}
+              search={search}
+              onSearchChange={setSearch}
+              onCategoryChange={setActivePostCategory}
+            />
+
+            {posts === null ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => <div key={i} className="skeleton h-44 w-full rounded-2xl" />)}
+              </div>
+            ) : posts.length === 0 ? (
+              <Card>
+                <CardContent className="p-6">
+                  <EmptyState icon={Sprout} title="No advisories found." description="Try a different category or search term." />
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    onOpen={setSelectedPost}
+                    onLike={handleLike}
+                    onShare={handleShare}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <aside className="space-y-5">
+            <FarmerProfileCard />
+          </aside>
+        </div>
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -152,31 +193,7 @@ export function KnowledgeCenterPage() {
         </div>
       )}
 
-      {tab === 'advisories' ? (
-        posts === null ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => <div key={i} className="skeleton h-44 w-full rounded-2xl" />)}
-          </div>
-        ) : posts.length === 0 ? (
-          <Card>
-            <CardContent className="p-6">
-              <EmptyState icon={Sprout} title="No advisories found." description="Try a different category or search term." />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onOpen={setSelectedPost}
-                onLike={handleLike}
-                onShare={setShareTarget}
-              />
-            ))}
-          </div>
-        )
-      ) : articles === null ? (
+      {tab === 'guides' && (articles === null ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => <div key={i} className="skeleton h-40 w-full rounded-2xl" />)}
         </div>
@@ -208,18 +225,12 @@ export function KnowledgeCenterPage() {
             )
           })}
         </div>
-      )}
+      ))}
 
       <PostDetailModal
         post={selectedPost}
         onClose={() => setSelectedPost(null)}
         onUpdate={updatePost}
-      />
-
-      <SharePostModal
-        post={shareTarget}
-        onClose={() => setShareTarget(null)}
-        onSuccess={updatePost}
       />
 
       <Modal open={Boolean(selectedArticle)} onClose={() => setSelectedArticle(null)} title={selectedArticle?.title ?? ''} size="lg">

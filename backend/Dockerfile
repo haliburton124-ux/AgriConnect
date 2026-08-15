@@ -18,7 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         exif \
         mbstring \
         xml \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && { \
+        echo "upload_max_filesize=10M"; \
+        echo "post_max_size=12M"; \
+        echo "memory_limit=256M"; \
+    } > /usr/local/etc/php/conf.d/uploads.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

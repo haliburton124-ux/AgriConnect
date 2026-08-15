@@ -56,7 +56,7 @@ export function commentRepliesList(comment: CommunityPostComment): CommunityPost
 }
 
 export const COMMENT_IMAGE_ACCEPT = 'image/jpeg,image/jpg,image/png,image/webp,image/gif'
-export const COMMENT_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+export const COMMENT_IMAGE_MAX_BYTES = 10 * 1024 * 1024
 
 export function validateCommentImage(file: File): string | null {
   if (!file.type.startsWith('image/')) {
@@ -64,7 +64,7 @@ export function validateCommentImage(file: File): string | null {
   }
 
   if (file.size > COMMENT_IMAGE_MAX_BYTES) {
-    return 'Image must be 5 MB or smaller.'
+    return 'Image must be 10 MB or smaller.'
   }
 
   return null

@@ -17,6 +17,7 @@ use App\Support\CommunityPostSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CommunityPostController extends Controller
 {
@@ -236,9 +237,26 @@ class CommunityPostController extends Controller
             abort_unless($parent->community_post_id === $communityPost->id, 422);
         }
 
-        $imagePath = $request->hasFile('image')
-            ? $request->file('image')->store('community-comments', 'public')
-            : null;
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $upload = $request->file('image');
+
+            if (! $upload->isValid()) {
+                throw ValidationException::withMessages([
+                    'image' => ['The image could not be uploaded. Try a smaller JPG or PNG (under 5 MB).'],
+                ]);
+            }
+
+            try {
+                $imagePath = $upload->store('community-comments', 'public');
+            } catch (\Throwable $e) {
+                report($e);
+
+                throw ValidationException::withMessages([
+                    'image' => ['The image could not be saved on the server. Please try again.'],
+                ]);
+            }
+        }
 
         $comment = $communityPost->allComments()->create([
             'user_id' => $request->user()->id,

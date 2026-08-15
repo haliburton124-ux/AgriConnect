@@ -22,7 +22,7 @@ class StoreCommunityPostCommentRequest extends FormRequest
     {
         return [
             'body' => ['nullable', 'string', 'max:2000'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:5120'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,gif', 'max:10240'],
             'parent_id' => ['nullable', 'exists:community_post_comments,id'],
         ];
     }

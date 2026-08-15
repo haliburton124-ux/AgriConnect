@@ -26,14 +26,15 @@ export const communityService = {
   addComment: (id: number, body: string, parentId?: number, image?: File) => {
     if (image) {
       const formData = new FormData()
-      formData.append('body', body)
+      if (body.trim()) {
+        formData.append('body', body.trim())
+      }
       if (parentId != null) {
         formData.append('parent_id', String(parentId))
       }
-      formData.append('image', image)
-      return api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      formData.append('image', image, image.name)
+      // Let axios set multipart boundary automatically — manual Content-Type breaks uploads.
+      return api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, formData)
     }
 
     return api.post<{ message: string; data: CommunityPostComment }>(`/community/posts/${id}/comments`, {
@@ -59,10 +60,8 @@ export const communityService = {
       if (payload.municipality_id != null) {
         formData.append('municipality_id', String(payload.municipality_id))
       }
-      formData.append('image', payload.image)
-      return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      formData.append('image', payload.image, payload.image.name)
+      return api.post<{ message: string; data: CommunityPost }>(`/${rolePrefix}/community/posts`, formData)
     }
 
     const { image: _, ...jsonPayload } = payload

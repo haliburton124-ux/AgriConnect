@@ -153,7 +153,7 @@ export function KnowledgeCenterPage() {
             )}
           </div>
 
-          <aside className="space-y-5">
+          <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
             <FarmerProfileCard />
           </aside>
         </div>

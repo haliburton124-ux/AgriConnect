@@ -157,8 +157,8 @@ export function KnowledgeHubSection() {
             )}
           </div>
 
-          {/* Sidebar */}
-          <aside className="space-y-5">
+          {/* Sidebar — stays in view while the feed scrolls */}
+          <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
             <FarmerProfileCard />
 
             <Card className="overflow-hidden border-gold/20 bg-gold/[0.04]">

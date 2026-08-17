@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Users, Search, Eye, MapPin, Sprout, AlertTriangle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { maoFarmerService, type FarmerDirectoryEntry } from '@/services/maoFarmerService'
+import { getApiErrorMessage } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
 import type { IncidentStatus } from '@/types'
 
@@ -29,7 +31,21 @@ export function MaoFarmersPage() {
 
   useEffect(() => {
     setFarmers(null)
-    maoFarmerService.list({ search: search || undefined }).then((res) => setFarmers(res.data.data))
+    maoFarmerService
+      .list({ search: search || undefined })
+      .then((res) => {
+        const payload = res.data.data
+        if (Array.isArray(payload)) {
+          setFarmers(payload)
+          return
+        }
+        const nested = (payload as { data?: FarmerDirectoryEntry[] } | null)?.data
+        setFarmers(Array.isArray(nested) ? nested : [])
+      })
+      .catch((error) => {
+        setFarmers([])
+        toast.error(getApiErrorMessage(error, 'Could not load farmers.'))
+      })
   }, [search])
 
   const openDetail = async (farmer: FarmerDirectoryEntry) => {

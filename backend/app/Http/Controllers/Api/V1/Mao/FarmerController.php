@@ -39,7 +39,7 @@ class FarmerController extends Controller
         $farmers = $query->latest()->paginate($request->integer('per_page', 15));
 
         return response()->json([
-            'data' => $farmers->through(fn ($farmer) => [
+            'data' => collect($farmers->items())->map(fn ($farmer) => [
                 'id' => $farmer->id,
                 'full_name' => $farmer->full_name,
                 'email' => $farmer->email,
@@ -49,7 +49,7 @@ class FarmerController extends Controller
                 'farm_count' => $farmer->farms->count(),
                 'incident_count' => $farmer->reported_incidents_count,
                 'created_at' => $farmer->created_at,
-            ]),
+            ])->values(),
             'meta' => [
                 'current_page' => $farmers->currentPage(),
                 'last_page' => $farmers->lastPage(),

@@ -13,10 +13,8 @@ import { knowledgeService } from '@/services/knowledgeService'
 import { communityService } from '@/services/communityService'
 import { getApiErrorMessage } from '@/lib/api'
 import { buildCommunityListParams } from '@/lib/communityQuery'
-import { getMunicipalityScopeCopy } from '@/lib/municipalityContent'
 import { cn } from '@/lib/utils'
 import type { CommunityPost, KnowledgeArticle, KnowledgeCategory } from '@/types'
-import { useAuthStore } from '@/store/authStore'
 
 const TYPE_ICONS: Record<KnowledgeArticle['type'], typeof BookOpen> = {
   article: BookOpen,
@@ -28,8 +26,6 @@ const TYPE_ICONS: Record<KnowledgeArticle['type'], typeof BookOpen> = {
 type HubTab = 'advisories' | 'guides'
 
 export function KnowledgeCenterPage() {
-  const { user } = useAuthStore()
-  const scopeCopy = getMunicipalityScopeCopy(user?.municipality?.name ?? null)
   const [tab, setTab] = useState<HubTab>('advisories')
   const [articles, setArticles] = useState<KnowledgeArticle[] | null>(null)
   const [posts, setPosts] = useState<CommunityPost[] | null>(null)
@@ -51,14 +47,14 @@ export function KnowledgeCenterPage() {
     knowledgeService.list({ category_id: activeCategory ?? undefined, search: search || undefined }).then((res) => {
       setArticles(res.data.data)
     })
-  }, [tab, activeCategory, search, user?.municipality?.id])
+  }, [tab, activeCategory, search])
 
   useEffect(() => {
     if (tab !== 'advisories') return
     setPosts(null)
     communityService.list(buildCommunityListParams({ category: activePostCategory, search }))
       .then((res) => setPosts(res.data.data))
-  }, [tab, activePostCategory, search, user?.municipality?.id])
+  }, [tab, activePostCategory, search])
 
   const updatePost = (updated: CommunityPost) => {
     setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
@@ -92,9 +88,9 @@ export function KnowledgeCenterPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{scopeCopy.knowledgeCenterTitle}</h1>
+        <h1 className="text-2xl font-bold text-ink">Knowledge Hub</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {scopeCopy.knowledgeCenterDescription}
+          Public agricultural advisories from municipalities across Ilocos Norte, plus guides and reference articles.
         </p>
       </div>
 

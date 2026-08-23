@@ -22,7 +22,6 @@ class StoreProgramRequest extends FormRequest
             'application_end' => ['nullable', 'date', 'after_or_equal:application_start'],
             'eligibility_criteria' => ['nullable', 'array'],
             'is_active' => ['boolean'],
-            'municipality_id' => ['nullable', 'exists:municipalities,id'],
         ];
     }
 }

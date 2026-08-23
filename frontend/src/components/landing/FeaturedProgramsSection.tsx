@@ -5,7 +5,6 @@ import { Calendar, ArrowRight, Gift } from 'lucide-react'
 import { SectionHeading } from './SectionHeading'
 import { programService } from '@/services/programService'
 import { useAuthStore } from '@/store/authStore'
-import { getMunicipalityScopeCopy } from '@/lib/municipalityContent'
 import { formatDate } from '@/lib/utils'
 import type { Program } from '@/types'
 
@@ -22,13 +21,11 @@ const CATEGORY_COLORS: Record<Program['category'], string> = {
 export function FeaturedProgramsSection() {
   const [programs, setPrograms] = useState<Program[] | null>(null)
   const navigate = useNavigate()
-  const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const scopeCopy = getMunicipalityScopeCopy(user?.municipality?.name ?? null)
 
   useEffect(() => {
     programService.list().then((res) => setPrograms(res.data.data.slice(0, 3)))
-  }, [user?.municipality?.id])
+  }, [])
 
   const handleApply = () => {
     navigate(isAuthenticated ? '/farmer/programs' : '/government-programs')
@@ -40,8 +37,7 @@ export function FeaturedProgramsSection() {
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <SectionHeading
             eyebrow="Government Programs"
-            title={scopeCopy.programsTitle}
-            description={scopeCopy.featuredProgramsDescription}
+            title="Support built for your farm"
             align="left"
             className="mx-0 max-w-xl text-left"
           />

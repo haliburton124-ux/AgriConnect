@@ -14,7 +14,7 @@ class Program extends Model
     protected $fillable = [
         'title', 'description', 'cover_image_path', 'category',
         'application_start', 'application_end', 'eligibility_criteria',
-        'is_active', 'created_by', 'municipality_id',
+        'is_active', 'created_by',
     ];
 
     protected $casts = [
@@ -27,11 +27,6 @@ class Program extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function municipality(): BelongsTo
-    {
-        return $this->belongsTo(Municipality::class);
     }
 
     public function applications(): HasMany

@@ -8,7 +8,6 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { ApplyProgramModal } from '@/components/modals/ApplyProgramModal'
 import { programService } from '@/services/programService'
 import { useAuthStore } from '@/store/authStore'
-import { getMunicipalityScopeCopy } from '@/lib/municipalityContent'
 import { formatDate } from '@/lib/utils'
 import type { Program, ProgramApplication } from '@/types'
 
@@ -25,7 +24,6 @@ const CATEGORY_COLORS: Record<Program['category'], string> = {
 export function ProgramsPage() {
   const { user } = useAuthStore()
   const isFarmer = user?.role === 'farmer'
-  const scopeCopy = getMunicipalityScopeCopy(user?.municipality?.name ?? null)
   const [programs, setPrograms] = useState<Program[] | null>(null)
   const [applications, setApplications] = useState<ProgramApplication[]>([])
   const [selected, setSelected] = useState<Program | null>(null)
@@ -38,16 +36,16 @@ export function ProgramsPage() {
     }
   }
 
-  useEffect(load, [user?.municipality?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const appliedProgramIds = new Set(applications.map((a) => a.program?.id))
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{scopeCopy.programsTitle}</h1>
+        <h1 className="text-2xl font-bold text-ink">Government Programs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {isFarmer ? scopeCopy.programsDescription : 'Programs currently published to farmers.'}
+          {isFarmer ? 'Browse subsidies, training, loans, and other assistance programs.' : 'Programs currently published to farmers.'}
         </p>
       </div>
 

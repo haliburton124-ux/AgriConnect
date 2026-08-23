@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Knowledge\StoreKnowledgeArticleRequest;
 use App\Models\KnowledgeArticle;
 use App\Models\KnowledgeCategory;
+use App\Support\MunicipalityContentScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -20,8 +21,10 @@ class KnowledgeArticleController extends Controller
     {
         $query = KnowledgeArticle::query()
             ->where('is_published', true)
-            ->with(['category', 'author:id,first_name,last_name'])
+            ->with(['category', 'author:id,first_name,last_name', 'municipality:id,name'])
             ->latest();
+
+        MunicipalityContentScope::applyNullableScope($query, $request);
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->query('category_id'));
@@ -50,11 +53,18 @@ class KnowledgeArticleController extends Controller
         return response()->json(['data' => KnowledgeCategory::withCount('articles')->orderBy('name')->get()]);
     }
 
-    public function show(KnowledgeArticle $article): JsonResponse
+    public function show(Request $request, KnowledgeArticle $article): JsonResponse
     {
+        abort_unless($article->is_published, 404);
+        abort_unless(
+            MunicipalityContentScope::canAccessNullableContent($request->user(), $article->municipality_id),
+            403,
+            'This article is not available in your municipality.'
+        );
+
         $article->increment('view_count');
 
-        return response()->json(['data' => $article->load(['category', 'author:id,first_name,last_name'])]);
+        return response()->json(['data' => $article->load(['category', 'author:id,first_name,last_name', 'municipality:id,name'])]);
     }
 
     /** Write access: Municipal/Provincial Office and Admin only (see request authorize()). */
@@ -63,6 +73,11 @@ class KnowledgeArticleController extends Controller
         $data = $request->validated();
         $coverPath = $request->hasFile('cover_image') ? $request->file('cover_image')->store('knowledge/covers', 'public') : null;
         $pdfPath = $request->hasFile('pdf_file') ? $request->file('pdf_file')->store('knowledge/pdfs', 'public') : null;
+
+        $user = $request->user();
+        $municipalityId = $user->hasRole('municipal_office')
+            ? $user->municipality_id
+            : ($data['municipality_id'] ?? null);
 
         $article = KnowledgeArticle::create([
             'category_id' => $data['category_id'] ?? null,
@@ -73,7 +88,8 @@ class KnowledgeArticleController extends Controller
             'type' => $data['type'],
             'video_url' => $data['video_url'] ?? null,
             'pdf_path' => $pdfPath,
-            'author_id' => $request->user()->id,
+            'author_id' => $user->id,
+            'municipality_id' => $municipalityId,
             'is_published' => $request->boolean('is_published', true),
         ]);
 

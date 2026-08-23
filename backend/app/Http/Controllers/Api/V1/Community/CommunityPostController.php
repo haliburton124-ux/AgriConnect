@@ -14,6 +14,7 @@ use App\Models\CommunityPostLike;
 use App\Models\CommunityPostShare;
 use App\Services\CommunityNotificationService;
 use App\Support\CommunityPostSearch;
+use App\Support\MunicipalityContentScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,8 +39,8 @@ class CommunityPostController extends Controller
     }
 
     /**
-     * Public agricultural advisories — visible to all registered farmers
-     * regardless of which municipality posted them.
+     * Public agricultural advisories. Farmers and technicians only see posts
+     * from their own municipality; guests see the province-wide feed.
      */
     public function index(Request $request): JsonResponse
     {
@@ -80,6 +81,11 @@ class CommunityPostController extends Controller
     public function show(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
+        abort_unless(
+            MunicipalityContentScope::canAccessStrictContent($request->user(), (int) $communityPost->municipality_id),
+            403,
+            'This advisory is not available in your municipality.'
+        );
 
         $this->applyEngagementFlags($request, collect([$communityPost]));
 
@@ -299,8 +305,10 @@ class CommunityPostController extends Controller
             $request->query('category'),
         );
 
-        if ($request->filled('municipality_id')) {
+        if ($request->filled('municipality_id') && $request->user()?->hasRole(['municipal_office', 'provincial_office', 'admin'])) {
             $query->where('municipality_id', $request->integer('municipality_id'));
+        } else {
+            MunicipalityContentScope::applyStrictScope($query, $request);
         }
 
         $this->applyEngagementFlags($request, null, $query);

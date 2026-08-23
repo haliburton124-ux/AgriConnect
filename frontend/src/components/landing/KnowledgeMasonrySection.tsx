@@ -5,6 +5,7 @@ import { BookOpen, Video, HelpCircle, FileDown, ArrowRight } from 'lucide-react'
 import { SectionHeading } from './SectionHeading'
 import { knowledgeService } from '@/services/knowledgeService'
 import { useAuthStore } from '@/store/authStore'
+import { getMunicipalityScopeCopy } from '@/lib/municipalityContent'
 import type { KnowledgeArticle } from '@/types'
 
 const TYPE_ICONS: Record<KnowledgeArticle['type'], typeof BookOpen> = {
@@ -20,11 +21,13 @@ const HEIGHT_CLASSES = ['sm:mt-0', 'sm:mt-8', 'sm:mt-0', 'sm:mt-8']
 export function KnowledgeMasonrySection() {
   const [articles, setArticles] = useState<KnowledgeArticle[] | null>(null)
   const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const scopeCopy = getMunicipalityScopeCopy(user?.municipality?.name ?? null)
 
   useEffect(() => {
     knowledgeService.list({}).then((res) => setArticles(res.data.data.slice(0, 4)))
-  }, [])
+  }, [user?.municipality?.id])
 
   const openCenter = () => navigate(isAuthenticated ? '/farmer/knowledge' : '/knowledge-center')
 
@@ -34,7 +37,8 @@ export function KnowledgeMasonrySection() {
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           <SectionHeading
             eyebrow="Learn & Grow"
-            title="Knowledge Center"
+            title={user?.municipality?.name ? `Knowledge Center — ${user.municipality.name}` : 'Knowledge Center'}
+            description={scopeCopy.guidesDescription}
             align="left"
             className="mx-0 max-w-xl text-left"
           />

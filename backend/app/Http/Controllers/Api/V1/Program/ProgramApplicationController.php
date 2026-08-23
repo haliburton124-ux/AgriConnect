@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Program\ApplyProgramRequest;
 use App\Models\Program;
 use App\Models\ProgramApplication;
+use App\Support\MunicipalityContentScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,6 +32,12 @@ class ProgramApplicationController extends Controller
 
     public function store(ApplyProgramRequest $request, Program $program): JsonResponse
     {
+        abort_unless(
+            MunicipalityContentScope::canAccessNullableContent($request->user(), $program->municipality_id),
+            403,
+            'This program is not available in your municipality.'
+        );
+
         abort_if(
             $program->application_end && now()->gt($program->application_end),
             422,

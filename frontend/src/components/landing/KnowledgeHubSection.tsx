@@ -16,6 +16,7 @@ import { communityService } from '@/services/communityService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
 import { buildCommunityListParams } from '@/lib/communityQuery'
+import { getMunicipalityScopeCopy } from '@/lib/municipalityContent'
 import { cn } from '@/lib/utils'
 import type { CommunityPost } from '@/types'
 
@@ -42,7 +43,7 @@ export function KnowledgeHubSection() {
         setPosts([])
         setLoadError(getApiErrorMessage(error))
       })
-  }, [activeCategory, search])
+  }, [activeCategory, search, user?.municipality?.id])
 
   const updatePost = (updated: CommunityPost) => {
     setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
@@ -81,14 +82,17 @@ export function KnowledgeHubSection() {
   }
 
   const enableEngagement = isAuthenticated
+  const scopeCopy = getMunicipalityScopeCopy(
+    isAuthenticated && user?.municipality?.name ? user.municipality.name : null,
+  )
 
   return (
     <section id="knowledge-hub" className="scroll-mt-24 bg-canvas px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <SectionHeading
           eyebrow="Knowledge Sharing"
-          title="Learn from municipalities across Ilocos Norte"
-          description="Public agricultural advisories on pesticide use, crop disease, soil management, planting calendars, and more — like, comment, and share with fellow farmers."
+          title={scopeCopy.knowledgeHubTitle}
+          description={scopeCopy.knowledgeHubDescription}
         />
 
         <div className="mt-14 grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px]">
@@ -101,7 +105,7 @@ export function KnowledgeHubSection() {
             )}>
               {!searchOpen && (
                 <p className="text-xs font-semibold uppercase tracking-wider text-forest/80">
-                  Public Advisories
+                  {user?.municipality?.name ? `${user.municipality.name} Advisories` : 'Public Advisories'}
                 </p>
               )}
 

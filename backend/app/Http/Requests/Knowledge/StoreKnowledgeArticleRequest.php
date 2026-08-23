@@ -22,6 +22,7 @@ class StoreKnowledgeArticleRequest extends FormRequest
             'video_url' => ['required_if:type,video', 'nullable', 'url'],
             'pdf_file' => ['required_if:type,pdf_guide', 'nullable', 'file', 'mimes:pdf', 'max:10240'],
             'is_published' => ['boolean'],
+            'municipality_id' => ['nullable', 'exists:municipalities,id'],
         ];
     }
 }

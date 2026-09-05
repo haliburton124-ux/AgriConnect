@@ -37,8 +37,8 @@ export const knowledgeService = {
     api.get<PaginatedResponse<KnowledgeArticle>>('/knowledge/articles', { params }),
   get: (id: number) => api.get<{ data: KnowledgeArticle }>(`/knowledge/articles/${id}`),
   manage: (params?: { search?: string; category_id?: number; archived?: boolean }) =>
-    api.get<PaginatedResponse<KnowledgeArticle>>('/mao/knowledge/articles', {
-      params: { ...params, archived: params?.archived ? 1 : undefined },
+    api.get<PaginatedResponse<KnowledgeArticle>>('/knowledge/articles', {
+      params: { ...params, office: 1, archived: params?.archived ? 1 : undefined },
     }),
   create: (payload: KnowledgeArticlePayload) =>
     api.post<{ message: string; data: KnowledgeArticle }>('/knowledge/articles', toFormData(payload)),

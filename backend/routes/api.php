@@ -85,6 +85,7 @@ Route::prefix('v1')->group(function () {
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
         // Knowledge Center — write access restricted inside the request/controller
+        Route::get('knowledge/managed', [KnowledgeArticleController::class, 'manage']);
         Route::post('knowledge/articles', [KnowledgeArticleController::class, 'store']);
         Route::post('knowledge/articles/{article}/archive', [KnowledgeArticleController::class, 'archive']);
         Route::post('knowledge/articles/{id}/restore', [KnowledgeArticleController::class, 'restore']);

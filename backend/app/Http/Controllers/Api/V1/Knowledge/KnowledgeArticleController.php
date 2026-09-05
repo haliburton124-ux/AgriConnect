@@ -28,6 +28,12 @@ class KnowledgeArticleController extends Controller
             ->latest('published_at')
             ->latest();
 
+        if ($request->boolean('office')) {
+            abort_unless($request->user(), 401);
+
+            return $this->manage($request);
+        }
+
         MunicipalityVisibility::applyViewerScope($query, $request);
 
         if (! $request->user()) {
@@ -174,6 +180,7 @@ class KnowledgeArticleController extends Controller
 
     protected function authorizeManage(Request $request): void
     {
+        abort_unless($request->user(), 401);
         abort_unless($request->user()->hasRole(['municipal_office', 'provincial_office', 'admin']), 403);
     }
 

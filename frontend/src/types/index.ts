@@ -170,6 +170,14 @@ export interface KnowledgeCategory {
   articles_count?: number
 }
 
+export interface KnowledgeAttachment {
+  path: string
+  name: string
+  mime: string | null
+  kind: 'image' | 'file'
+  url: string | null
+}
+
 export interface KnowledgeArticle {
   id: number
   title: string
@@ -179,9 +187,13 @@ export interface KnowledgeArticle {
   type: 'article' | 'video' | 'faq' | 'pdf_guide'
   video_url: string | null
   pdf_path: string | null
+  attachments?: KnowledgeAttachment[]
+  is_published?: boolean
+  published_at?: string | null
   view_count: number
+  municipality?: { id: number; name: string } | null
   category?: { id: number; name: string } | null
-  author?: { id: number; first_name: string; last_name: string }
+  author?: { id: number; first_name: string; last_name: string; full_name?: string }
   created_at: string
 }
 

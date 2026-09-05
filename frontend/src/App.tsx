@@ -27,6 +27,7 @@ import { DocumentsPage } from '@/pages/shared/DocumentsPage'
 import { ProgramsPage } from '@/pages/farmer/ProgramsPage'
 import { KnowledgeCenterPage } from '@/pages/shared/KnowledgeCenterPage'
 import { FarmerProfilePage } from '@/pages/farmer/FarmerProfilePage'
+import { MaoKnowledgeCenterPage } from '@/pages/mao/MaoKnowledgeCenterPage'
 import { KnowledgeSharingPage } from '@/pages/shared/KnowledgeSharingPage'
 import { AnnouncementsPage } from '@/pages/shared/AnnouncementsPage'
 import { SettingsPage } from '@/pages/shared/SettingsPage'
@@ -55,6 +56,7 @@ const BUILT_PAGES: Partial<Record<string, ComponentType>> = {
   '/farmer/programs': ProgramsPage,
   '/ppo/programs': ProgramsPage,
   '/farmer/knowledge': KnowledgeCenterPage,
+  '/mao/knowledge': MaoKnowledgeCenterPage,
   '/farmer/feed': FarmerProfilePage,
   '/farmer/profile': FarmerProfilePage,
   '/mao/knowledge-sharing': KnowledgeSharingPage,

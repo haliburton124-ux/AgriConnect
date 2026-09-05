@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../core/api/api_client.dart';
 import '../models/community_post.dart';
 import '../models/post_comment.dart';
@@ -42,20 +40,16 @@ class CommunityService {
     );
   }
 
-  Future<CommunityPost> share(int id, {String? caption}) {
+  Future<CommunityPost> share(int id) {
     return _api.handle(
-      _api.post('/community/posts/$id/share', data: {
-        if (caption != null && caption.isNotEmpty) 'caption': caption,
-      }),
+      _api.post('/community/posts/$id/share'),
       (json) => CommunityPost.fromJson((json as Map<String, dynamic>)['data'] as Map<String, dynamic>),
     );
   }
 
-  Future<CommunityPost> getPost(int id, {int? shareId}) {
+  Future<CommunityPost> getPost(int id) {
     return _api.handle(
-      _api.get('/community/posts/$id', queryParameters: {
-        if (shareId != null) 'share_id': shareId,
-      }),
+      _api.get('/community/posts/$id'),
       (json) => CommunityPost.fromJson((json as Map<String, dynamic>)['data'] as Map<String, dynamic>),
     );
   }
@@ -70,30 +64,9 @@ class CommunityService {
     );
   }
 
-  Future<PostComment> addComment(
-    int postId, {
-    String? body,
-    int? parentId,
-    String? imagePath,
-  }) async {
-    if (imagePath != null && imagePath.isNotEmpty) {
-      final form = FormData.fromMap({
-        if (body != null && body.trim().isNotEmpty) 'body': body.trim(),
-        if (parentId != null) 'parent_id': parentId,
-        'image': await MultipartFile.fromFile(imagePath),
-      });
-
-      return _api.handle(
-        _api.postMultipart('/community/posts/$postId/comments', form),
-        (json) => PostComment.fromJson((json as Map<String, dynamic>)['data'] as Map<String, dynamic>),
-      );
-    }
-
+  Future<PostComment> addComment(int postId, String body) {
     return _api.handle(
-      _api.post('/community/posts/$postId/comments', data: {
-        'body': body?.trim() ?? '',
-        if (parentId != null) 'parent_id': parentId,
-      }),
+      _api.post('/community/posts/$postId/comments', data: {'body': body}),
       (json) => PostComment.fromJson((json as Map<String, dynamic>)['data'] as Map<String, dynamic>),
     );
   }

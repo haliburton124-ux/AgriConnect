@@ -9,8 +9,6 @@ class AppNotification {
     this.actorId,
     this.actorName,
     this.postTitle,
-    this.shareId,
-    this.shareCaption,
     this.readAt,
     required this.createdAt,
   });
@@ -26,8 +24,6 @@ class AppNotification {
       actorId: json['actor_id'] as int?,
       actorName: json['actor_name'] as String?,
       postTitle: json['post_title'] as String?,
-      shareId: json['share_id'] as int?,
-      shareCaption: json['share_caption'] as String?,
       readAt: json['read_at'] as String?,
       createdAt: json['created_at'] as String? ?? '',
     );
@@ -42,8 +38,6 @@ class AppNotification {
   final int? actorId;
   final String? actorName;
   final String? postTitle;
-  final int? shareId;
-  final String? shareCaption;
   final String? readAt;
   final String createdAt;
 

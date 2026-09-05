@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/community_post.dart';
-
 class AdvisoryCategory {
   const AdvisoryCategory({required this.value, required this.label, required this.icon});
 
@@ -75,18 +73,4 @@ String getAdvisoryCategoryLabel(String? value) {
 
 String formatPostDate(DateTime date) {
   return DateFormat('MMM d, yyyy').format(date);
-}
-
-DateTime communityFeedSortTime(CommunityPost post) {
-  if (post.hasSharedPostContext && post.sharedAt != null) {
-    return post.sharedAt!;
-  }
-
-  return post.createdAt;
-}
-
-List<CommunityPost> sortCommunityFeed(List<CommunityPost> posts) {
-  final sorted = List<CommunityPost>.from(posts);
-  sorted.sort((a, b) => communityFeedSortTime(b).compareTo(communityFeedSortTime(a)));
-  return sorted;
 }

@@ -63,7 +63,9 @@ export function KnowledgeSharingPage() {
         <div>
           <h1 className="text-2xl font-bold text-ink">Knowledge Sharing</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Publish public agricultural advisories for farmers across Ilocos Norte.
+            {user?.role === 'municipal_office'
+              ? `Publish agricultural advisories for farmers in ${user.municipality?.name ?? 'your municipality'} only.`
+              : 'Publish public agricultural advisories for farmers across Ilocos Norte.'}
           </p>
         </div>
         {view === 'active' && (

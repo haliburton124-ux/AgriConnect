@@ -59,12 +59,11 @@ Route::prefix('v1')->group(function () {
         Route::get('announcements', [AnnouncementController::class, 'index']);
         Route::get('advisories', [AdvisoryController::class, 'index']);
 
-        Route::get('knowledge/categories', [KnowledgeArticleController::class, 'categories']);
-        Route::get('knowledge/articles', [KnowledgeArticleController::class, 'index']);
-        Route::get('knowledge/articles/{article}', [KnowledgeArticleController::class, 'show']);
-
         Route::get('community/categories', [CommunityPostController::class, 'categories']);
         Route::middleware('auth.optional')->group(function () {
+            Route::get('knowledge/categories', [KnowledgeArticleController::class, 'categories']);
+            Route::get('knowledge/articles', [KnowledgeArticleController::class, 'index']);
+            Route::get('knowledge/articles/{article}', [KnowledgeArticleController::class, 'show']);
             Route::get('community/posts', [CommunityPostController::class, 'index']);
             Route::get('community/posts/{communityPost}', [CommunityPostController::class, 'show']);
         });
@@ -159,6 +158,8 @@ Route::prefix('v1')->group(function () {
             Route::get('technicians', [TechnicianController::class, 'index']);
             Route::get('farmers', [MaoFarmerController::class, 'index']);
             Route::get('farmers/{farmer}', [MaoFarmerController::class, 'show']);
+
+            Route::get('knowledge/articles', [KnowledgeArticleController::class, 'manage']);
 
             Route::post('announcements', [AnnouncementController::class, 'store']);
             Route::post('announcements/{announcement}/archive', [AnnouncementController::class, 'archive']);

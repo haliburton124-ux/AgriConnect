@@ -14,6 +14,7 @@ use App\Models\CommunityPostLike;
 use App\Models\CommunityPostShare;
 use App\Services\CommunityNotificationService;
 use App\Support\CommunityPostSearch;
+use App\Support\MunicipalityVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,8 +39,8 @@ class CommunityPostController extends Controller
     }
 
     /**
-     * Public agricultural advisories — visible to all registered farmers
-     * regardless of which municipality posted them.
+     * Agricultural advisories. Authenticated farmers and technicians only
+     * receive posts from their registered municipality.
      */
     public function index(Request $request): JsonResponse
     {
@@ -80,6 +81,7 @@ class CommunityPostController extends Controller
     public function show(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
+        MunicipalityVisibility::assertCanView($request->user(), $communityPost->municipality_id);
 
         $this->applyEngagementFlags($request, collect([$communityPost]));
 
@@ -94,11 +96,10 @@ class CommunityPostController extends Controller
     {
         $user = $request->user();
 
-        $municipalityId = $user->hasRole('municipal_office')
-            ? $user->municipality_id
-            : $request->validated('municipality_id');
-
-        abort_unless($municipalityId, 422, 'A municipality must be specified for this post.');
+        $municipalityId = MunicipalityVisibility::municipalityIdForCreate(
+            $user,
+            $user->hasRole('municipal_office') ? null : $request->validated('municipality_id'),
+        );
 
         $imagePath = $request->hasFile('image')
             ? $request->file('image')->store('community-posts', 'public')
@@ -147,6 +148,7 @@ class CommunityPostController extends Controller
     public function toggleLike(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
+        MunicipalityVisibility::assertCanView($request->user(), $communityPost->municipality_id);
 
         $user = $request->user();
         $existing = CommunityPostLike::where('community_post_id', $communityPost->id)
@@ -185,6 +187,7 @@ class CommunityPostController extends Controller
     public function share(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
+        MunicipalityVisibility::assertCanView($request->user(), $communityPost->municipality_id);
 
         $user = $request->user();
 
@@ -213,9 +216,10 @@ class CommunityPostController extends Controller
         ]);
     }
 
-    public function comments(CommunityPost $communityPost): JsonResponse
+    public function comments(Request $request, CommunityPost $communityPost): JsonResponse
     {
         abort_unless($communityPost->is_published, 404);
+        MunicipalityVisibility::assertCanView($request->user(), $communityPost->municipality_id);
 
         $comments = CommunityPostComment::assembleTree(
             $communityPost->allComments()->with('user')->get(),
@@ -231,6 +235,7 @@ class CommunityPostController extends Controller
         CommunityPost $communityPost,
     ): JsonResponse {
         abort_unless($communityPost->is_published, 404);
+        MunicipalityVisibility::assertCanView($request->user(), $communityPost->municipality_id);
 
         if ($request->filled('parent_id')) {
             $parent = CommunityPostComment::findOrFail($request->integer('parent_id'));
@@ -286,6 +291,8 @@ class CommunityPostController extends Controller
                 ->with(['municipality', 'author'])
                 ->latest('archived_at');
 
+            MunicipalityVisibility::applyViewerScope($query, $request);
+
             return $query;
         }
 
@@ -299,8 +306,10 @@ class CommunityPostController extends Controller
             $request->query('category'),
         );
 
-        if ($request->filled('municipality_id')) {
+        if ($request->filled('municipality_id') && $request->user()?->hasRole(['provincial_office', 'admin'])) {
             $query->where('municipality_id', $request->integer('municipality_id'));
+        } else {
+            MunicipalityVisibility::applyViewerScope($query, $request);
         }
 
         $this->applyEngagementFlags($request, null, $query);

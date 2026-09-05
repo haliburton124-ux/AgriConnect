@@ -1,9 +1,7 @@
-import { KnowledgeMasonrySection } from '@/components/landing/KnowledgeMasonrySection'
+import { KnowledgeCenterView } from '@/components/knowledge-center/KnowledgeCenterView'
 
 export function KnowledgeCenterPublicPage() {
   return (
-    <div className="pt-28">
-      <KnowledgeMasonrySection />
-    </div>
+    <KnowledgeCenterView heroClassName="pt-28" />
   )
 }

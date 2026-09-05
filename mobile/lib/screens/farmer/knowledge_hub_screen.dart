@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../config/api_config.dart';
 import '../../core/api/api_exception.dart';
 import '../../models/community_post.dart';
 import '../../models/post_comment.dart';
@@ -15,24 +16,14 @@ import '../../widgets/agri_page_header.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/expandable_text.dart';
 import '../../widgets/loading_view.dart';
-import '../../widgets/comment_composer.dart';
-import '../../widgets/comment_thread.dart';
-import '../../widgets/shared_post_banner.dart';
-import '../../widgets/shared_post_preview.dart';
 
 enum KnowledgeView { advisories, myFeed }
 
 class KnowledgeHubScreen extends StatefulWidget {
-  const KnowledgeHubScreen({
-    super.key,
-    this.initialView = KnowledgeView.advisories,
-    this.initialPostId,
-    this.initialShareId,
-  });
+  const KnowledgeHubScreen({super.key, this.initialView = KnowledgeView.advisories, this.initialPostId});
 
   final KnowledgeView initialView;
   final int? initialPostId;
-  final int? initialShareId;
 
   @override
   State<KnowledgeHubScreen> createState() => _KnowledgeHubScreenState();
@@ -85,10 +76,10 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
           : await _community.listPosts(category: _category, search: searchParam);
       if (!mounted) return;
       setState(() {
-        _posts = _view == KnowledgeView.myFeed ? sortCommunityFeed(posts) : posts;
+        _posts = posts;
         _loading = false;
       });
-      _maybeOpenInitialPost(_posts!);
+      _maybeOpenInitialPost(posts);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -105,16 +96,14 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
     _openedInitialPost = true;
 
     CommunityPost? post;
-    if (widget.initialShareId == null) {
-      for (final item in posts) {
-        if (item.id == postId) {
-          post = item;
-          break;
-        }
+    for (final item in posts) {
+      if (item.id == postId) {
+        post = item;
+        break;
       }
     }
 
-    post ??= await _community.getPost(postId, shareId: widget.initialShareId);
+    post ??= await _community.getPost(postId);
     if (!mounted) return;
     _openPost(post);
   }
@@ -191,24 +180,13 @@ class _KnowledgeHubScreenState extends State<KnowledgeHubScreen> {
   }
 
   Future<void> _share(CommunityPost post) async {
-    final caption = await showModalBottomSheet<String?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _SharePostSheet(post: post),
-    );
-    if (caption == null || !mounted) return;
-
     try {
-      final updated = await _community.share(post.id, caption: caption.isEmpty ? null : caption);
+      final updated = await _community.share(post.id);
       setState(() {
-        final next = _posts?.map((p) => p.id == updated.id ? updated : p).toList() ?? [];
-        _posts = _view == KnowledgeView.myFeed ? sortCommunityFeed(next) : next;
+        _posts = _posts?.map((p) => p.id == updated.id ? updated : p).toList();
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(post.sharedByMe ? 'Share updated.' : 'Shared to your feed.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shared to your feed.')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -493,109 +471,6 @@ class _CategoryPickerSheet extends StatelessWidget {
   }
 }
 
-class _SharePostSheet extends StatefulWidget {
-  const _SharePostSheet({required this.post});
-
-  final CommunityPost post;
-
-  @override
-  State<_SharePostSheet> createState() => _SharePostSheetState();
-}
-
-class _SharePostSheetState extends State<_SharePostSheet> {
-  late final TextEditingController _captionController;
-
-  @override
-  void initState() {
-    super.initState();
-    _captionController = TextEditingController(text: widget.post.shareCaption ?? '');
-  }
-
-  @override
-  void dispose() {
-    _captionController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.72,
-        minChildSize: 0.4,
-        maxChildSize: 0.92,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('Share Post', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(
-                  'Add an optional caption before sharing this advisory to your feed.',
-                  style: GoogleFonts.poppins(fontSize: 13, color: AgriColors.muted),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Your caption (optional)',
-                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _captionController,
-                  maxLength: 500,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Say something about this post…',
-                    filled: true,
-                    fillColor: AgriColors.canvas,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SharedPostPreview(post: widget.post, label: 'Original post'),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(context, _captionController.text.trim()),
-                        style: FilledButton.styleFrom(backgroundColor: AgriColors.forest),
-                        child: Text(widget.post.sharedByMe ? 'Update share' : 'Share'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _PostDetailSheet extends StatefulWidget {
   const _PostDetailSheet({required this.post, required this.community});
 
@@ -610,7 +485,7 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
   List<PostComment>? _comments;
   bool _loadingComments = true;
   bool _posting = false;
-  int? _replyToId;
+  final _commentController = TextEditingController();
 
   @override
   void initState() {
@@ -620,6 +495,7 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
 
   @override
   void dispose() {
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -640,18 +516,13 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
     }
   }
 
-  Future<void> _submitComment(String body, String? imagePath) async {
-    if (body.isEmpty && (imagePath == null || imagePath.isEmpty)) return;
+  Future<void> _submitComment() async {
+    final body = _commentController.text.trim();
+    if (body.isEmpty) return;
     setState(() => _posting = true);
     try {
-      await widget.community.addComment(
-        widget.post.id,
-        body: body.isEmpty ? null : body,
-        parentId: _replyToId,
-        imagePath: imagePath,
-      );
-      if (!mounted) return;
-      setState(() => _replyToId = null);
+      await widget.community.addComment(widget.post.id, body);
+      _commentController.clear();
       await _loadComments();
     } catch (e) {
       if (!mounted) return;
@@ -664,10 +535,6 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
-    final viewerId = context.watch<AuthProvider>().user?.id;
-    final images = post.displayImageUrls;
-    final isSharedView = post.hasSharedPostContext;
-    final galleryComments = _comments == null ? <PostComment>[] : collectCommentImages(_comments!);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -694,39 +561,28 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (isSharedView) ...[
-                      SharedPostBanner(post: post, viewerId: viewerId),
-                      const SizedBox(height: 16),
-                      SharedPostPreview(post: post, label: 'Original advisory'),
-                    ] else ...[
-                      Text(post.title, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
-                        style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
-                      ),
-                      if (images.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            images.first,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      ExpandableText(text: post.content, maxLines: 20),
-                    ],
-                    const SizedBox(height: 20),
-                    Text('Community Discussion', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
+                    Text(post.title, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 8),
                     Text(
-                      'Farmer comments and replies appear below the original municipal advisory.',
+                      'Posted by ${post.municipalityName ?? 'Municipal Agriculture Office'} · ${formatPostDate(post.createdAt)}',
                       style: GoogleFonts.poppins(fontSize: 12, color: AgriColors.muted),
                     ),
+                    if (post.imagePath != null) ...[
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          ApiConfig.storageUrl(post.imagePath!),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    ExpandableText(text: post.content, maxLines: 20),
+                    const SizedBox(height: 20),
+                    Text('Comments', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     if (_loadingComments)
                       const Padding(
@@ -737,20 +593,56 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       Text('No comments yet. Be the first to comment.', style: GoogleFonts.poppins(fontSize: 13, color: AgriColors.muted))
                     else
                       ..._comments!.map(
-                        (comment) => CommentThread(
-                          comment: comment,
-                          galleryComments: galleryComments,
-                          onReply: (id) => setState(() => _replyToId = id),
+                        (c) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AgriColors.canvas,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(c.authorName, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text(c.body, style: GoogleFonts.poppins(fontSize: 13)),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                   ],
                 ),
               ),
-              CommentComposer(
-                replyToId: _replyToId,
-                submitting: _posting,
-                onCancelReply: () => setState(() => _replyToId = null),
-                onSubmit: _submitComment,
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _commentController,
+                          decoration: InputDecoration(
+                            hintText: 'Write a comment…',
+                            filled: true,
+                            fillColor: AgriColors.canvas,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _posting ? null : _submitComment,
+                        icon: _posting
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.send, color: AgriColors.forest),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

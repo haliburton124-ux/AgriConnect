@@ -101,7 +101,11 @@ export function CreateCommunityPostModal({ open, onClose, onSuccess, role }: Cre
       open={open}
       onClose={handleClose}
       title="Publish Public Advisory"
-      description="This will be visible to farmers from all municipalities across Ilocos Norte."
+      description={
+        role === 'municipal_office'
+          ? 'This advisory will only be visible to farmers in your assigned municipality.'
+          : 'This will be visible to farmers across Ilocos Norte.'
+      }
       size="lg"
       footer={
         <>

@@ -26,6 +26,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+function localDateInputValue(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 interface ReportIncidentModalProps {
   open: boolean
   onClose: () => void
@@ -57,7 +64,7 @@ export function ReportIncidentModal({ open, onClose, onSuccess, farmId }: Report
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { severity: 'medium', incident_date: new Date().toISOString().slice(0, 10) },
+    defaultValues: { severity: 'medium', incident_date: localDateInputValue() },
   })
 
   const selectedFarmId = watch('farm_id')
@@ -101,7 +108,7 @@ export function ReportIncidentModal({ open, onClose, onSuccess, farmId }: Report
   }
 
   const handleClose = () => {
-    reset({ severity: 'medium', incident_date: new Date().toISOString().slice(0, 10) })
+    reset({ severity: 'medium', incident_date: localDateInputValue() })
     setPhotos([])
     setCoords(null)
     setFarms(null)
@@ -115,23 +122,31 @@ export function ReportIncidentModal({ open, onClose, onSuccess, farmId }: Report
     }
 
     const farm = farms?.find((item) => item.id === values.farm_id)
-    if (!farm?.municipality?.id || !farm.barangay?.id) {
+    const municipalityId = farm?.municipality?.id ?? farm?.municipality_id
+    const barangayId = farm?.barangay?.id ?? farm?.barangay_id
+    if (!municipalityId || !barangayId) {
       toast.error('The selected farm is missing municipality or barangay details.')
       return
     }
 
     const formData = new FormData()
-    Object.entries(values).forEach(([key, value]) => formData.append(key, String(value)))
+    formData.append('farm_id', String(values.farm_id))
+    formData.append('category_id', String(values.category_id))
+    formData.append('title', values.title)
+    formData.append('description', values.description)
+    formData.append('severity', values.severity)
+    formData.append('incident_date', values.incident_date)
+    if (values.remarks?.trim()) {
+      formData.append('remarks', values.remarks.trim())
+    }
     formData.append('latitude', String(coords.lat))
     formData.append('longitude', String(coords.lng))
-    formData.append('municipality_id', String(farm.municipality.id))
-    formData.append('barangay_id', String(farm.barangay.id))
-    photos.forEach((file) => formData.append('photos[]', file))
+    formData.append('municipality_id', String(municipalityId))
+    formData.append('barangay_id', String(barangayId))
+    photos.forEach((file, index) => formData.append(`photos[${index}]`, file, file.name))
 
     try {
-      const { data } = await api.post('/farmer/incidents', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const { data } = await api.post('/farmer/incidents', formData)
       toast.success(data.message ?? 'Incident reported successfully.')
       reset()
       setPhotos([])

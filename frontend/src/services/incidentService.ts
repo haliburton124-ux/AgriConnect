@@ -28,9 +28,7 @@ export const incidentService = {
   updateStatus: (id: number, status: 'ongoing' | 'resolved', notes?: string) =>
     api.put<{ message: string; data: Incident }>(`/technician/incidents/${id}/status`, { status, notes }),
   submitRecommendation: (id: number, payload: FormData) =>
-    api.post<{ message: string; data: Incident }>(`/technician/incidents/${id}/recommendations`, payload, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post<{ message: string; data: Incident }>(`/technician/incidents/${id}/recommendations`, payload),
 
   // Municipal Agriculture Office
   listForMunicipality: (filters?: IncidentFilters) =>

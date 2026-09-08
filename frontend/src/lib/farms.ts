@@ -5,7 +5,7 @@ export function isValidFarmLocation(farm: Farm): boolean {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false
   if (latitude === 0 && longitude === 0) return false
   if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return false
-  return Boolean(farm.municipality?.id && farm.barangay?.id)
+  return Boolean(farm.municipality?.id || farm.municipality_id) && Boolean(farm.barangay?.id || farm.barangay_id)
 }
 
 export function getGeolocatedFarms(farms: Farm[]): Farm[] {

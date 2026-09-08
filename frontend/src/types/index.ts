@@ -102,12 +102,14 @@ export interface Farm {
   address: string | null
   latitude: number
   longitude: number
+  municipality_id?: number
+  barangay_id?: number
   area_hectares: number | null
   farm_type: string
   primary_crop: string | null
   status: 'active' | 'inactive'
-  municipality?: { id: number; name: string }
-  barangay?: { id: number; name: string }
+  municipality?: { id: number; name: string } | null
+  barangay?: { id: number; name: string } | null
   boundaries?: { id: number; geojson: GeoJSON.Polygon; computed_area_hectares: number | null }[]
 }
 

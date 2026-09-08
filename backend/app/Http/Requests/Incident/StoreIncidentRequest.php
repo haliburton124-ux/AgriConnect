@@ -13,6 +13,31 @@ class StoreIncidentRequest extends FormRequest
         return $this->user()->hasRole('farmer');
     }
 
+    protected function prepareForValidation(): void
+    {
+        $remarks = $this->input('remarks');
+        if ($remarks === 'undefined' || (is_string($remarks) && trim($remarks) === '')) {
+            $this->merge(['remarks' => null]);
+        }
+
+        $farmer = $this->user();
+        $farmId = $this->input('farm_id');
+        if (! $farmer || ! $farmId) {
+            return;
+        }
+
+        /** @var Farm|null $farm */
+        $farm = $farmer->farms()->find($farmId);
+        if (! $farm) {
+            return;
+        }
+
+        $this->merge([
+            'municipality_id' => $this->input('municipality_id') ?: $farm->municipality_id,
+            'barangay_id' => $this->input('barangay_id') ?: $farm->barangay_id,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
@@ -25,12 +50,12 @@ class StoreIncidentRequest extends FormRequest
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'municipality_id' => ['required', 'exists:municipalities,id'],
             'barangay_id' => ['required', 'exists:barangays,id'],
-            'incident_date' => ['required', 'date', 'before_or_equal:today'],
+            'incident_date' => ['required', 'date', 'before_or_equal:tomorrow'],
             'remarks' => ['nullable', 'string', 'max:2000'],
             'photos' => ['nullable', 'array', 'max:6'],
-            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:8192'], // 8MB each
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp,gif,heic,heif,bmp', 'max:8192'],
             'videos' => ['nullable', 'array', 'max:2'],
-            'videos.*' => ['mimetypes:video/mp4,video/quicktime', 'max:51200'], // 50MB each
+            'videos.*' => ['mimetypes:video/mp4,video/quicktime', 'max:51200'],
         ];
     }
 

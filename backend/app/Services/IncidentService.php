@@ -55,8 +55,11 @@ class IncidentService
 
     protected function attachMedia(Incident $incident, array $files, string $type): void
     {
-        /** @var UploadedFile $file */
         foreach ($files as $file) {
+            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+                continue;
+            }
+
             $path = $file->store("incidents/{$incident->id}/{$type}s", 'public');
 
             $incident->media()->create([

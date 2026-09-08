@@ -15,13 +15,19 @@ class FarmResource extends JsonResource
             'address' => $this->address,
             'latitude' => (float) $this->latitude,
             'longitude' => (float) $this->longitude,
+            'municipality_id' => $this->municipality_id,
+            'barangay_id' => $this->barangay_id,
             'area_hectares' => $this->area_hectares ? (float) $this->area_hectares : null,
             'farm_type' => $this->farm_type,
             'primary_crop' => $this->primary_crop,
             'ownership_status' => $this->ownership_status,
             'status' => $this->status,
-            'municipality' => $this->whenLoaded('municipality', fn () => ['id' => $this->municipality->id, 'name' => $this->municipality->name]),
-            'barangay' => $this->whenLoaded('barangay', fn () => ['id' => $this->barangay->id, 'name' => $this->barangay->name]),
+            'municipality' => $this->municipality
+                ? ['id' => $this->municipality->id, 'name' => $this->municipality->name]
+                : null,
+            'barangay' => $this->barangay
+                ? ['id' => $this->barangay->id, 'name' => $this->barangay->name]
+                : null,
             'boundaries' => $this->whenLoaded('boundaries', fn () => $this->boundaries->map(fn ($b) => [
                 'id' => $b->id,
                 'geojson' => $b->geojson,

@@ -79,9 +79,21 @@ function MapResize({ active }: { active: boolean }) {
   const map = useMap()
 
   useEffect(() => {
-    if (!active) return
-    const timer = window.setTimeout(() => map.invalidateSize(), 150)
-    return () => window.clearTimeout(timer)
+    const invalidate = () => map.invalidateSize()
+    if (active) {
+      const timer = window.setTimeout(invalidate, 150)
+      const frame = window.requestAnimationFrame(invalidate)
+      const observer = new ResizeObserver(invalidate)
+      observer.observe(map.getContainer())
+      window.addEventListener('resize', invalidate)
+      return () => {
+        window.clearTimeout(timer)
+        window.cancelAnimationFrame(frame)
+        observer.disconnect()
+        window.removeEventListener('resize', invalidate)
+      }
+    }
+    return undefined
   }, [active, map])
 
   return null
@@ -307,12 +319,16 @@ export function AgriMap({
   const showStaticMarker = !hasPicker && value && isValidMapCoords(value) && markers.length === 0
 
   const mapBody = (
-    <div className={cn(!embedded && 'overflow-hidden rounded-xl border-2 border-black/5', embedded && 'h-full w-full')}>
+    <div className={cn(!embedded && 'overflow-hidden rounded-xl border-2 border-black/5', embedded && 'absolute inset-0')}>
       <MapContainer
         key={mapKey ?? (active ? 'agri-map-active' : 'agri-map-idle')}
         center={resolvedCenter}
         zoom={resolvedZoom}
-        className={cn('h-56 w-full touch-manipulation sm:h-64', className)}
+        className={cn(
+          'w-full touch-manipulation',
+          embedded ? 'h-full min-h-0' : 'h-56 sm:h-64',
+          className,
+        )}
         scrollWheelZoom={scrollWheelZoom}
         zoomControl={false}
       >

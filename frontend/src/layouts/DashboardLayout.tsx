@@ -116,7 +116,7 @@ export function DashboardLayout() {
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 min-h-0 flex-1 flex-col">
         {/* Topbar */}
         <header className="glass-surface sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:px-8">
           <button className="text-ink lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
@@ -174,7 +174,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex min-h-0 flex-1 flex-col p-4 lg:p-8">
           <Outlet />
         </main>
       </div>

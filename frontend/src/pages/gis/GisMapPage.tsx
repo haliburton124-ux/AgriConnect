@@ -40,8 +40,8 @@ export function GisMapPage() {
   const activeFilterCount = Object.values(filters).filter((v) => v !== undefined && v !== '').length
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col gap-4 animate-fade-in">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 animate-fade-in">
+      <div className="flex shrink-0 flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-ink">GIS Incident Map</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -85,8 +85,14 @@ export function GisMapPage() {
         </div>
       </div>
 
-      <Card className="relative flex-1 overflow-hidden p-0">
-        <AgriMap embedded center={ILOCOS_NORTE_CENTER} zoom={10} className="h-full min-h-[420px] w-full sm:min-h-0" scrollWheelZoom>
+      <Card className="relative min-h-[70vh] flex-1 overflow-hidden p-0 lg:min-h-0">
+        <AgriMap
+          embedded
+          center={ILOCOS_NORTE_CENTER}
+          zoom={10}
+          className="absolute inset-0 h-full w-full"
+          scrollWheelZoom
+        >
           {viewMode === 'heatmap' && <HeatmapLayer points={heatPoints} />}
 
           {viewMode === 'markers' && points?.map((point) => (

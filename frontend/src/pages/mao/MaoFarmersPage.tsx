@@ -259,7 +259,7 @@ export function MaoFarmersPage() {
                         </span>
                         <div className="min-w-0">
                           <p className="truncate font-medium text-ink">{farm.farm_name}</p>
-                          <p className="text-xs capitalize text-muted-foreground">{farm.farm_type.replaceAll('_', ' ')}</p>
+                          <p className="text-xs capitalize text-muted-foreground">{farm.farm_type.replace(/_/g, ' ')}</p>
                         </div>
                       </div>
                       {farm.area_hectares != null && (

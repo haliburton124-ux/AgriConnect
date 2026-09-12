@@ -48,8 +48,8 @@ export function DashboardLayout() {
   }
 
   const SidebarContent = (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-6 py-6">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center gap-2.5 px-6 py-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white shadow-card">
           <Sprout className="h-5 w-5" />
         </div>
@@ -59,7 +59,7 @@ export function DashboardLayout() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+      <nav className="flex-1 space-y-1 overflow-hidden px-3">
         {items.map((item) => (
           <NavLink
             key={item.path}
@@ -79,23 +79,15 @@ export function DashboardLayout() {
           </NavLink>
         ))}
       </nav>
-
-      <div className="border-t border-black/5 p-4">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-danger hover:bg-danger/5"
-        >
-          <LogOut className="h-[18px] w-[18px]" />
-          Sign out
-        </button>
-      </div>
     </div>
   )
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-black/5 bg-white lg:block">{SidebarContent}</aside>
+    <div className="h-screen overflow-hidden bg-canvas">
+      {/* Desktop sidebar — pinned to the viewport, never scrolls */}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 overflow-hidden border-r border-black/5 bg-white lg:block">
+        {SidebarContent}
+      </aside>
 
       {/* Mobile sidebar */}
       <AnimatePresence>
@@ -108,7 +100,7 @@ export function DashboardLayout() {
             />
             <motion.aside
               initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: 'tween', duration: 0.25 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 bg-white lg:hidden"
+              className="fixed inset-y-0 left-0 z-50 h-screen w-64 overflow-hidden bg-white lg:hidden"
             >
               {SidebarContent}
             </motion.aside>
@@ -116,9 +108,9 @@ export function DashboardLayout() {
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 min-h-0 flex-1 flex-col">
+      <div className="flex h-full min-h-0 min-w-0 flex-col lg:ml-64">
         {/* Topbar */}
-        <header className="glass-surface sticky top-0 z-30 flex items-center justify-between px-4 py-3 lg:px-8">
+        <header className="glass-surface z-30 flex shrink-0 items-center justify-between px-4 py-3 lg:px-8">
           <button className="text-ink lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
             {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -174,7 +166,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col p-4 lg:p-8">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4 lg:p-8">
           <Outlet />
         </main>
       </div>

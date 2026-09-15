@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ClipboardList, Search, PlayCircle, CheckCircle2, ClipboardCheck, MapPin } from 'lucide-react'
+import { ClipboardList, Search, PlayCircle, CheckCircle2, MapPin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -124,14 +124,9 @@ export function TechnicianIncidentsPage() {
                       </Button>
                     )}
                     {incident.status === 'ongoing' && (
-                      <>
-                        <Button size="sm" variant="ghost" onClick={() => { setSelected(incident); setActiveModal('recommendation') }}>
-                          <ClipboardCheck className="h-4 w-4" /> Recommend
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => { setSelected(incident); setActiveModal('status') }}>
-                          <CheckCircle2 className="h-4 w-4" /> Resolve
-                        </Button>
-                      </>
+                      <Button size="sm" variant="outline" onClick={() => { setSelected(incident); setActiveModal('recommendation') }}>
+                        <CheckCircle2 className="h-4 w-4" /> Resolve
+                      </Button>
                     )}
                   </div>
                 </motion.div>
@@ -148,17 +143,10 @@ export function TechnicianIncidentsPage() {
         loading={detailLoading}
         footer={
           selected && selected.status !== 'resolved' ? (
-            <>
-              {selected.status === 'ongoing' && (
-                <Button variant="ghost" onClick={() => setActiveModal('recommendation')}>
-                  <ClipboardCheck className="h-4 w-4" /> Add Recommendation
-                </Button>
-              )}
-              <Button onClick={() => setActiveModal('status')}>
-                {selected.status === 'assigned' ? <PlayCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                {selected.status === 'assigned' ? 'Start Inspection' : 'Mark Resolved'}
-              </Button>
-            </>
+            <Button onClick={() => setActiveModal(selected.status === 'ongoing' ? 'recommendation' : 'status')}>
+              {selected.status === 'assigned' ? <PlayCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+              {selected.status === 'assigned' ? 'Start Inspection' : 'Resolve'}
+            </Button>
           ) : undefined
         }
       />

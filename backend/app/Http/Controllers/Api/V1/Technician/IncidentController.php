@@ -65,7 +65,7 @@ class IncidentController extends Controller
         $updated = $this->incidentService->addRecommendation($incident, $request->user(), $request->validated());
 
         return response()->json([
-            'message' => 'Recommendation submitted successfully.',
+            'message' => 'Incident resolved with your inspection report.',
             'data' => new IncidentResource($updated),
         ], 201);
     }

@@ -50,6 +50,8 @@ class IncidentPolicy
 
     public function addRecommendation(User $user, Incident $incident): bool
     {
-        return $user->hasRole('technician') && $incident->assigned_technician_id === $user->id;
+        return $user->hasRole('technician')
+            && $incident->assigned_technician_id === $user->id
+            && $incident->status === Incident::STATUS_ONGOING;
     }
 }

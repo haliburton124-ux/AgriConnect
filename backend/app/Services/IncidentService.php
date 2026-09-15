@@ -132,6 +132,12 @@ class IncidentService
 
         $this->assertTransition($incident, $allowedFrom, $newStatus);
 
+        if ($newStatus === Incident::STATUS_RESOLVED && $incident->recommendations()->doesntExist()) {
+            throw ValidationException::withMessages([
+                'status' => ['Submit an inspection report before resolving this incident.'],
+            ]);
+        }
+
         $extra = $newStatus === Incident::STATUS_RESOLVED ? ['resolved_at' => now()] : [];
 
         return $this->transition($incident, $newStatus, $actor, $notes, $extra);
@@ -186,6 +192,16 @@ class IncidentService
                 'requires_follow_up' => $data['requires_follow_up'] ?? false,
                 'follow_up_date' => $data['follow_up_date'] ?? null,
             ]);
+
+            if ($incident->status === Incident::STATUS_ONGOING) {
+                $incident = $this->transition(
+                    $incident,
+                    Incident::STATUS_RESOLVED,
+                    $technician,
+                    $data['inspection_notes'],
+                    ['resolved_at' => now()],
+                );
+            }
 
             return $incident->load('recommendations.technician');
         });

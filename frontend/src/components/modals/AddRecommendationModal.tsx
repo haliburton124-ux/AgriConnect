@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ClipboardCheck } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { incidentService } from '@/services/incidentService'
@@ -60,7 +60,7 @@ export function AddRecommendationModal({ open, onClose, incident, onSuccess }: A
 
     try {
       await incidentService.submitRecommendation(incident.id, formData)
-      toast.success('Recommendation submitted successfully.')
+      toast.success('Incident resolved with your inspection report.')
       onSuccess()
       onClose()
       reset()
@@ -74,14 +74,14 @@ export function AddRecommendationModal({ open, onClose, incident, onSuccess }: A
     <Modal
       open={open}
       onClose={onClose}
-      title="Add Inspection Recommendation"
-      description={incident ? `${incident.reference_code} — ${incident.title}` : undefined}
+      title="Resolve Incident"
+      description={incident ? `Submit your inspection report to resolve ${incident.reference_code} — ${incident.title}` : undefined}
       size="lg"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit(onSubmit)} loading={isSubmitting}>
-            <ClipboardCheck className="h-4 w-4" /> Submit Recommendation
+            <CheckCircle2 className="h-4 w-4" /> Submit and Resolve
           </Button>
         </>
       }

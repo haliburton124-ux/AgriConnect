@@ -116,7 +116,16 @@ class AppointmentController extends Controller
         $user = $request->user();
         abort_unless($user->hasRole('technician') && $user->id === $appointment->technician_id, 403);
 
-        $appointment->update(['status' => $request->validated('status')]);
+        $nextStatus = $request->validated('status');
+        $allowed = match ($appointment->status) {
+            'scheduled' => ['confirmed', 'cancelled'],
+            'confirmed' => ['completed', 'cancelled', 'no_show'],
+            default => [],
+        };
+
+        abort_unless(in_array($nextStatus, $allowed, true), 422, 'This appointment cannot move to that status yet.');
+
+        $appointment->update(['status' => $nextStatus]);
 
         return response()->json(['message' => 'Appointment updated.', 'data' => $appointment]);
     }

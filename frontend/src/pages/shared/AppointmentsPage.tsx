@@ -77,7 +77,7 @@ export function AppointmentsPage() {
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-forest/10 text-forest">
                       <CalendarClock className="h-5 w-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-medium text-ink">
                         {isFarmer ? appt.technician?.first_name : appt.farmer?.first_name}{' '}
                         {isFarmer ? appt.technician?.last_name : appt.farmer?.last_name}
@@ -85,13 +85,29 @@ export function AppointmentsPage() {
                       <p className="text-xs text-muted-foreground">
                         {formatDateTime(appt.scheduled_at)}{appt.purpose ? ` · ${appt.purpose}` : ''}
                       </p>
+                      {appt.notes && (
+                        <p className="mt-1.5 text-xs leading-relaxed text-ink/70">
+                          <span className="font-medium text-ink/80">Notes: </span>
+                          {appt.notes}
+                        </p>
+                      )}
                       {appt.incident && <p className="text-xs text-forest">Re: {appt.incident.reference_code}</p>}
                     </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
                     <Badge variant={STATUS_BADGE[appt.status]}>{appt.status.replace('_', ' ')}</Badge>
-                    {!isFarmer && (appt.status === 'scheduled' || appt.status === 'confirmed') && (
+                    {!isFarmer && appt.status === 'scheduled' && (
+                      <>
+                        <Button size="icon" variant="ghost" title="Confirm" onClick={() => handleStatusChange(appt, 'confirmed')}>
+                          <Clock className="h-4 w-4 text-sky" />
+                        </Button>
+                        <Button size="icon" variant="ghost" title="Cancel" onClick={() => handleStatusChange(appt, 'cancelled')}>
+                          <XCircle className="h-4 w-4 text-danger" />
+                        </Button>
+                      </>
+                    )}
+                    {!isFarmer && appt.status === 'confirmed' && (
                       <>
                         <Button size="icon" variant="ghost" title="Mark completed" onClick={() => handleStatusChange(appt, 'completed')}>
                           <CheckCircle2 className="h-4 w-4 text-success" />
@@ -99,11 +115,6 @@ export function AppointmentsPage() {
                         <Button size="icon" variant="ghost" title="Cancel" onClick={() => handleStatusChange(appt, 'cancelled')}>
                           <XCircle className="h-4 w-4 text-danger" />
                         </Button>
-                        {appt.status === 'scheduled' && (
-                          <Button size="icon" variant="ghost" title="Confirm" onClick={() => handleStatusChange(appt, 'confirmed')}>
-                            <Clock className="h-4 w-4 text-sky" />
-                          </Button>
-                        )}
                       </>
                     )}
                   </div>

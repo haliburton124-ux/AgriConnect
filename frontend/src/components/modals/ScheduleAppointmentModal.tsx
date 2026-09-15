@@ -6,8 +6,8 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { api, getApiErrorMessage } from '@/lib/api'
-import { appointmentService } from '@/services/appointmentService'
+import { getApiErrorMessage } from '@/lib/api'
+import { appointmentService, type AppointmentTechnician } from '@/services/appointmentService'
 import { useAuthStore } from '@/store/authStore'
 
 const schema = z.object({
@@ -19,11 +19,6 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-interface Counterpart {
-  id: number
-  full_name: string
-}
-
 interface ScheduleAppointmentModalProps {
   open: boolean
   onClose: () => void
@@ -31,33 +26,55 @@ interface ScheduleAppointmentModalProps {
 }
 
 /**
- * "Schedule Visit Modal" — a farmer books a visit with a technician (or
- * vice versa). Since a farmer only ever coordinates with the technician
- * assigned to their incidents, the counterpart list is pulled from the
- * MAO's technician directory for farmers, or would come from an incident
- * context for technicians (kept simple here: technicians type a farmer's
- * name is out of scope for MVP — this modal focuses on the farmer flow).
+ * Farmer books a visit with the technician assigned to their incidents
+ * (and other active technicians in the same municipality).
  */
 export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleAppointmentModalProps) {
   const { user } = useAuthStore()
   const isFarmer = user?.role === 'farmer'
-  const [counterparts, setCounterparts] = useState<Counterpart[]>([])
+  const [counterparts, setCounterparts] = useState<AppointmentTechnician[]>([])
+  const [loadingTechnicians, setLoadingTechnicians] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   useEffect(() => {
-    if (open && isFarmer) {
-      api.get('/mao/technicians').then((res) => setCounterparts(res.data.data)).catch(() => setCounterparts([]))
+    if (!open || !isFarmer) return
+
+    let cancelled = false
+    setLoadingTechnicians(true)
+    appointmentService
+      .listTechnicians()
+      .then((res) => {
+        if (cancelled) return
+        const list = Array.isArray(res.data.data) ? res.data.data : []
+        setCounterparts(list)
+        const assigned = list.filter((tech) => tech.assigned)
+        const preferred = assigned[0] ?? (list.length === 1 ? list[0] : undefined)
+        if (preferred) {
+          setValue('counterpart_id', preferred.id)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCounterparts([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTechnicians(false)
+      })
+
+    return () => {
+      cancelled = true
     }
-  }, [open, isFarmer])
+  }, [open, isFarmer, setValue])
 
   const close = () => {
     reset()
+    setCounterparts([])
     onClose()
   }
 
@@ -88,7 +105,9 @@ export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleA
       footer={
         <>
           <Button variant="ghost" onClick={close}>Cancel</Button>
-          <Button onClick={handleSubmit(onSubmit)} loading={isSubmitting}>Schedule Appointment</Button>
+          <Button onClick={handleSubmit(onSubmit)} loading={isSubmitting} disabled={isFarmer && counterparts.length === 0}>
+            Schedule Appointment
+          </Button>
         </>
       }
     >
@@ -97,13 +116,23 @@ export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleA
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">Technician</label>
             <select
-              className="h-11 w-full rounded-xl border-2 border-input bg-white px-4 text-sm focus-visible:outline-none focus-visible:border-forest-light"
+              className="h-11 w-full rounded-xl border-2 border-input bg-white px-4 text-sm focus-visible:outline-none focus-visible:border-forest-light disabled:opacity-60"
+              disabled={loadingTechnicians || counterparts.length === 0}
               {...register('counterpart_id')}
             >
-              <option value="">Select a technician…</option>
-              {counterparts.map((c) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+              <option value="">{loadingTechnicians ? 'Loading technicians…' : 'Select a technician…'}</option>
+              {counterparts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}{c.assigned ? ' (Assigned)' : ''}
+                </option>
+              ))}
             </select>
             {errors.counterpart_id && <p className="mt-1.5 text-xs text-danger">{errors.counterpart_id.message}</p>}
+            {!loadingTechnicians && counterparts.length === 0 && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                No technician is available yet. Once MAO assigns a technician to your incident, they will appear here.
+              </p>
+            )}
           </div>
         ) : (
           <Input label="Farmer ID" type="number" error={errors.counterpart_id?.message} {...register('counterpart_id')} />

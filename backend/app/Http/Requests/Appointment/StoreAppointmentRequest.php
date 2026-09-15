@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Appointment;
 
+use App\Models\Incident;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreAppointmentRequest extends FormRequest
 {
@@ -26,5 +29,39 @@ class StoreAppointmentRequest extends FormRequest
             'purpose' => ['nullable', 'string', 'max:200'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $user = $this->user();
+            if (! $user?->hasRole('farmer')) {
+                return;
+            }
+
+            $technicianId = (int) $this->input('technician_id');
+            if ($technicianId < 1) {
+                return;
+            }
+
+            $technician = User::query()->where('id', $technicianId)->where('role', 'technician')->first();
+            if (! $technician) {
+                $validator->errors()->add('technician_id', 'Select a valid technician.');
+
+                return;
+            }
+
+            $assigned = Incident::query()
+                ->where('farmer_id', $user->id)
+                ->where('assigned_technician_id', $technicianId)
+                ->exists();
+            $sameMunicipality = $user->municipality_id
+                && $technician->municipality_id === $user->municipality_id
+                && $technician->status === 'active';
+
+            if (! $assigned && ! $sameMunicipality) {
+                $validator->errors()->add('technician_id', 'You can only schedule a visit with your assigned technician.');
+            }
+        });
     }
 }

@@ -127,6 +127,7 @@ Route::prefix('v1')->group(function () {
             Route::get('incidents', [FarmerIncidentController::class, 'index']);
             Route::post('incidents', [FarmerIncidentController::class, 'store']);
             Route::get('incidents/{incident}', [FarmerIncidentController::class, 'show']);
+            Route::get('technicians', [AppointmentController::class, 'technicians']);
 
             Route::get('program-applications', [ProgramApplicationController::class, 'index']);
             Route::post('programs/{program}/apply', [ProgramApplicationController::class, 'store']);

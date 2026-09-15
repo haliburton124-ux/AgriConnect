@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Models\Appointment;
+use App\Models\Incident;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,6 +18,55 @@ use Illuminate\Http\Request;
  */
 class AppointmentController extends Controller
 {
+    /**
+     * Technicians a farmer can book: anyone already assigned to their
+     * incidents, plus active technicians in the same municipality.
+     */
+    public function technicians(Request $request): JsonResponse
+    {
+        $farmer = $request->user();
+        abort_unless($farmer->hasRole('farmer'), 403);
+
+        $assignedIds = Incident::query()
+            ->where('farmer_id', $farmer->id)
+            ->whereNotNull('assigned_technician_id')
+            ->pluck('assigned_technician_id')
+            ->unique()
+            ->filter()
+            ->values();
+
+        $technicianIds = User::query()
+            ->where('role', 'technician')
+            ->where('status', 'active')
+            ->when(
+                $farmer->municipality_id,
+                fn ($q) => $q->where('municipality_id', $farmer->municipality_id),
+                fn ($q) => $q->whereRaw('0 = 1'),
+            )
+            ->pluck('id')
+            ->merge($assignedIds)
+            ->unique()
+            ->values();
+
+        $technicians = User::query()
+            ->whereIn('id', $technicianIds)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'middle_name', 'last_name', 'suffix', 'phone']);
+
+        return response()->json([
+            'data' => $technicians
+                ->sortBy(fn (User $tech) => $assignedIds->contains($tech->id) ? 0 : 1)
+                ->values()
+                ->map(fn (User $tech) => [
+                    'id' => $tech->id,
+                    'full_name' => $tech->full_name,
+                    'phone' => $tech->phone,
+                    'assigned' => $assignedIds->contains($tech->id),
+                ]),
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();

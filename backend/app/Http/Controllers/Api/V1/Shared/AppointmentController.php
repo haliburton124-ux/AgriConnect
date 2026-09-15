@@ -114,7 +114,7 @@ class AppointmentController extends Controller
     public function updateStatus(UpdateAppointmentStatusRequest $request, Appointment $appointment): JsonResponse
     {
         $user = $request->user();
-        abort_unless(in_array($user->id, [$appointment->farmer_id, $appointment->technician_id], true), 403);
+        abort_unless($user->hasRole('technician') && $user->id === $appointment->technician_id, 403);
 
         $appointment->update(['status' => $request->validated('status')]);
 

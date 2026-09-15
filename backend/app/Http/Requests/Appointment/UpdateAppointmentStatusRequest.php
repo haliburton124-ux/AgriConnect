@@ -8,7 +8,7 @@ class UpdateAppointmentStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // ownership checked in controller
+        return $this->user()?->hasRole('technician') ?? false;
     }
 
     public function rules(): array

@@ -91,7 +91,7 @@ export function AppointmentsPage() {
 
                   <div className="flex shrink-0 items-center gap-2">
                     <Badge variant={STATUS_BADGE[appt.status]}>{appt.status.replace('_', ' ')}</Badge>
-                    {(appt.status === 'scheduled' || appt.status === 'confirmed') && (
+                    {!isFarmer && (appt.status === 'scheduled' || appt.status === 'confirmed') && (
                       <>
                         <Button size="icon" variant="ghost" title="Mark completed" onClick={() => handleStatusChange(appt, 'completed')}>
                           <CheckCircle2 className="h-4 w-4 text-success" />

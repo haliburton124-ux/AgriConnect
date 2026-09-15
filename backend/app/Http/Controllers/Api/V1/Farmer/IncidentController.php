@@ -21,10 +21,11 @@ class IncidentController extends Controller
         $incidents = $this->incidentService->repository()->paginateForFarmer(
             $request->user(),
             $request->only(['status', 'severity', 'category_id', 'search', 'date_from', 'date_to']),
+            min(100, max(1, $request->integer('per_page', 15))),
         );
 
         return response()->json([
-            'data' => IncidentResource::collection($incidents),
+            'data' => IncidentResource::collection($incidents->getCollection())->resolve(),
             'meta' => [
                 'current_page' => $incidents->currentPage(),
                 'last_page' => $incidents->lastPage(),

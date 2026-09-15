@@ -8,7 +8,54 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { getApiErrorMessage } from '@/lib/api'
 import { appointmentService, type AppointmentTechnician } from '@/services/appointmentService'
+import { incidentService } from '@/services/incidentService'
 import { useAuthStore } from '@/store/authStore'
+import type { Incident } from '@/types'
+
+function unwrapList<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload
+  if (payload && typeof payload === 'object') {
+    const inner = (payload as { data?: unknown }).data
+    if (Array.isArray(inner)) return inner
+    if (inner && typeof inner === 'object') {
+      const nested = (inner as { data?: unknown }).data
+      if (Array.isArray(nested)) return nested
+    }
+  }
+  return []
+}
+
+function techniciansFromIncidents(payload: unknown): AppointmentTechnician[] {
+  const incidents = unwrapList<Incident>(payload)
+  const byId = new Map<number, AppointmentTechnician>()
+  for (const incident of incidents) {
+    const tech = incident.assigned_technician
+    if (tech?.id) {
+      byId.set(tech.id, {
+        id: tech.id,
+        full_name: tech.full_name,
+        phone: tech.phone,
+        assigned: true,
+      })
+    }
+  }
+  return [...byId.values()]
+}
+
+function mergeTechnicians(...groups: AppointmentTechnician[][]): AppointmentTechnician[] {
+  const byId = new Map<number, AppointmentTechnician>()
+  for (const group of groups) {
+    for (const tech of group) {
+      const existing = byId.get(tech.id)
+      byId.set(tech.id, {
+        ...existing,
+        ...tech,
+        assigned: Boolean(existing?.assigned || tech.assigned),
+      })
+    }
+  }
+  return [...byId.values()].sort((a, b) => Number(Boolean(b.assigned)) - Number(Boolean(a.assigned)))
+}
 
 const schema = z.object({
   counterpart_id: z.coerce.number().min(1, 'Select who you want to meet'),
@@ -48,24 +95,29 @@ export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleA
 
     let cancelled = false
     setLoadingTechnicians(true)
-    appointmentService
-      .listTechnicians()
-      .then((res) => {
-        if (cancelled) return
-        const list = Array.isArray(res.data.data) ? res.data.data : []
-        setCounterparts(list)
-        const assigned = list.filter((tech) => tech.assigned)
-        const preferred = assigned[0] ?? (list.length === 1 ? list[0] : undefined)
-        if (preferred) {
-          setValue('counterpart_id', preferred.id)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setCounterparts([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingTechnicians(false)
-      })
+
+    Promise.allSettled([
+      appointmentService.listTechnicians(),
+      incidentService.listMine({ per_page: 100 }),
+    ]).then(([techResult, incidentResult]) => {
+      if (cancelled) return
+
+      const fromDirectory = techResult.status === 'fulfilled'
+        ? unwrapList<AppointmentTechnician>(techResult.value.data)
+        : []
+      const fromIncidents = incidentResult.status === 'fulfilled'
+        ? techniciansFromIncidents(incidentResult.value.data)
+        : []
+      const list = mergeTechnicians(fromDirectory, fromIncidents)
+
+      setCounterparts(list)
+      const preferred = list.find((tech) => tech.assigned) ?? (list.length === 1 ? list[0] : undefined)
+      if (preferred) {
+        setValue('counterpart_id', preferred.id)
+      }
+    }).finally(() => {
+      if (!cancelled) setLoadingTechnicians(false)
+    })
 
     return () => {
       cancelled = true

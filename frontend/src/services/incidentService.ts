@@ -9,6 +9,7 @@ export interface IncidentFilters {
   date_from?: string
   date_to?: string
   page?: number
+  per_page?: number
 }
 
 function toParams(filters: IncidentFilters = {}) {

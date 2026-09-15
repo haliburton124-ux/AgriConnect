@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Models\Appointment;
-use App\Models\Incident;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Shared between Farmer and Technician — visit scheduling for on-site
@@ -27,15 +27,24 @@ class AppointmentController extends Controller
         $farmer = $request->user();
         abort_unless($farmer->hasRole('farmer'), 403);
 
-        $assignedIds = Incident::query()
+        $assignedFromIncidents = DB::table('incidents')
             ->where('farmer_id', $farmer->id)
             ->whereNotNull('assigned_technician_id')
-            ->pluck('assigned_technician_id')
+            ->pluck('assigned_technician_id');
+
+        $assignedFromHistory = DB::table('incident_assignments')
+            ->join('incidents', 'incidents.id', '=', 'incident_assignments.incident_id')
+            ->where('incidents.farmer_id', $farmer->id)
+            ->pluck('incident_assignments.technician_id');
+
+        $assignedIds = $assignedFromIncidents
+            ->merge($assignedFromHistory)
+            ->map(fn ($id) => (int) $id)
             ->unique()
             ->filter()
             ->values();
 
-        $technicianIds = User::query()
+        $municipalityIds = User::query()
             ->where('role', 'technician')
             ->where('status', 'active')
             ->when(
@@ -44,11 +53,12 @@ class AppointmentController extends Controller
                 fn ($q) => $q->whereRaw('0 = 1'),
             )
             ->pluck('id')
-            ->merge($assignedIds)
-            ->unique()
-            ->values();
+            ->map(fn ($id) => (int) $id);
+
+        $technicianIds = $municipalityIds->merge($assignedIds)->unique()->values();
 
         $technicians = User::query()
+            ->withArchived()
             ->whereIn('id', $technicianIds)
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -56,14 +66,15 @@ class AppointmentController extends Controller
 
         return response()->json([
             'data' => $technicians
-                ->sortBy(fn (User $tech) => $assignedIds->contains($tech->id) ? 0 : 1)
+                ->sortBy(fn (User $tech) => $assignedIds->contains((int) $tech->id) ? 0 : 1)
                 ->values()
                 ->map(fn (User $tech) => [
                     'id' => $tech->id,
                     'full_name' => $tech->full_name,
                     'phone' => $tech->phone,
-                    'assigned' => $assignedIds->contains($tech->id),
-                ]),
+                    'assigned' => $assignedIds->contains((int) $tech->id),
+                ])
+                ->all(),
         ]);
     }
 

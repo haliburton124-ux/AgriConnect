@@ -42,19 +42,15 @@ function techniciansFromIncidents(payload: unknown): AppointmentTechnician[] {
   return [...byId.values()]
 }
 
-function mergeTechnicians(...groups: AppointmentTechnician[][]): AppointmentTechnician[] {
+function mergeAssignedTechnicians(...groups: AppointmentTechnician[][]): AppointmentTechnician[] {
   const byId = new Map<number, AppointmentTechnician>()
   for (const group of groups) {
     for (const tech of group) {
-      const existing = byId.get(tech.id)
-      byId.set(tech.id, {
-        ...existing,
-        ...tech,
-        assigned: Boolean(existing?.assigned || tech.assigned),
-      })
+      if (!tech.assigned) continue
+      byId.set(tech.id, { ...tech, assigned: true })
     }
   }
-  return [...byId.values()].sort((a, b) => Number(Boolean(b.assigned)) - Number(Boolean(a.assigned)))
+  return [...byId.values()]
 }
 
 const schema = z.object({
@@ -73,8 +69,7 @@ interface ScheduleAppointmentModalProps {
 }
 
 /**
- * Farmer books a visit with the technician assigned to their incidents
- * (and other active technicians in the same municipality).
+ * Farmer books a visit only with the technician assigned to their incidents.
  */
 export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleAppointmentModalProps) {
   const { user } = useAuthStore()
@@ -103,17 +98,16 @@ export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleA
       if (cancelled) return
 
       const fromDirectory = techResult.status === 'fulfilled'
-        ? unwrapList<AppointmentTechnician>(techResult.value.data)
+        ? unwrapList<AppointmentTechnician>(techResult.value.data).filter((tech) => tech.assigned)
         : []
       const fromIncidents = incidentResult.status === 'fulfilled'
         ? techniciansFromIncidents(incidentResult.value.data)
         : []
-      const list = mergeTechnicians(fromDirectory, fromIncidents)
+      const list = mergeAssignedTechnicians(fromDirectory, fromIncidents)
 
       setCounterparts(list)
-      const preferred = list.find((tech) => tech.assigned) ?? (list.length === 1 ? list[0] : undefined)
-      if (preferred) {
-        setValue('counterpart_id', preferred.id)
+      if (list.length === 1) {
+        setValue('counterpart_id', list[0].id)
       }
     }).finally(() => {
       if (!cancelled) setLoadingTechnicians(false)
@@ -175,7 +169,7 @@ export function ScheduleAppointmentModal({ open, onClose, onSuccess }: ScheduleA
               <option value="">{loadingTechnicians ? 'Loading technicians…' : 'Select a technician…'}</option>
               {counterparts.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.full_name}{c.assigned ? ' (Assigned)' : ''}
+                  {c.full_name}
                 </option>
               ))}
             </select>

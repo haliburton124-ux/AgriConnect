@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\DB;
 class AppointmentController extends Controller
 {
     /**
-     * Technicians a farmer can book: anyone already assigned to their
-     * incidents, plus active technicians in the same municipality.
+     * Technicians a farmer can book: only those already assigned to
+     * this farmer's incidents.
      */
     public function technicians(Request $request): JsonResponse
     {
@@ -44,36 +44,22 @@ class AppointmentController extends Controller
             ->filter()
             ->values();
 
-        $municipalityIds = User::query()
-            ->where('role', 'technician')
-            ->where('status', 'active')
-            ->when(
-                $farmer->municipality_id,
-                fn ($q) => $q->where('municipality_id', $farmer->municipality_id),
-                fn ($q) => $q->whereRaw('0 = 1'),
-            )
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id);
-
-        $technicianIds = $municipalityIds->merge($assignedIds)->unique()->values();
-
         $technicians = User::query()
             ->withArchived()
-            ->whereIn('id', $technicianIds)
+            ->whereIn('id', $assignedIds)
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'middle_name', 'last_name', 'suffix', 'phone']);
 
         return response()->json([
             'data' => $technicians
-                ->sortBy(fn (User $tech) => $assignedIds->contains((int) $tech->id) ? 0 : 1)
-                ->values()
                 ->map(fn (User $tech) => [
                     'id' => $tech->id,
                     'full_name' => $tech->full_name,
                     'phone' => $tech->phone,
-                    'assigned' => $assignedIds->contains((int) $tech->id),
+                    'assigned' => true,
                 ])
+                ->values()
                 ->all(),
         ]);
     }

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Appointment;
 use App\Models\Incident;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Validator;
 
 class StoreAppointmentRequest extends FormRequest
@@ -51,15 +52,18 @@ class StoreAppointmentRequest extends FormRequest
                 return;
             }
 
-            $assigned = Incident::query()
+            $assignedOnIncident = Incident::query()
                 ->where('farmer_id', $user->id)
                 ->where('assigned_technician_id', $technicianId)
                 ->exists();
-            $sameMunicipality = $user->municipality_id
-                && $technician->municipality_id === $user->municipality_id
-                && $technician->status === 'active';
 
-            if (! $assigned && ! $sameMunicipality) {
+            $assignedOnRecord = DB::table('incident_assignments')
+                ->join('incidents', 'incidents.id', '=', 'incident_assignments.incident_id')
+                ->where('incidents.farmer_id', $user->id)
+                ->where('incident_assignments.technician_id', $technicianId)
+                ->exists();
+
+            if (! $assignedOnIncident && ! $assignedOnRecord) {
                 $validator->errors()->add('technician_id', 'You can only schedule a visit with your assigned technician.');
             }
         });

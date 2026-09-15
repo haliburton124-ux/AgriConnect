@@ -125,7 +125,14 @@ class AppointmentController extends Controller
 
         abort_unless(in_array($nextStatus, $allowed, true), 422, 'This appointment cannot move to that status yet.');
 
-        $appointment->update(['status' => $nextStatus]);
+        $payload = ['status' => $nextStatus];
+        if ($nextStatus === 'completed') {
+            $payload['completion_findings'] = $request->validated('completion_findings');
+            $payload['completion_outcome'] = $request->validated('completion_outcome');
+            $payload['completion_follow_up'] = $request->validated('completion_follow_up') ?? null;
+        }
+
+        $appointment->update($payload);
 
         return response()->json(['message' => 'Appointment updated.', 'data' => $appointment]);
     }

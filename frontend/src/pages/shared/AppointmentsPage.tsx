@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ScheduleAppointmentModal } from '@/components/modals/ScheduleAppointmentModal'
+import { CompleteAppointmentModal } from '@/components/modals/CompleteAppointmentModal'
 import { appointmentService } from '@/services/appointmentService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
@@ -25,6 +26,7 @@ export function AppointmentsPage() {
   const isFarmer = user?.role === 'farmer'
   const [appointments, setAppointments] = useState<Appointment[] | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [completing, setCompleting] = useState<Appointment | null>(null)
 
   const load = () => {
     setAppointments(null)
@@ -91,6 +93,17 @@ export function AppointmentsPage() {
                           {appt.notes}
                         </p>
                       )}
+                      {appt.completion_findings && (
+                        <div className="mt-1.5 space-y-0.5 text-xs leading-relaxed text-ink/70">
+                          <p><span className="font-medium text-ink/80">Visit findings: </span>{appt.completion_findings}</p>
+                          {appt.completion_outcome && (
+                            <p><span className="font-medium text-ink/80">Outcome: </span>{appt.completion_outcome}</p>
+                          )}
+                          {appt.completion_follow_up && (
+                            <p><span className="font-medium text-ink/80">Follow-up: </span>{appt.completion_follow_up}</p>
+                          )}
+                        </div>
+                      )}
                       {appt.incident && <p className="text-xs text-forest">Re: {appt.incident.reference_code}</p>}
                     </div>
                   </div>
@@ -109,7 +122,7 @@ export function AppointmentsPage() {
                     )}
                     {!isFarmer && appt.status === 'confirmed' && (
                       <>
-                        <Button size="icon" variant="ghost" title="Mark completed" onClick={() => handleStatusChange(appt, 'completed')}>
+                        <Button size="icon" variant="ghost" title="Mark completed" onClick={() => setCompleting(appt)}>
                           <CheckCircle2 className="h-4 w-4 text-success" />
                         </Button>
                         <Button size="icon" variant="ghost" title="Cancel" onClick={() => handleStatusChange(appt, 'cancelled')}>
@@ -126,6 +139,12 @@ export function AppointmentsPage() {
       </Card>
 
       <ScheduleAppointmentModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={load} />
+      <CompleteAppointmentModal
+        open={completing !== null}
+        appointment={completing}
+        onClose={() => setCompleting(null)}
+        onSuccess={load}
+      />
     </div>
   )
 }

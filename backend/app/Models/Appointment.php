@@ -10,6 +10,7 @@ class Appointment extends Model
     protected $fillable = [
         'incident_id', 'farmer_id', 'technician_id', 'farm_id',
         'scheduled_at', 'purpose', 'notes', 'status',
+        'completion_findings', 'completion_outcome', 'completion_follow_up',
     ];
 
     protected $casts = ['scheduled_at' => 'datetime'];

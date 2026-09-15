@@ -22,6 +22,10 @@ export const appointmentService = {
   list: (status?: string) => api.get<PaginatedResponse<Appointment>>('/appointments', { params: { status } }),
   listTechnicians: () => api.get<{ data: AppointmentTechnician[] }>('/farmer/technicians'),
   create: (payload: AppointmentPayload) => api.post<{ message: string; data: Appointment }>('/appointments', payload),
-  updateStatus: (id: number, status: Appointment['status']) =>
-    api.put<{ message: string; data: Appointment }>(`/appointments/${id}/status`, { status }),
+  updateStatus: (id: number, status: Appointment['status'], extras?: {
+    completion_findings?: string
+    completion_outcome?: string
+    completion_follow_up?: string
+  }) =>
+    api.put<{ message: string; data: Appointment }>(`/appointments/${id}/status`, { status, ...extras }),
 }

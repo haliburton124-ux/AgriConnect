@@ -1,17 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { messageService } from '@/services/messageService'
 import { useAuthStore } from '@/store/authStore'
+import { REALTIME_EVENT, notifyMessagesChanged, type RealtimeInboxPayload } from '@/hooks/useRealtimeInbox'
 
-const POLL_INTERVAL_MS = 15_000
-
-export function notifyMessagesChanged() {
-  window.dispatchEvent(new Event('agriri-messages-changed'))
-}
+export { notifyMessagesChanged }
 
 export function useUnreadMessages() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const [unreadCount, setUnreadCount] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) {
@@ -33,11 +29,17 @@ export function useUnreadMessages() {
     }
 
     refresh()
-    intervalRef.current = setInterval(refresh, POLL_INTERVAL_MS)
+    const onRealtime = (event: Event) => {
+      const payload = (event as CustomEvent<RealtimeInboxPayload>).detail
+      if (typeof payload?.unread_messages === 'number') {
+        setUnreadCount(payload.unread_messages)
+      }
+    }
     const onChanged = () => { refresh() }
+    window.addEventListener(REALTIME_EVENT, onRealtime)
     window.addEventListener('agriri-messages-changed', onChanged)
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      window.removeEventListener(REALTIME_EVENT, onRealtime)
       window.removeEventListener('agriri-messages-changed', onChanged)
     }
   }, [isAuthenticated, refresh])

@@ -4,6 +4,7 @@ import { Send, MessageCircle } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { notifyMessagesChanged } from '@/hooks/useUnreadMessages'
+import { REALTIME_EVENT, type RealtimeInboxPayload } from '@/hooks/useRealtimeInbox'
 import { messageService } from '@/services/messageService'
 import { useAuthStore } from '@/store/authStore'
 import { cn, formatDateTime } from '@/lib/utils'
@@ -36,6 +37,21 @@ export function MessagesPage() {
       setConversation(res.data.data)
       notifyMessagesChanged()
     })
+  }, [activePartnerId])
+
+  useEffect(() => {
+    const onRealtime = (event: Event) => {
+      const payload = (event as CustomEvent<RealtimeInboxPayload>).detail
+      loadThreads()
+      if (activePartnerId !== null && payload?.sender_id === activePartnerId) {
+        messageService.conversation(activePartnerId).then((res) => {
+          setConversation(res.data.data)
+          notifyMessagesChanged()
+        })
+      }
+    }
+    window.addEventListener(REALTIME_EVENT, onRealtime)
+    return () => window.removeEventListener(REALTIME_EVENT, onRealtime)
   }, [activePartnerId])
 
   useEffect(() => {

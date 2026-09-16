@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { cn, formatDateTime, initials } from '@/lib/utils'
 import { notifyMessagesChanged, useUnreadMessages } from '@/hooks/useUnreadMessages'
+import { REALTIME_EVENT, type RealtimeInboxPayload } from '@/hooks/useRealtimeInbox'
 import { messageService } from '@/services/messageService'
 import { useAuthStore } from '@/store/authStore'
 import type { ChatMessage, MessageThread } from '@/types'
@@ -66,6 +67,22 @@ export function MessengerPanel({ open, onClose, messagesPath }: MessengerPanelPr
       setConversation(res.data.data)
       notifyMessagesChanged()
     })
+  }, [open, activePartnerId])
+
+  useEffect(() => {
+    if (!open) return
+    const onRealtime = (event: Event) => {
+      const payload = (event as CustomEvent<RealtimeInboxPayload>).detail
+      loadThreads()
+      if (activePartnerId !== null && payload?.sender_id === activePartnerId) {
+        messageService.conversation(activePartnerId).then((res) => {
+          setConversation(res.data.data)
+          notifyMessagesChanged()
+        })
+      }
+    }
+    window.addEventListener(REALTIME_EVENT, onRealtime)
+    return () => window.removeEventListener(REALTIME_EVENT, onRealtime)
   }, [open, activePartnerId])
 
   useEffect(() => {

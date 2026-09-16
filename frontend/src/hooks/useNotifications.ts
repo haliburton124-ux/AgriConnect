@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { notificationService } from '@/services/notificationService'
 import { useAuthStore } from '@/store/authStore'
+import { REALTIME_EVENT, type RealtimeInboxPayload } from '@/hooks/useRealtimeInbox'
 import type { AppNotification } from '@/types'
-
-const POLL_INTERVAL_MS = 15_000
 
 export function useNotifications() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) {
@@ -73,14 +71,21 @@ export function useNotifications() {
 
     refreshUnreadCount()
 
-    intervalRef.current = setInterval(refreshUnreadCount, POLL_INTERVAL_MS)
+    const onRealtime = (event: Event) => {
+      const payload = (event as CustomEvent<RealtimeInboxPayload>).detail
+      if (typeof payload?.unread_notifications !== 'number') return
+      setUnreadCount(payload.unread_notifications)
+      void refresh()
+    }
     const onChanged = () => { refreshUnreadCount() }
+
+    window.addEventListener(REALTIME_EVENT, onRealtime)
     window.addEventListener('agriri-messages-changed', onChanged)
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      window.removeEventListener(REALTIME_EVENT, onRealtime)
       window.removeEventListener('agriri-messages-changed', onChanged)
     }
-  }, [isAuthenticated, refreshUnreadCount])
+  }, [isAuthenticated, refresh, refreshUnreadCount])
 
   return {
     notifications,

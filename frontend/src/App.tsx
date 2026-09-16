@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import type { ComponentType } from 'react'
 import { useAuthStore, ROLE_HOME } from '@/store/authStore'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
+import { useRealtimeInbox } from '@/hooks/useRealtimeInbox'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { FarmerLayout } from '@/layouts/FarmerLayout'
 import { PublicFarmerLayout } from '@/layouts/PublicFarmerLayout'
@@ -42,6 +43,7 @@ import { GisMapPage } from '@/pages/gis/GisMapPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
+import { MaoDesignExportPage } from '@/pages/design/MaoDesignExportPage'
 
 import type { UserRole } from '@/types'
 
@@ -101,9 +103,15 @@ function FallbackRedirect() {
   return <Navigate to="/" replace />
 }
 
+function RealtimeInboxSync() {
+  useRealtimeInbox()
+  return null
+}
+
 export function App() {
   return (
     <BrowserRouter>
+      <RealtimeInboxSync />
       <Routes>
         {/* ── Public Farmer marketing site (multi-page, top nav) ── */}
         <Route element={<PublicFarmerLayout />}>
@@ -117,6 +125,10 @@ export function App() {
 
         {/* Legacy path → home */}
         <Route path="/farmer" element={<Navigate to="/" replace />} />
+
+        {/* Exact MAO desktop screens for html.to.design (real components, 1440px) */}
+        <Route path="/design/mao" element={<MaoDesignExportPage />} />
+        <Route path="/design/mao/:slug" element={<MaoDesignExportPage />} />
 
         {/* ── Public auth routes ─────────────────────────────── */}
         <Route path="/login" element={<LoginPage />} />

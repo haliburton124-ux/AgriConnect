@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\V1\Shared\DocumentController;
 use App\Http\Controllers\Api\V1\Shared\MunicipalityDocumentController;
 use App\Http\Controllers\Api\V1\Shared\MessageController;
 use App\Http\Controllers\Api\V1\Shared\NotificationController;
+use App\Http\Controllers\Api\V1\Shared\RealtimeController;
 use App\Http\Controllers\Api\V1\Technician\IncidentController as TechnicianIncidentController;
 use Illuminate\Support\Facades\Route;
 
@@ -83,6 +84,7 @@ Route::prefix('v1')->group(function () {
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::get('realtime/snapshot', [RealtimeController::class, 'snapshot']);
 
         // Knowledge Center — write access restricted inside the request/controller
         Route::get('knowledge/managed', [KnowledgeArticleController::class, 'manage']);

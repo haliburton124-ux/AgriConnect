@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1\Shared;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Message\StoreMessageRequest;
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,20 +17,31 @@ use Illuminate\Support\Facades\DB;
  */
 class MessageController extends Controller
 {
-    /** List distinct conversation threads for the current user. */
+    /** List conversation threads, including assigned contacts with no messages yet. */
     public function threads(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
 
-        $partnerIds = Message::query()
-            ->where('sender_id', $userId)->orWhere('receiver_id', $userId)
+        $messagePartnerIds = Message::query()
+            ->where(function ($q) use ($userId) {
+                $q->where('sender_id', $userId)->orWhere('receiver_id', $userId);
+            })
             ->get(['sender_id', 'receiver_id'])
             ->flatMap(fn ($m) => [$m->sender_id, $m->receiver_id])
             ->unique()
-            ->reject(fn ($id) => $id === $userId)
+            ->reject(fn ($id) => (int) $id === $userId)
             ->values();
 
-        $threads = \App\Models\User::whereIn('id', $partnerIds)
+        $partnerIds = $messagePartnerIds
+            ->merge(self::assignedContactIdsFor($user))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->filter()
+            ->values();
+
+        $threads = User::query()
+            ->whereIn('id', $partnerIds)
             ->get(['id', 'first_name', 'last_name', 'role'])
             ->map(function ($partner) use ($userId) {
                 $last = Message::where(function ($q) use ($userId, $partner) {
@@ -48,7 +61,7 @@ class MessageController extends Controller
                     'unread_count' => $unread,
                 ];
             })
-            ->sortByDesc(fn ($t) => $t['last_message']?->created_at)
+            ->sortByDesc(fn ($t) => $t['last_message']?->created_at?->timestamp ?? 0)
             ->values();
 
         return response()->json(['data' => $threads]);
@@ -96,5 +109,40 @@ class MessageController extends Controller
         ]);
 
         return response()->json(['message' => 'Message sent.', 'data' => $message], 201);
+    }
+
+    /** Farmers may message assigned technicians; technicians may message their assigned farmers. */
+    public static function assignedContactIdsFor(User $user): Collection
+    {
+        if ($user->hasRole('farmer')) {
+            $fromIncidents = DB::table('incidents')
+                ->where('farmer_id', $user->id)
+                ->whereNotNull('assigned_technician_id')
+                ->pluck('assigned_technician_id');
+
+            $fromHistory = DB::table('incident_assignments')
+                ->join('incidents', 'incidents.id', '=', 'incident_assignments.incident_id')
+                ->where('incidents.farmer_id', $user->id)
+                ->pluck('incident_assignments.technician_id');
+
+            return $fromIncidents
+                ->merge($fromHistory)
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->filter()
+                ->values();
+        }
+
+        if ($user->hasRole('technician')) {
+            return DB::table('incidents')
+                ->where('assigned_technician_id', $user->id)
+                ->pluck('farmer_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->filter()
+                ->values();
+        }
+
+        return collect();
     }
 }

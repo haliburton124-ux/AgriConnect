@@ -148,7 +148,11 @@ export function MessengerPanel({ open, onClose, messagesPath }: MessengerPanelPr
                   <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
                     <MessageCircle className="h-7 w-7 text-forest-light" />
                     <p className="text-sm font-medium text-ink">No conversations yet</p>
-                    <p className="text-xs text-muted-foreground">Messages with your contacts will show up here.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.role === 'farmer'
+                        ? 'After MAO assigns a technician to your incident, they will appear here.'
+                        : 'Farmers assigned to you will appear here.'}
+                    </p>
                   </div>
                 ) : (
                   <ul>

@@ -24,6 +24,12 @@ export function MessagesPage() {
   useEffect(loadThreads, [])
 
   useEffect(() => {
+    if (threads?.length === 1 && activePartnerId === null) {
+      setActivePartnerId(threads[0].partner.id)
+    }
+  }, [threads, activePartnerId])
+
+  useEffect(() => {
     if (activePartnerId === null) return
     messageService.conversation(activePartnerId).then((res) => setConversation(res.data.data))
   }, [activePartnerId])
@@ -52,7 +58,11 @@ export function MessagesPage() {
     <div className="animate-fade-in">
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-ink">Messages</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Direct conversations with your farmer/technician contacts.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {user?.role === 'farmer'
+            ? 'Message the technician assigned to your incident.'
+            : 'Message farmers assigned to you.'}
+        </p>
       </div>
 
       <Card className="flex h-[calc(100vh-14rem)] overflow-hidden p-0">
@@ -64,7 +74,13 @@ export function MessagesPage() {
             </div>
           ) : threads.length === 0 ? (
             <div className="p-6">
-              <EmptyState icon={MessageCircle} title="No conversations yet" description="Messages with your contacts will show up here." />
+              <EmptyState
+                icon={MessageCircle}
+                title="No conversations yet"
+                description={user?.role === 'farmer'
+                  ? 'After MAO assigns a technician to your incident, they will appear here so you can message them.'
+                  : 'Farmers assigned to you will appear here so you can message them.'}
+              />
             </div>
           ) : (
             threads.map((thread) => (
@@ -80,12 +96,15 @@ export function MessagesPage() {
                   {thread.partner.first_name[0]}{thread.partner.last_name[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-medium text-ink">{thread.partner.first_name} {thread.partner.last_name}</p>
                     {thread.unread_count > 0 && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-white">{thread.unread_count}</span>
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-white">{thread.unread_count}</span>
                     )}
                   </div>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {thread.partner.role === 'technician' ? 'Assigned technician' : thread.partner.role === 'farmer' ? 'Farmer' : thread.partner.role.replace('_', ' ')}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">{thread.last_message?.body ?? 'No messages yet'}</p>
                 </div>
               </button>
@@ -97,12 +116,21 @@ export function MessagesPage() {
         <div className="flex flex-1 flex-col">
           {activePartnerId === null ? (
             <div className="flex flex-1 items-center justify-center">
-              <EmptyState icon={MessageCircle} title="Select a conversation" description="Choose a contact from the left to view your messages." />
+              <EmptyState
+                icon={MessageCircle}
+                title="Select a conversation"
+                description={user?.role === 'farmer'
+                  ? 'Open your assigned technician on the left, then type a message.'
+                  : 'Open a farmer on the left, then type a message.'}
+              />
             </div>
           ) : (
             <>
               <div className="border-b border-black/5 p-4">
                 <p className="text-sm font-semibold text-ink">{activeThread?.partner.first_name} {activeThread?.partner.last_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {activeThread?.partner.role === 'technician' ? 'Assigned technician' : activeThread?.partner.role === 'farmer' ? 'Farmer' : ''}
+                </p>
               </div>
               <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
                 {conversation === null ? (

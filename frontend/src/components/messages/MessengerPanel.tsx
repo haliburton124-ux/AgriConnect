@@ -5,6 +5,7 @@ import {
   ChevronLeft, MessageCircle, MessageSquare, Search, Send, X,
 } from 'lucide-react'
 import { cn, formatDateTime, initials } from '@/lib/utils'
+import { notifyMessagesChanged, useUnreadMessages } from '@/hooks/useUnreadMessages'
 import { messageService } from '@/services/messageService'
 import { useAuthStore } from '@/store/authStore'
 import type { ChatMessage, MessageThread } from '@/types'
@@ -61,7 +62,10 @@ export function MessengerPanel({ open, onClose, messagesPath }: MessengerPanelPr
       setConversation(null)
       return
     }
-    messageService.conversation(activePartnerId).then((res) => setConversation(res.data.data))
+    messageService.conversation(activePartnerId).then((res) => {
+      setConversation(res.data.data)
+      notifyMessagesChanged()
+    })
   }, [open, activePartnerId])
 
   useEffect(() => {
@@ -330,16 +334,7 @@ export function MessengerBell({
   tone?: 'default' | 'transparent'
   messagesPath: string
 }) {
-  const [unreadTotal, setUnreadTotal] = useState(0)
-
-  useEffect(() => {
-    messageService.threads()
-      .then((res) => {
-        const total = res.data.data.reduce((sum, thread) => sum + thread.unread_count, 0)
-        setUnreadTotal(total)
-      })
-      .catch(() => {})
-  }, [open])
+  const { unreadCount } = useUnreadMessages()
 
   return (
     <div className="relative">
@@ -356,9 +351,9 @@ export function MessengerBell({
         aria-expanded={open}
       >
         <MessageSquare className="h-5 w-5" />
-        {unreadTotal > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#0084ff] px-1 text-[10px] font-bold text-white">
-            {unreadTotal > 9 ? '9+' : unreadTotal}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>

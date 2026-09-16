@@ -140,6 +140,10 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
                 open={notificationsOpen}
                 onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false); setMessagesOpen(false) }}
                 onOpenPost={handleOpenNotificationPost}
+                onOpenMessage={() => {
+                  setNotificationsOpen(false)
+                  navigate('/farmer/messages')
+                }}
                 tone={isTransparent ? 'transparent' : 'default'}
                 notifications={notifications}
                 loading={loading}
@@ -208,14 +212,43 @@ export function FarmerNavbar({ transparentAtTop = false }: FarmerNavbarProps) {
           )}
         </div>
 
-        <button
-          type="button"
-          className={cn('lg:hidden', isTransparent ? 'text-white' : 'text-ink')}
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-1 lg:hidden">
+          {isAuthenticated && (
+            <>
+              <NotificationBell
+                unreadCount={unreadCount}
+                open={notificationsOpen}
+                onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false); setMessagesOpen(false) }}
+                onOpenPost={handleOpenNotificationPost}
+                onOpenMessage={() => {
+                  setNotificationsOpen(false)
+                  setMobileOpen(false)
+                  navigate('/farmer/messages')
+                }}
+                tone={isTransparent ? 'transparent' : 'default'}
+                notifications={notifications}
+                loading={loading}
+                onLoad={load}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+              />
+              <MessengerBell
+                open={messagesOpen}
+                onToggle={() => { setMessagesOpen((v) => !v); setProfileOpen(false); setNotificationsOpen(false) }}
+                tone={isTransparent ? 'transparent' : 'default'}
+                messagesPath="/farmer/messages"
+              />
+            </>
+          )}
+          <button
+            type="button"
+            className={isTransparent ? 'text-white' : 'text-ink'}
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>

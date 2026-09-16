@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Message\StoreMessageRequest;
 use App\Models\Message;
 use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -67,6 +68,16 @@ class MessageController extends Controller
         return response()->json(['data' => $threads]);
     }
 
+    public function unreadCount(Request $request): JsonResponse
+    {
+        $count = Message::query()
+            ->where('receiver_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
     /** Conversation history with a specific user. */
     public function conversation(Request $request, int $partnerId): JsonResponse
     {
@@ -85,6 +96,11 @@ class MessageController extends Controller
         // Mark incoming messages as read.
         Message::where('sender_id', $partnerId)->where('receiver_id', $userId)
             ->whereNull('read_at')->update(['read_at' => now()]);
+
+        $request->user()->unreadNotifications
+            ->filter(fn ($notification) => ($notification->data['activity_type'] ?? null) === 'message'
+                && (int) ($notification->data['sender_id'] ?? 0) === $partnerId)
+            ->each->markAsRead();
 
         return response()->json([
             'data' => $messages->items(),
@@ -107,6 +123,9 @@ class MessageController extends Controller
             'body' => $request->validated('body'),
             'attachment_path' => $path,
         ]);
+
+        $receiver = User::query()->find($message->receiver_id);
+        $receiver?->notify(new NewMessageNotification($message, $request->user()));
 
         return response()->json(['message' => 'Message sent.', 'data' => $message], 201);
     }

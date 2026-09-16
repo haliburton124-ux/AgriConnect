@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { NotificationBell } from '@/components/community/NotificationPanel'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useUnreadMessages } from '@/hooks/useUnreadMessages'
 import type { CommunityPost } from '@/types'
 
 export function DashboardLayout() {
@@ -21,6 +22,7 @@ export function DashboardLayout() {
   const user = useAuthStore((s) => s.user)
   const clearSession = useAuthStore((s) => s.clearSession)
   const { unreadCount, notifications, loading, load, markAsRead, markAllAsRead } = useNotifications()
+  const { unreadCount: unreadMessages } = useUnreadMessages()
   const navigate = useNavigate()
 
   if (!user) return null
@@ -75,7 +77,12 @@ export function DashboardLayout() {
             }
           >
             <item.icon className="h-[18px] w-[18px]" />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.label === 'Messages' && unreadMessages > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-bold text-white">
+                {unreadMessages > 9 ? '9+' : unreadMessages}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
@@ -125,6 +132,10 @@ export function DashboardLayout() {
               open={notificationsOpen}
               onToggle={() => { setNotificationsOpen((v) => !v); setProfileOpen(false) }}
               onOpenPost={handleOpenNotificationPost}
+              onOpenMessage={() => {
+                setNotificationsOpen(false)
+                navigate(user.role === 'farmer' ? '/farmer/messages' : '/technician/messages')
+              }}
               notifications={notifications}
               loading={loading}
               onLoad={load}

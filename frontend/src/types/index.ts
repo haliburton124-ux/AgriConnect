@@ -275,7 +275,7 @@ export interface CommunityCategory {
 
 export interface AppNotification {
   id: string
-  type: 'like' | 'share' | 'comment' | 'reply' | 'mention' | 'community'
+  type: 'like' | 'share' | 'comment' | 'reply' | 'mention' | 'community' | 'message'
   message: string
   post_id: number | null
   comment_id: number | null
@@ -283,6 +283,7 @@ export interface AppNotification {
   actor_id: number | null
   actor_name: string | null
   post_title: string | null
+  sender_id?: number | null
   read_at: string | null
   created_at: string
 }

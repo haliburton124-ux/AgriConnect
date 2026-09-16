@@ -3,7 +3,7 @@ import { notificationService } from '@/services/notificationService'
 import { useAuthStore } from '@/store/authStore'
 import type { AppNotification } from '@/types'
 
-const POLL_INTERVAL_MS = 30_000
+const POLL_INTERVAL_MS = 15_000
 
 export function useNotifications() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -74,8 +74,11 @@ export function useNotifications() {
     refreshUnreadCount()
 
     intervalRef.current = setInterval(refreshUnreadCount, POLL_INTERVAL_MS)
+    const onChanged = () => { refreshUnreadCount() }
+    window.addEventListener('agriri-messages-changed', onChanged)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
+      window.removeEventListener('agriri-messages-changed', onChanged)
     }
   }, [isAuthenticated, refreshUnreadCount])
 

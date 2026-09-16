@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function () {
             Route::put('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
 
             Route::get('messages/threads', [MessageController::class, 'threads']);
+            Route::get('messages/unread-count', [MessageController::class, 'unreadCount']);
             Route::get('messages/{partnerId}', [MessageController::class, 'conversation']);
             Route::post('messages', [MessageController::class, 'store']);
         });

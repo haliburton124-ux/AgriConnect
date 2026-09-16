@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, Heart, MessageCircle, Share2, AtSign } from 'lucide-react'
+import { Bell, CheckCheck, Heart, MessageCircle, MessageSquare, Share2, AtSign } from 'lucide-react'
 import { cn, formatDateTime } from '@/lib/utils'
 import type { AppNotification } from '@/types'
 
@@ -8,6 +8,7 @@ const TYPE_ICONS: Record<string, typeof Bell> = {
   comment: MessageCircle,
   reply: MessageCircle,
   mention: AtSign,
+  message: MessageSquare,
 }
 
 interface NotificationPanelProps {
@@ -20,6 +21,7 @@ interface NotificationPanelProps {
   onMarkAsRead: (id: string) => Promise<void>
   onMarkAllAsRead: () => Promise<void>
   onOpenPost: (postId: number) => void
+  onOpenMessage?: (senderId?: number | null) => void
 }
 
 export function NotificationPanel({
@@ -32,10 +34,16 @@ export function NotificationPanel({
   onMarkAsRead,
   onMarkAllAsRead,
   onOpenPost,
+  onOpenMessage,
 }: NotificationPanelProps) {
   const handleOpen = async (notification: AppNotification) => {
     if (!notification.read_at) {
       await onMarkAsRead(notification.id)
+    }
+    if (notification.type === 'message') {
+      onOpenMessage?.(notification.sender_id)
+      onClose()
+      return
     }
     if (notification.post_id) {
       onOpenPost(notification.post_id)
@@ -132,6 +140,7 @@ export function NotificationBell({
   open,
   onToggle,
   onOpenPost,
+  onOpenMessage,
   tone = 'default',
   notifications,
   loading,
@@ -143,6 +152,7 @@ export function NotificationBell({
   open: boolean
   onToggle: () => void
   onOpenPost: (postId: number) => void
+  onOpenMessage?: (senderId?: number | null) => void
   tone?: 'default' | 'transparent'
   notifications: AppNotification[]
   loading: boolean
@@ -185,6 +195,7 @@ export function NotificationBell({
         onMarkAsRead={onMarkAsRead}
         onMarkAllAsRead={onMarkAllAsRead}
         onOpenPost={onOpenPost}
+        onOpenMessage={onOpenMessage}
       />
     </div>
   )

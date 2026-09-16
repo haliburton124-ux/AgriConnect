@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Send, MessageCircle } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { notifyMessagesChanged } from '@/hooks/useUnreadMessages'
 import { messageService } from '@/services/messageService'
 import { useAuthStore } from '@/store/authStore'
 import { cn, formatDateTime } from '@/lib/utils'
@@ -31,7 +32,10 @@ export function MessagesPage() {
 
   useEffect(() => {
     if (activePartnerId === null) return
-    messageService.conversation(activePartnerId).then((res) => setConversation(res.data.data))
+    messageService.conversation(activePartnerId).then((res) => {
+      setConversation(res.data.data)
+      notifyMessagesChanged()
+    })
   }, [activePartnerId])
 
   useEffect(() => {

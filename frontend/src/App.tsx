@@ -43,7 +43,6 @@ import { GisMapPage } from '@/pages/gis/GisMapPage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
-import { MaoDesignExportPage } from '@/pages/design/MaoDesignExportPage'
 
 import type { UserRole } from '@/types'
 
@@ -125,10 +124,6 @@ export function App() {
 
         {/* Legacy path → home */}
         <Route path="/farmer" element={<Navigate to="/" replace />} />
-
-        {/* Exact MAO desktop screens for html.to.design (real components, 1440px) */}
-        <Route path="/design/mao" element={<MaoDesignExportPage />} />
-        <Route path="/design/mao/:slug" element={<MaoDesignExportPage />} />
 
         {/* ── Public auth routes ─────────────────────────────── */}
         <Route path="/login" element={<LoginPage />} />

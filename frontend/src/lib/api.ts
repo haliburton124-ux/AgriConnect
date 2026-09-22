@@ -1,4 +1,12 @@
 import axios from 'axios'
+import { beginTrackedRequest, endTrackedRequest, isNavigationPending, shouldSkipLoader } from '@/store/loadingStore'
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipLoader?: boolean
+    loaderGen?: number
+  }
+}
 
 /**
  * Central Axios instance. The Sanctum bearer token is attached on every
@@ -23,12 +31,34 @@ api.interceptors.request.use((config) => {
       delete (config.headers as Record<string, unknown>)['Content-Type']
     }
   }
+
+  const method = (config.method ?? 'get').toLowerCase()
+  const url = `${config.baseURL ?? ''}${config.url ?? ''}`
+  if (method === 'get' && !shouldSkipLoader(url, config.skipLoader)) {
+    config.loaderGen = beginTrackedRequest()
+  }
+
   return config
 })
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config.loaderGen != null) {
+      endTrackedRequest(response.config.loaderGen)
+    }
+    return response
+  },
   (error) => {
+    const config = axios.isAxiosError(error) ? error.config : undefined
+    if (config?.loaderGen != null) {
+      const status = error.response?.status as number | undefined
+      const failed = isNavigationPending() && (!error.response || (status != null && status >= 500))
+        ? (!error.response
+          ? "We couldn’t load this page. Check your connection and try again."
+          : "We couldn’t load this page")
+        : undefined
+      endTrackedRequest(config.loaderGen, failed)
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('agriri_token')
       localStorage.removeItem('agriri_user')

@@ -48,7 +48,7 @@ export function useRealtimeInbox() {
 
     const pull = async () => {
       try {
-        const { data } = await api.get<RealtimeInboxPayload>('/realtime/snapshot')
+        const { data } = await api.get<RealtimeInboxPayload>('/realtime/snapshot', { skipLoader: true })
         if (cancelled) return
         const next = fingerprint(data)
         if (next !== lastFingerprint.current) {

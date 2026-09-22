@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router-dom'
 import { FarmerNavbar } from '@/components/landing/FarmerNavbar'
+import { NavigationOutlet } from '@/components/navigation/PageLoadingOverlay'
 import { Footer } from '@/components/landing/Footer'
 import { FarmerActionsProvider } from '@/contexts/FarmerActionsContext'
 
@@ -13,7 +13,7 @@ export function FarmerLayout() {
       <div className="min-h-screen bg-canvas">
         <FarmerNavbar />
         <main className="mx-auto max-w-7xl px-4 pb-16 pt-28 sm:px-6 lg:px-8">
-          <Outlet />
+          <NavigationOutlet />
         </main>
         <Footer />
       </div>

@@ -5,10 +5,10 @@ export const notificationService = {
   list: (page = 1) =>
     api.get<{ data: AppNotification[]; unread_count: number; meta: { current_page: number; last_page: number; total: number } }>(
       '/notifications',
-      { params: { page, per_page: 20 } },
+      { params: { page, per_page: 20 }, skipLoader: true },
     ),
 
-  unreadCount: () => api.get<{ count: number }>('/notifications/unread-count'),
+  unreadCount: () => api.get<{ count: number }>('/notifications/unread-count', { skipLoader: true }),
 
   markAsRead: (id: string) =>
     api.post<{ message: string; data: AppNotification }>(`/notifications/${id}/read`),

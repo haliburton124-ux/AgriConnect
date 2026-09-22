@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 import { useAuthStore, ROLE_HOME } from '@/store/authStore'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { useRealtimeInbox } from '@/hooks/useRealtimeInbox'
+import { NavigationLoaderRoot } from '@/components/navigation/PageLoadingOverlay'
 import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { FarmerLayout } from '@/layouts/FarmerLayout'
 import { PublicFarmerLayout } from '@/layouts/PublicFarmerLayout'
@@ -111,6 +112,7 @@ export function App() {
   return (
     <BrowserRouter>
       <RealtimeInboxSync />
+      <NavigationLoaderRoot />
       <Routes>
         {/* ── Public Farmer marketing site (multi-page, top nav) ── */}
         <Route element={<PublicFarmerLayout />}>

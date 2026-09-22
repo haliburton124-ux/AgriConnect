@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, LogOut, ChevronDown, Sprout } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
@@ -12,6 +12,7 @@ import { NotificationBell } from '@/components/community/NotificationPanel'
 import { PostDetailModal } from '@/components/community/PostDetailModal'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useUnreadMessages } from '@/hooks/useUnreadMessages'
+import { NavigationOutlet } from '@/components/navigation/PageLoadingOverlay'
 import type { CommunityPost } from '@/types'
 
 export function DashboardLayout() {
@@ -178,7 +179,7 @@ export function DashboardLayout() {
         </header>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4 lg:p-8">
-          <Outlet />
+          <NavigationOutlet />
         </main>
       </div>
 

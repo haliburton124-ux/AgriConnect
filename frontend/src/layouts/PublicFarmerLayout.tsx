@@ -1,5 +1,6 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { FarmerNavbar } from '@/components/landing/FarmerNavbar'
+import { NavigationOutlet } from '@/components/navigation/PageLoadingOverlay'
 import { Footer } from '@/components/landing/Footer'
 import { FarmerActionsProvider } from '@/contexts/FarmerActionsContext'
 
@@ -16,7 +17,7 @@ export function PublicFarmerLayout() {
       <div className="min-h-screen bg-canvas">
         <FarmerNavbar transparentAtTop={transparentNav} />
         <main>
-          <Outlet />
+          <NavigationOutlet />
         </main>
         <Footer />
       </div>

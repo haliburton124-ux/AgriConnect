@@ -1,4 +1,3 @@
-import type { LatLngBoundsExpression } from 'leaflet'
 import { AgriMap } from '@/components/map'
 import { DETAIL_MAP_ZOOM } from '@/lib/mapConfig'
 import type { Farm } from '@/types'
@@ -11,7 +10,7 @@ interface FarmLocationMapProps {
   mapKey?: string
 }
 
-function polygonBounds(geojson: GeoJSON.Polygon): LatLngBoundsExpression {
+function polygonBounds(geojson: GeoJSON.Polygon): [number, number][] {
   return geojson.coordinates[0].map(([lng, lat]) => [lat, lng] as [number, number])
 }
 

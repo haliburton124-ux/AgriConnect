@@ -11,11 +11,13 @@ class ApiConfig {
     defaultValue: 'https://agriconnect-production-f13f.up.railway.app/api/v1',
   );
 
-  static const String esriWorldImagery =
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  static const String mapboxToken = String.fromEnvironment(
+    'MAPBOX_TOKEN',
+    defaultValue: '',
+  );
 
-  static const String esriReferenceLabels =
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+  static const String mapboxSatelliteStreets =
+      'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}';
 
   /// Default map center — Ilocos Norte.
   static const double defaultLat = 18.1647;

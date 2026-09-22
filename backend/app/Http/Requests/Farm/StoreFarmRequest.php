@@ -24,7 +24,7 @@ class StoreFarmRequest extends FormRequest
             'farm_type' => ['required', 'in:rice,corn,vegetable,fruit,livestock,poultry,fishery,mixed,other'],
             'primary_crop' => ['nullable', 'string', 'max:100'],
             'ownership_status' => ['nullable', 'in:owned,leased,tenant,other'],
-            // Optional GeoJSON polygon drawn via Leaflet Draw on the frontend
+            // Optional GeoJSON polygon drawn on the farm map, stored as JSON: {type: Polygon, coordinates: [...]}
             'boundary' => ['nullable', 'array'],
             'boundary.type' => ['required_with:boundary', 'in:Polygon'],
             'boundary.coordinates' => ['required_with:boundary', 'array'],

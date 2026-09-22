@@ -1,11 +1,6 @@
-export const ESRI_WORLD_IMAGERY_URL =
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN ?? ''
 
-export const ESRI_REFERENCE_LABELS_URL =
-  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
-
-export const ESRI_ATTRIBUTION =
-  'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+export const MAPBOX_STYLE = 'mapbox://styles/mapbox/satellite-streets-v12'
 
 export const ILOCOS_NORTE_CENTER: [number, number] = [18.1647, 120.7116]
 
@@ -33,4 +28,20 @@ export function isValidMapCoords(coords: Partial<MapCoords> | null | undefined):
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
   if (lat === 0 && lng === 0) return false
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+}
+
+/** Convert [lat, lng] points into a Mapbox [[west, south], [east, north]] box. */
+export function latLngPointsToBounds(points: [number, number][]): [[number, number], [number, number]] | null {
+  if (points.length === 0) return null
+  let minLat = points[0][0]
+  let maxLat = points[0][0]
+  let minLng = points[0][1]
+  let maxLng = points[0][1]
+  for (const [lat, lng] of points) {
+    minLat = Math.min(minLat, lat)
+    maxLat = Math.max(maxLat, lat)
+    minLng = Math.min(minLng, lng)
+    maxLng = Math.max(maxLng, lng)
+  }
+  return [[minLng, minLat], [maxLng, maxLat]]
 }

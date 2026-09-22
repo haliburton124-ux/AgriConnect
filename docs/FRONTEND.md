@@ -17,7 +17,7 @@ a genuine backend gap rather than missing frontend work — documented below.
 
 Vite + React 18 + TypeScript (strict mode, `noUnusedLocals`/`noUnusedParameters`),
 TailwindCSS, Framer Motion, React Router, React Hook Form + Zod, TanStack
-Query, Zustand, Axios, React Leaflet + Leaflet Draw + Leaflet.heat, Chart.js
+Query, Zustand, Axios, Mapbox GL (react-map-gl, satellite-streets), Chart.js
 + react-chartjs-2, Sonner, Radix primitives.
 
 ## Design System

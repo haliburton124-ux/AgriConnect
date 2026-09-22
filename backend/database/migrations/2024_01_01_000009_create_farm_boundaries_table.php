@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('farm_boundaries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('farm_id')->constrained('farms')->cascadeOnDelete();
-            // GeoJSON polygon drawn via Leaflet Draw, stored as JSON: {type: Polygon, coordinates: [...]}
+            // GeoJSON polygon drawn on the farm map, stored as JSON: {type: Polygon, coordinates: [...]}
             $table->json('geojson');
             $table->decimal('computed_area_hectares', 8, 2)->nullable();
             $table->timestamps();

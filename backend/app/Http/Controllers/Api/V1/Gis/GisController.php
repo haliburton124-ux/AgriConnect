@@ -8,7 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Powers the interactive Leaflet map: cluster markers, heatmap layer,
+ * Powers the interactive Mapbox map: cluster markers, heatmap layer,
  * and the GIS filter modal (municipality, barangay, category, severity, date).
  * Available to Municipal Office (scoped to their own LGU), Provincial
  * Office and Admin (province-wide), and Technicians (scoped to only their
@@ -71,7 +71,7 @@ class GisController extends Controller
 
     /**
      * Heatmap intensity points: same coordinates, weighted by severity,
-     * formatted for Leaflet.heat ([lat, lng, intensity]).
+     * formatted for the Mapbox heatmap layer ([lat, lng, intensity]).
      */
     public function heatmap(Request $request): JsonResponse
     {

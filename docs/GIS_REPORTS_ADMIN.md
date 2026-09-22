@@ -12,7 +12,7 @@ be used to peek at another municipality's incidents).
 
 - `map-points` → cluster-marker-ready GeoJSON-ish points with category icon/color.
 - `heatmap` → `[lat, lng, intensity]` triples weighted by severity
-  (low 0.3 → critical 1.0), ready for Leaflet.heat.
+  (low 0.3 → critical 1.0), ready for the Mapbox heatmap layer.
 
 ## Dashboards
 

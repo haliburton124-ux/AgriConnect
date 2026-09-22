@@ -97,11 +97,8 @@ class _AgriLocationPickerState extends State<AgriLocationPicker> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: ApiConfig.esriWorldImagery,
-                      userAgentPackageName: 'com.agriconnect.in.mobile',
-                    ),
-                    TileLayer(
-                      urlTemplate: ApiConfig.esriReferenceLabels,
+                      urlTemplate: ApiConfig.mapboxSatelliteStreets,
+                      additionalOptions: const {'accessToken': ApiConfig.mapboxToken},
                       userAgentPackageName: 'com.agriconnect.in.mobile',
                     ),
                     if (_point != null)

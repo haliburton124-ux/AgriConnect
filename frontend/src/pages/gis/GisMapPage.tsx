@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
-import { CircleMarker, Popup } from 'react-leaflet'
 import { motion } from 'framer-motion'
 import { SlidersHorizontal, Flame, MapPinned } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { AgriMap } from '@/components/map'
-import { HeatmapLayer } from '@/components/gis/HeatmapLayer'
 import { GisFilterModal } from '@/components/modals/GisFilterModal'
 import { gisService, type GisFilters, type MapPoint, type HeatPoint } from '@/services/gisService'
 import { useAuthStore } from '@/store/authStore'
@@ -92,36 +90,31 @@ export function GisMapPage() {
           zoom={10}
           className="absolute inset-0 h-full w-full"
           scrollWheelZoom
-        >
-          {viewMode === 'heatmap' && <HeatmapLayer points={heatPoints} />}
-
-          {viewMode === 'markers' && points?.map((point) => (
-            <CircleMarker
-              key={point.id}
-              center={[point.latitude, point.longitude]}
-              radius={8}
-              pathOptions={{
-                color: SEVERITY_COLORS[point.severity],
-                fillColor: SEVERITY_COLORS[point.severity],
-                fillOpacity: 0.75,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <div className="min-w-[180px] space-y-1.5 font-sans">
-                  <p className="text-sm font-semibold text-ink">{point.title}</p>
-                  <p className="text-xs text-muted-foreground">{point.reference_code}</p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <Badge variant={point.severity}>{point.severity}</Badge>
-                    <Badge variant={point.status}>{point.status}</Badge>
-                  </div>
-                  {point.category && <p className="pt-1 text-xs text-ink/70">{point.category.name}</p>}
-                  <p className="text-[11px] text-muted-foreground">{formatDateTime(point.created_at)}</p>
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
-        </AgriMap>
+          heatmapPoints={viewMode === 'heatmap' ? heatPoints : []}
+          markers={
+            viewMode === 'markers'
+              ? (points ?? []).map((point) => ({
+                  id: point.id,
+                  lat: point.latitude,
+                  lng: point.longitude,
+                  color: SEVERITY_COLORS[point.severity],
+                  fillColor: SEVERITY_COLORS[point.severity],
+                  popup: (
+                    <div className="min-w-[180px] space-y-1.5 font-sans">
+                      <p className="text-sm font-semibold text-ink">{point.title}</p>
+                      <p className="text-xs text-muted-foreground">{point.reference_code}</p>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <Badge variant={point.severity}>{point.severity}</Badge>
+                        <Badge variant={point.status}>{point.status}</Badge>
+                      </div>
+                      {point.category && <p className="pt-1 text-xs text-ink/70">{point.category.name}</p>}
+                      <p className="text-[11px] text-muted-foreground">{formatDateTime(point.created_at)}</p>
+                    </div>
+                  ),
+                }))
+              : []
+          }
+        />
 
         {points === null && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">

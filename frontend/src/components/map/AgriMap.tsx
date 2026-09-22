@@ -1,33 +1,23 @@
-import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import {
-  MapContainer,
-  TileLayer,
-  CircleMarker,
-  Marker,
-  Popup,
-  GeoJSON,
-  ZoomControl,
-  useMap,
-  useMapEvents,
-} from 'react-leaflet'
-import type { LatLngBoundsExpression } from 'leaflet'
-import L from 'leaflet'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import Map, { Layer, Marker, NavigationControl, Popup, Source } from 'react-map-gl/mapbox'
+import type { MapMouseEvent, MapRef } from 'react-map-gl/mapbox'
 import { LocateFixed, MapPin, Search } from 'lucide-react'
 import { toast } from 'sonner'
-import 'leaflet/dist/leaflet.css'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import {
   DEFAULT_MAP_ZOOM,
   DETAIL_MAP_ZOOM,
-  ESRI_ATTRIBUTION,
-  ESRI_REFERENCE_LABELS_URL,
-  ESRI_WORLD_IMAGERY_URL,
   ILOCOS_NORTE_CENTER,
+  MAPBOX_STYLE,
+  MAPBOX_TOKEN,
   PICKER_MAP_ZOOM,
   PRIMARY_MARKER_STYLE,
   type MapCoords,
   isValidMapCoords,
+  latLngPointsToBounds,
 } from '@/lib/mapConfig'
 import { cn } from '@/lib/utils'
+import type { HeatPoint } from '@/services/gisService'
 
 export interface AgriMapMarker {
   id: string | number
@@ -56,8 +46,9 @@ export interface AgriMapProps {
   draggableMarker?: boolean
 
   markers?: AgriMapMarker[]
+  heatmapPoints?: HeatPoint[]
   geoJson?: GeoJSON.Geometry | null
-  fitBounds?: LatLngBoundsExpression | null
+  fitBounds?: [number, number][] | null
 
   showGpsButton?: boolean
   showSearch?: boolean
@@ -68,112 +59,11 @@ export interface AgriMapProps {
   embedded?: boolean
 }
 
-const pickerMarkerIcon = L.divIcon({
-  className: 'agri-map-marker-icon',
-  html: '<span class="agri-map-marker-dot"></span>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-})
-
-function MapResize({ active }: { active: boolean }) {
-  const map = useMap()
-
-  useEffect(() => {
-    const invalidate = () => map.invalidateSize()
-    if (active) {
-      const timer = window.setTimeout(invalidate, 150)
-      const frame = window.requestAnimationFrame(invalidate)
-      const observer = new ResizeObserver(invalidate)
-      observer.observe(map.getContainer())
-      window.addEventListener('resize', invalidate)
-      return () => {
-        window.clearTimeout(timer)
-        window.cancelAnimationFrame(frame)
-        observer.disconnect()
-        window.removeEventListener('resize', invalidate)
-      }
-    }
-    return undefined
-  }, [active, map])
-
-  return null
-}
-
-function MapClickHandler({ enabled, onPick }: { enabled: boolean; onPick: (coords: MapCoords) => void }) {
-  useMapEvents({
-    click(event) {
-      if (!enabled) return
-      onPick({ lat: event.latlng.lat, lng: event.latlng.lng })
-    },
-  })
-
-  return null
-}
-
-function RecenterMap({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) {
-  const map = useMap()
-
-  useEffect(() => {
-    map.setView([lat, lng], zoom, { animate: true })
-  }, [lat, lng, map, zoom])
-
-  return null
-}
-
-function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
-  const map = useMap()
-
-  useEffect(() => {
-    map.fitBounds(bounds, { padding: [32, 32], maxZoom: DETAIL_MAP_ZOOM })
-  }, [map, bounds])
-
-  return null
-}
-
-function MapMarker({ marker }: { marker: AgriMapMarker }) {
+function MapPinDot({ color }: { color: string }) {
   return (
-    <CircleMarker
-      center={[marker.lat, marker.lng]}
-      radius={marker.radius ?? 10}
-      pathOptions={{
-        color: marker.color ?? PRIMARY_MARKER_STYLE.color,
-        fillColor: marker.fillColor ?? marker.color ?? PRIMARY_MARKER_STYLE.fillColor,
-        fillOpacity: marker.fillOpacity ?? 0.85,
-        weight: marker.weight ?? 2,
-      }}
-      eventHandlers={
-        marker.openPopup && marker.popup
-          ? {
-              add: (event) => {
-                window.setTimeout(() => event.target.openPopup(), 250)
-              },
-            }
-          : undefined
-      }
-    >
-      {marker.popup && <Popup>{marker.popup}</Popup>}
-    </CircleMarker>
-  )
-}
-
-function DraggablePickerMarker({
-  position,
-  onChange,
-}: {
-  position: MapCoords
-  onChange: (coords: MapCoords) => void
-}) {
-  return (
-    <Marker
-      position={[position.lat, position.lng]}
-      draggable
-      icon={pickerMarkerIcon}
-      eventHandlers={{
-        dragend: (event) => {
-          const { lat, lng } = event.target.getLatLng()
-          onChange({ lat, lng })
-        },
-      }}
+    <span
+      className="agri-map-marker-dot block h-5 w-5 rounded-full border-[3px] border-white"
+      style={{ backgroundColor: color }}
     />
   )
 }
@@ -281,6 +171,7 @@ export function AgriMap({
   interactive = false,
   draggableMarker = true,
   markers = [],
+  heatmapPoints = [],
   geoJson,
   fitBounds,
   showGpsButton = false,
@@ -291,7 +182,18 @@ export function AgriMap({
   children,
   embedded = false,
 }: AgriMapProps) {
+  const mapRef = useRef<MapRef>(null)
+  const sourceId = useId().replace(/:/g, '')
   const hasPicker = Boolean(onChange)
+  const [openPopupId, setOpenPopupId] = useState<string | number | null>(
+    () => markers.find((marker) => marker.openPopup)?.id ?? null,
+  )
+  const autoOpenId = markers.find((marker) => marker.openPopup)?.id ?? null
+
+  useEffect(() => {
+    if (autoOpenId !== null) setOpenPopupId(autoOpenId)
+  }, [autoOpenId])
+
   const resolvedCenter = useMemo<[number, number]>(() => {
     if (value && isValidMapCoords(value)) return [value.lat, value.lng]
     if (center) return center
@@ -300,6 +202,39 @@ export function AgriMap({
   }, [center, markers, value])
 
   const resolvedZoom = zoom ?? (value && isValidMapCoords(value) ? PICKER_MAP_ZOOM : DEFAULT_MAP_ZOOM)
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !active) return
+    const resize = () => map.resize()
+    const timer = window.setTimeout(resize, 150)
+    const frame = window.requestAnimationFrame(resize)
+    const observer = new ResizeObserver(resize)
+    observer.observe(map.getContainer())
+    window.addEventListener('resize', resize)
+    return () => {
+      window.clearTimeout(timer)
+      window.cancelAnimationFrame(frame)
+      observer.disconnect()
+      window.removeEventListener('resize', resize)
+    }
+  }, [active, mapKey])
+
+  useEffect(() => {
+    if (!value || !isValidMapCoords(value)) return
+    mapRef.current?.flyTo({
+      center: [value.lng, value.lat],
+      zoom: PICKER_MAP_ZOOM,
+      essential: true,
+    })
+  }, [value])
+
+  useEffect(() => {
+    if (!fitBounds || fitBounds.length === 0) return
+    const box = latLngPointsToBounds(fitBounds)
+    if (!box) return
+    mapRef.current?.fitBounds(box, { padding: 32, maxZoom: DETAIL_MAP_ZOOM, duration: 600 })
+  }, [fitBounds])
 
   const useCurrentLocation = useCallback(() => {
     if (!onChange) return
@@ -315,66 +250,158 @@ export function AgriMap({
     )
   }, [onChange])
 
+  const handleMapClick = (event: MapMouseEvent) => {
+    if (!(interactive || hasPicker) || !onChange) return
+    const target = event.originalEvent.target as HTMLElement | null
+    if (target?.closest('.agri-map-marker-dot, .mapboxgl-marker, .mapboxgl-popup')) return
+    onChange({ lat: event.lngLat.lat, lng: event.lngLat.lng })
+  }
+
   const showPickerMarker = hasPicker && value && isValidMapCoords(value)
   const showStaticMarker = !hasPicker && value && isValidMapCoords(value) && markers.length === 0
+  const openMarker = markers.find((marker) => marker.id === openPopupId && marker.popup)
+
+  const heatGeoJson = useMemo(() => ({
+    type: 'FeatureCollection' as const,
+    features: heatmapPoints.map(([lat, lng, intensity], index) => ({
+      type: 'Feature' as const,
+      id: index,
+      properties: { intensity },
+      geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+    })),
+  }), [heatmapPoints])
 
   const mapBody = (
     <div className={cn(!embedded && 'overflow-hidden rounded-xl border-2 border-black/5', embedded && 'absolute inset-0')}>
-      <MapContainer
-        key={mapKey ?? (active ? 'agri-map-active' : 'agri-map-idle')}
-        center={resolvedCenter}
-        zoom={resolvedZoom}
+      <div
         className={cn(
-          'w-full touch-manipulation',
+          'relative w-full touch-manipulation',
           embedded ? 'h-full min-h-0' : 'h-56 sm:h-64',
           className,
         )}
-        scrollWheelZoom={scrollWheelZoom}
-        zoomControl={false}
       >
-        <TileLayer attribution={ESRI_ATTRIBUTION} url={ESRI_WORLD_IMAGERY_URL} />
-        <TileLayer url={ESRI_REFERENCE_LABELS_URL} />
+        <Map
+          key={mapKey ?? (active ? 'agri-map-active' : 'agri-map-idle')}
+          ref={mapRef}
+          mapboxAccessToken={MAPBOX_TOKEN}
+          mapStyle={MAPBOX_STYLE}
+          initialViewState={{
+            longitude: resolvedCenter[1],
+            latitude: resolvedCenter[0],
+            zoom: resolvedZoom,
+          }}
+          style={{ width: '100%', height: '100%' }}
+          scrollZoom={scrollWheelZoom}
+          dragRotate={false}
+          pitchWithRotate={false}
+          attributionControl
+          onClick={handleMapClick}
+          onLoad={() => {
+            const map = mapRef.current
+            map?.resize()
+            if (map && (interactive || hasPicker)) {
+              map.getCanvas().style.cursor = 'crosshair'
+            }
+          }}
+        >
+          <NavigationControl position="bottom-right" showCompass={false} />
 
-        <ZoomControl position="bottomright" />
-        <MapResize active={active} />
-        {onChange && <MapClickHandler enabled={interactive || hasPicker} onPick={onChange} />}
+          {geoJson && (
+            <Source id={`${sourceId}-boundary`} type="geojson" data={{ type: 'Feature', properties: {}, geometry: geoJson }}>
+              <Layer
+                id={`${sourceId}-boundary-fill`}
+                type="fill"
+                paint={{
+                  'fill-color': PRIMARY_MARKER_STYLE.fillColor,
+                  'fill-opacity': 0.3,
+                }}
+              />
+              <Layer
+                id={`${sourceId}-boundary-line`}
+                type="line"
+                paint={{
+                  'line-color': PRIMARY_MARKER_STYLE.color,
+                  'line-width': 2,
+                }}
+              />
+            </Source>
+          )}
 
-        {value && isValidMapCoords(value) && (
-          <RecenterMap lat={value.lat} lng={value.lng} zoom={PICKER_MAP_ZOOM} />
-        )}
+          {heatmapPoints.length > 0 && (
+            <Source id={`${sourceId}-heat`} type="geojson" data={heatGeoJson}>
+              <Layer
+                id={`${sourceId}-heat-layer`}
+                type="heatmap"
+                paint={{
+                  'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity'], 0, 0, 1, 1],
+                  'heatmap-intensity': 1.1,
+                  'heatmap-radius': 28,
+                  'heatmap-opacity': 0.8,
+                  'heatmap-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['heatmap-density'],
+                    0, 'rgba(102,187,106,0)',
+                    0.2, '#66BB6A',
+                    0.5, '#F9A825',
+                    0.8, '#EF6C00',
+                    1, '#D32F2F',
+                  ],
+                }}
+              />
+            </Source>
+          )}
 
-        {fitBounds && <FitBounds bounds={fitBounds} />}
+          {showPickerMarker && (
+            <Marker
+              longitude={value.lng}
+              latitude={value.lat}
+              anchor="center"
+              draggable={draggableMarker}
+              onDragEnd={(event) => onChange?.({ lat: event.lngLat.lat, lng: event.lngLat.lng })}
+            >
+              <MapPinDot color={PRIMARY_MARKER_STYLE.fillColor} />
+            </Marker>
+          )}
 
-        {geoJson && (
-          <GeoJSON
-            data={geoJson}
-            style={{
-              color: PRIMARY_MARKER_STYLE.color,
-              fillColor: PRIMARY_MARKER_STYLE.fillColor,
-              fillOpacity: 0.3,
-              weight: 2,
-            }}
-          />
-        )}
+          {showStaticMarker && value && (
+            <Marker longitude={value.lng} latitude={value.lat} anchor="center">
+              <MapPinDot color={PRIMARY_MARKER_STYLE.fillColor} />
+            </Marker>
+          )}
 
-        {showPickerMarker && draggableMarker && (
-          <DraggablePickerMarker position={value} onChange={onChange!} />
-        )}
+          {markers.map((marker) => (
+            <Marker
+              key={marker.id}
+              longitude={marker.lng}
+              latitude={marker.lat}
+              anchor="center"
+              onClick={(event) => {
+                event.originalEvent.stopPropagation()
+                if (marker.popup) setOpenPopupId(marker.id)
+              }}
+            >
+              <MapPinDot color={marker.fillColor ?? marker.color ?? PRIMARY_MARKER_STYLE.fillColor} />
+            </Marker>
+          ))}
 
-        {showPickerMarker && !draggableMarker && (
-          <CircleMarker center={[value.lat, value.lng]} radius={10} pathOptions={PRIMARY_MARKER_STYLE} />
-        )}
-
-        {showStaticMarker && value && (
-          <CircleMarker center={[value.lat, value.lng]} radius={10} pathOptions={PRIMARY_MARKER_STYLE} />
-        )}
-
-        {markers.map((marker) => (
-          <MapMarker key={marker.id} marker={marker} />
-        ))}
-
+          {openMarker && (
+            <Popup
+              longitude={openMarker.lng}
+              latitude={openMarker.lat}
+              anchor="bottom"
+              offset={14}
+              closeButton
+              closeOnClick={false}
+              onClose={() => setOpenPopupId(null)}
+              className="agri-map-popup"
+            >
+              {openMarker.popup}
+            </Popup>
+          )}
+        </Map>
         {children}
-      </MapContainer>
+      </div>
     </div>
   )
 

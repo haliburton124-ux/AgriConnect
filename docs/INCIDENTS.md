@@ -26,7 +26,7 @@ notified on every status change; the technician gets notified on assignment.
 | GET | `/farms/{farm}` | View a farm |
 | PUT | `/farms/{farm}` | Update a farm |
 | DELETE | `/farms/{farm}` | Remove a farm |
-| POST | `/farms/{farm}/boundary` | Attach/redraw a Leaflet Draw polygon boundary |
+| POST | `/farms/{farm}/boundary` | Attach/redraw a farm map polygon boundary |
 | GET | `/incidents` | List own incidents (filterable: status, severity, category, date range, search) |
 | POST | `/incidents` | Report a new incident (multipart: photos[], videos[], GPS, category, severity) |
 | GET | `/incidents/{incident}` | View incident detail incl. status history & recommendations |

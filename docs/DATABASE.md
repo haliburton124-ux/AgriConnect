@@ -11,7 +11,7 @@ users (role: admin | provincial_office | municipal_office | technician | farmer)
    │
    ├──< technician_profiles (1:1, for role=technician)
    ├──< farms (1:many, for role=farmer)
-   │        └──< farm_boundaries (1:many — GeoJSON polygons drawn via Leaflet Draw)
+   │        └──< farm_boundaries (1:many — GeoJSON polygons drawn on the farm map)
    │
    ├──< incidents (as farmer_id, assigned_technician_id, validated_by)
    │        ├──< incident_media (photos/videos)
@@ -53,7 +53,7 @@ personal_access_tokens — Sanctum API tokens
   records government offices need to retain for reporting/audit purposes even
   after a user requests removal.
 - **GeoJSON storage**: `farm_boundaries.geojson` and `municipalities.boundary_geojson`
-  store Leaflet Draw polygon output directly as JSON, avoiding a dependency on
+  store farm-map polygon output directly as JSON, avoiding a dependency on
   MySQL spatial extensions while remaining simple to query and render.
 - **Audit logs are polymorphic** (`auditable_type` + `auditable_id`) so any model
   (incidents, users, programs, etc.) can be tracked without a dedicated table per

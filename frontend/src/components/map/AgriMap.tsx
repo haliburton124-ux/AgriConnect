@@ -306,26 +306,41 @@ export function AgriMap({
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
           mapStyle={MAPBOX_STYLE}
+          projection="globe"
           initialViewState={{
             longitude: resolvedCenter[1],
             latitude: resolvedCenter[0],
             zoom: resolvedZoom,
+            bearing: 0,
+            pitch: embedded ? 45 : 0,
           }}
           style={{ width: '100%', height: '100%' }}
           scrollZoom={scrollWheelZoom}
-          dragRotate={false}
-          pitchWithRotate={false}
+          dragRotate
+          pitchWithRotate
+          touchPitch
+          touchZoomRotate
+          renderWorldCopies
+          maxPitch={85}
           attributionControl
           onClick={handleMapClick}
           onLoad={() => {
-            const map = mapRef.current
-            map?.resize()
-            if (map && (interactive || hasPicker)) {
+            const map = mapRef.current?.getMap()
+            mapRef.current?.resize()
+            if (!map) return
+            map.setFog({
+              color: 'rgb(186, 210, 235)',
+              'high-color': 'rgb(36, 92, 223)',
+              'horizon-blend': 0.02,
+              'space-color': 'rgb(11, 11, 25)',
+              'star-intensity': 0.6,
+            })
+            if (interactive || hasPicker) {
               map.getCanvas().style.cursor = 'crosshair'
             }
           }}
         >
-          <NavigationControl position="bottom-right" showCompass={false} />
+          <NavigationControl position="bottom-right" visualizePitch />
 
           {geoJson && (
             <Source id={`${sourceId}-boundary`} type="geojson" data={{ type: 'Feature', properties: {}, geometry: geoJson }}>

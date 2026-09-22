@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, LogOut, ChevronDown, Sprout } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
@@ -52,7 +52,7 @@ export function DashboardLayout() {
 
   const SidebarContent = (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center gap-2.5 px-6 py-6">
+      <Link to="/" className="flex shrink-0 items-center gap-2.5 px-6 py-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white shadow-card">
           <Sprout className="h-5 w-5" />
         </div>
@@ -60,7 +60,7 @@ export function DashboardLayout() {
           <p className="text-base font-bold leading-none text-ink">AgriConnect</p>
           <p className="mt-1 text-[11px] text-muted-foreground">Ilocos Norte</p>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 space-y-1 overflow-hidden px-3">
         {items.map((item) => (

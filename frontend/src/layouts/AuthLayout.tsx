@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Leaf, Sprout, CloudRain } from 'lucide-react'
 
@@ -31,12 +32,12 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent" />
 
         {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3 text-white drop-shadow-sm">
+        <Link to="/" className="relative z-10 flex items-center gap-3 text-white drop-shadow-sm">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 shadow-inner ring-1 ring-white/20 backdrop-blur-md">
             <Sprout className="h-6 w-6" />
           </div>
           <span className="text-xl font-semibold tracking-tight">AgriConnect</span>
-        </div>
+        </Link>
 
         {/* Hero copy */}
         <div className="relative z-10 text-white">
@@ -90,12 +91,12 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="relative z-10 w-full max-w-md"
         >
-          <div className="mb-6 flex items-center gap-2 text-forest lg:hidden">
+          <Link to="/" className="mb-6 flex items-center gap-2 text-forest lg:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest/10">
               <Sprout className="h-5 w-5" />
             </div>
             <span className="text-lg font-semibold">AgriConnect</span>
-          </div>
+          </Link>
 
           <h2 className="text-2xl font-bold tracking-tight text-ink">{title}</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>

@@ -5,7 +5,7 @@ export function ServicesPage() {
   const { openReportIncident, openRequestVisit } = useFarmerActions()
 
   return (
-    <div className="pt-28">
+    <div className="pt-6">
       <QuickActionsSection
         onReportIncident={openReportIncident}
         onRequestVisit={openRequestVisit}

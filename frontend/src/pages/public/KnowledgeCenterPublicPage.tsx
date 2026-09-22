@@ -2,6 +2,6 @@ import { KnowledgeCenterView } from '@/components/knowledge-center/KnowledgeCent
 
 export function KnowledgeCenterPublicPage() {
   return (
-    <KnowledgeCenterView heroClassName="pt-28" />
+    <KnowledgeCenterView heroClassName="pt-6" />
   )
 }

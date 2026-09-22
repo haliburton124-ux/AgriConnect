@@ -21,6 +21,7 @@ export function initials(firstName: string, lastName: string): string {
 }
 
 export function storageUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path
   const base = import.meta.env.VITE_API_URL?.replace('/api/v1', '') ?? ''
   return `${base}/storage/${path}`
 }

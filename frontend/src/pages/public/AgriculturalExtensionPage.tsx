@@ -4,7 +4,7 @@ import { AdvisoriesSection } from '@/components/landing/AdvisoriesSection'
 
 export function AgriculturalExtensionPage() {
   return (
-    <div className="pt-28">
+    <div className="pt-6">
       <ExtensionProcessSection />
       <AdvisoriesSection />
       <GisTeaserSection />

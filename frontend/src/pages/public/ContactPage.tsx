@@ -4,7 +4,7 @@ import { SectionHeading } from '@/components/landing/SectionHeading'
 
 export function ContactPage() {
   return (
-    <div className="bg-canvas px-4 pb-20 pt-28 sm:px-6 lg:px-8">
+    <div className="bg-white px-4 pb-20 pt-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <SectionHeading
           eyebrow="Get in Touch"

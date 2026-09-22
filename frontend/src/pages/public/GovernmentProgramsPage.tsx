@@ -2,7 +2,7 @@ import { FeaturedProgramsSection } from '@/components/landing/FeaturedProgramsSe
 
 export function GovernmentProgramsPage() {
   return (
-    <div className="pt-28">
+    <div className="pt-6">
       <FeaturedProgramsSection />
     </div>
   )

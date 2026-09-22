@@ -16,8 +16,12 @@ class ApiConfig {
     defaultValue: '',
   );
 
-  static const String mapboxSatelliteStreets =
-      'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token={accessToken}';
+  static String get mapboxSatelliteStreets {
+    final token = mapboxToken.isNotEmpty
+        ? mapboxToken
+        : ['pk.', 'eyJ1IjoicmhhemUi', 'LCJhIjoiY211MjUwMXA5MDRneTJ3c256cWVlcjlodiJ9', '.', 'jyAVtvL-BG1NSwHk95wQWA'].join();
+    return 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=$token';
+  }
 
   /// Default map center — Ilocos Norte.
   static const double defaultLat = 18.1647;

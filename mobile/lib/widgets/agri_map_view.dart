@@ -38,7 +38,6 @@ class AgriMapView extends StatelessWidget {
           children: [
             TileLayer(
               urlTemplate: ApiConfig.mapboxSatelliteStreets,
-              additionalOptions: const {'accessToken': ApiConfig.mapboxToken},
               userAgentPackageName: 'com.agriconnect.in.mobile',
             ),
             MarkerLayer(

@@ -83,7 +83,7 @@ export function GisMapPage() {
         </div>
       </div>
 
-      <Card className="relative min-h-[70vh] flex-1 overflow-hidden p-0 lg:min-h-0">
+      <Card className="relative min-h-[70vh] flex-1 overflow-hidden p-0">
         <AgriMap
           embedded
           center={ILOCOS_NORTE_CENTER}

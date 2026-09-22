@@ -183,12 +183,24 @@ export function AgriMap({
   embedded = false,
 }: AgriMapProps) {
   const mapRef = useRef<MapRef>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const sourceId = useId().replace(/:/g, '')
   const hasPicker = Boolean(onChange)
+  const [containerReady, setContainerReady] = useState(false)
   const [openPopupId, setOpenPopupId] = useState<string | number | null>(
     () => markers.find((marker) => marker.openPopup)?.id ?? null,
   )
   const autoOpenId = markers.find((marker) => marker.openPopup)?.id ?? null
+  const validMarkers = useMemo(
+    () => markers.filter((marker) => isValidMapCoords({ lat: marker.lat, lng: marker.lng })),
+    [markers],
+  )
+  const validHeatPoints = useMemo(
+    () => heatmapPoints.filter(([lat, lng, intensity]) => (
+      Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(intensity)
+    )),
+    [heatmapPoints],
+  )
 
   useEffect(() => {
     if (autoOpenId !== null) setOpenPopupId(autoOpenId)
@@ -196,33 +208,37 @@ export function AgriMap({
 
   const resolvedCenter = useMemo<[number, number]>(() => {
     if (value && isValidMapCoords(value)) return [value.lat, value.lng]
-    if (center) return center
-    if (markers.length > 0) return [markers[0].lat, markers[0].lng]
+    if (center && isValidMapCoords({ lat: center[0], lng: center[1] })) return center
+    if (validMarkers.length > 0) return [validMarkers[0].lat, validMarkers[0].lng]
     return ILOCOS_NORTE_CENTER
-  }, [center, markers, value])
+  }, [center, validMarkers, value])
 
   const resolvedZoom = zoom ?? (value && isValidMapCoords(value) ? PICKER_MAP_ZOOM : DEFAULT_MAP_ZOOM)
 
   useEffect(() => {
-    const map = mapRef.current
-    if (!map || !active) return
-    const resize = () => map.resize()
-    const timer = window.setTimeout(resize, 150)
-    const frame = window.requestAnimationFrame(resize)
-    const observer = new ResizeObserver(resize)
-    observer.observe(map.getContainer())
-    window.addEventListener('resize', resize)
-    return () => {
-      window.clearTimeout(timer)
-      window.cancelAnimationFrame(frame)
-      observer.disconnect()
-      window.removeEventListener('resize', resize)
+    const el = wrapRef.current
+    if (!el) return
+    const sync = () => {
+      if (el.clientWidth > 8 && el.clientHeight > 8) {
+        setContainerReady(true)
+        mapRef.current?.resize()
+      }
     }
-  }, [active, mapKey])
+    sync()
+    const observer = new ResizeObserver(sync)
+    observer.observe(el)
+    window.addEventListener('resize', sync)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', sync)
+    }
+  }, [active, mapKey, embedded])
 
   useEffect(() => {
     if (!value || !isValidMapCoords(value)) return
-    mapRef.current?.flyTo({
+    const map = mapRef.current
+    if (!map) return
+    map.flyTo({
       center: [value.lng, value.lat],
       zoom: PICKER_MAP_ZOOM,
       essential: true,
@@ -252,34 +268,39 @@ export function AgriMap({
 
   const handleMapClick = (event: MapMouseEvent) => {
     if (!(interactive || hasPicker) || !onChange) return
+    const lng = event.lngLat?.lng
+    const lat = event.lngLat?.lat
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
     const target = event.originalEvent.target as HTMLElement | null
     if (target?.closest('.agri-map-marker-dot, .mapboxgl-marker, .mapboxgl-popup')) return
-    onChange({ lat: event.lngLat.lat, lng: event.lngLat.lng })
+    onChange({ lat, lng })
   }
 
   const showPickerMarker = hasPicker && value && isValidMapCoords(value)
-  const showStaticMarker = !hasPicker && value && isValidMapCoords(value) && markers.length === 0
-  const openMarker = markers.find((marker) => marker.id === openPopupId && marker.popup)
+  const showStaticMarker = !hasPicker && value && isValidMapCoords(value) && validMarkers.length === 0
+  const openMarker = validMarkers.find((marker) => marker.id === openPopupId && marker.popup)
 
   const heatGeoJson = useMemo(() => ({
     type: 'FeatureCollection' as const,
-    features: heatmapPoints.map(([lat, lng, intensity], index) => ({
+    features: validHeatPoints.map(([lat, lng, intensity], index) => ({
       type: 'Feature' as const,
       id: index,
       properties: { intensity },
       geometry: { type: 'Point' as const, coordinates: [lng, lat] },
     })),
-  }), [heatmapPoints])
+  }), [validHeatPoints])
 
   const mapBody = (
     <div className={cn(!embedded && 'overflow-hidden rounded-xl border-2 border-black/5', embedded && 'absolute inset-0')}>
       <div
+        ref={wrapRef}
         className={cn(
           'relative w-full touch-manipulation',
-          embedded ? 'h-full min-h-0' : 'h-56 sm:h-64',
+          embedded ? 'h-full min-h-[70vh]' : 'h-56 sm:h-64',
           className,
         )}
       >
+        {containerReady && MAPBOX_TOKEN && (
         <Map
           key={mapKey ?? (active ? 'agri-map-active' : 'agri-map-idle')}
           ref={mapRef}
@@ -327,7 +348,7 @@ export function AgriMap({
             </Source>
           )}
 
-          {heatmapPoints.length > 0 && (
+          {validHeatPoints.length > 0 && (
             <Source id={`${sourceId}-heat`} type="geojson" data={heatGeoJson}>
               <Layer
                 id={`${sourceId}-heat-layer`}
@@ -370,7 +391,7 @@ export function AgriMap({
             </Marker>
           )}
 
-          {markers.map((marker) => (
+          {validMarkers.map((marker) => (
             <Marker
               key={marker.id}
               longitude={marker.lng}
@@ -400,6 +421,7 @@ export function AgriMap({
             </Popup>
           )}
         </Map>
+        )}
         {children}
       </div>
     </div>

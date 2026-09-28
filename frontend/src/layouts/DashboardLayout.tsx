@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, LogOut, ChevronDown, Sprout } from 'lucide-react'
-import { cn, initials } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 import { useAuthStore } from '@/store/authStore'
 import { NAVIGATION, ROLE_LABELS } from '@/config/navigation'
 import { authService } from '@/services/authService'
@@ -149,9 +150,7 @@ export function DashboardLayout() {
                 onClick={() => setProfileOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-forest/5"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-primary text-sm font-semibold text-white">
-                  {initials(user.first_name, user.last_name)}
-                </div>
+                <UserAvatar user={user} size="sm" className="bg-gradient-primary text-white" />
                 <span className="hidden text-sm font-medium text-ink sm:block">{user.first_name}</span>
                 <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
               </button>

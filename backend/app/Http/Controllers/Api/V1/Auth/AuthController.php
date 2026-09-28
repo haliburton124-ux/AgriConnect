@@ -8,11 +8,13 @@ use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\UpdateAvatarRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\AuditLogger;
 use App\Services\AuthService;
+use App\Services\PublicMediaStorage;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -184,5 +186,25 @@ class AuthController extends Controller
         $this->audit->logAuth($user, 'auth.password_changed', "{$user->full_name} changed their password.");
 
         return response()->json(['message' => 'Password changed successfully. Please log in again.']);
+    }
+
+    public function updateAvatar(UpdateAvatarRequest $request, PublicMediaStorage $media): JsonResponse
+    {
+        $user = $request->user();
+        $stored = $media->storeUpload($request->file('avatar'), 'avatars/'.$user->id);
+        $previous = $user->avatar_path;
+
+        $user->update(['avatar_path' => $stored['path']]);
+
+        if ($previous && $previous !== $stored['path']) {
+            $media->disk()->delete($previous);
+        }
+
+        $this->audit->logAuth($user, 'auth.avatar_updated', "{$user->full_name} updated their profile photo.");
+
+        return response()->json([
+            'message' => 'Profile photo updated.',
+            'user' => new UserResource($user->fresh()->load(['municipality', 'barangay', 'technicianProfile'])),
+        ]);
     }
 }

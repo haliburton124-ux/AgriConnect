@@ -45,4 +45,10 @@ export const authService = {
 
   updateAvailability: (availability: NonNullable<User['availability']>) =>
     api.put<{ message: string; user: User }>('/technician/availability', { availability }),
+
+  updateAvatar: (file: File) => {
+    const form = new FormData()
+    form.append('avatar', file)
+    return api.post<{ message: string; user: User }>('/auth/avatar', form)
+  },
 }

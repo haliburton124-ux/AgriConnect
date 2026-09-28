@@ -80,6 +80,7 @@ Route::prefix('v1')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::post('auth/logout-all', [AuthController::class, 'logoutAllDevices']);
         Route::post('auth/change-password', [AuthController::class, 'changePassword']);
+        Route::post('auth/avatar', [AuthController::class, 'updateAvatar']);
 
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);

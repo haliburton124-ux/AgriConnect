@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
-import { Clock, HardHat, Mail, MapPin, Phone } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Camera, Clock, HardHat, Mail, MapPin, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/services/authService'
-import { initials } from '@/lib/utils'
 import { AvailabilityPicker } from '@/components/technician/AvailabilityPicker'
 import { AccountSecurityCards } from '@/components/settings/AccountSecurityCards'
+import { ChangeAvatarModal } from '@/components/settings/ChangeAvatarModal'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 function specializationLabel(keys?: string[]): string {
   if (!keys?.length) return 'Agricultural technician'
@@ -16,6 +17,7 @@ function specializationLabel(keys?: string[]): string {
 
 export function TechnicianSettingsPage() {
   const { user, updateUser } = useAuthStore()
+  const [avatarOpen, setAvatarOpen] = useState(false)
 
   useEffect(() => {
     authService.me().then(({ data }) => updateUser(data.user)).catch(() => {})
@@ -34,13 +36,22 @@ export function TechnicianSettingsPage() {
 
       <div className="overflow-hidden rounded-[22px] bg-gradient-to-br from-forest-dark via-forest to-forest-light p-6 text-white shadow-card">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-lg font-semibold backdrop-blur-sm">
-            {initials(user.first_name, user.last_name)}
-          </div>
+          <button
+            type="button"
+            onClick={() => setAvatarOpen(true)}
+            className="group relative shrink-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            aria-label="Change profile photo"
+          >
+            <UserAvatar user={user} size="md" className="bg-white/15 text-white backdrop-blur-sm" />
+            <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-white text-forest shadow-card">
+              <Camera className="h-3.5 w-3.5" />
+            </span>
+          </button>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Agricultural Technician</p>
             <h2 className="mt-1 truncate text-xl font-semibold">{user.full_name}</h2>
             <p className="mt-1 text-sm text-white/85">{specializationLabel(user.specializations)}</p>
+            <p className="mt-2 text-xs text-white/70">Tap your photo to change it.</p>
           </div>
         </div>
       </div>
@@ -95,6 +106,8 @@ export function TechnicianSettingsPage() {
       <div className="max-w-2xl">
         <AccountSecurityCards layout="modal" />
       </div>
+
+      <ChangeAvatarModal open={avatarOpen} onClose={() => setAvatarOpen(false)} />
     </div>
   )
 }

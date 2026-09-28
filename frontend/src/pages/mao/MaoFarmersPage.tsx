@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
+import { AgriMap } from '@/components/map'
+import { DETAIL_MAP_ZOOM, isValidMapCoords } from '@/lib/mapConfig'
 import { maoFarmerService, type FarmerDirectoryEntry } from '@/services/maoFarmerService'
 import { getApiErrorMessage } from '@/lib/api'
 import { cn, formatDate } from '@/lib/utils'
@@ -20,7 +22,16 @@ interface FarmerDetail {
   status?: string
   municipality?: { id: number; name: string } | null
   barangay: { id: number; name: string } | null
-  farms: { id: number; farm_name: string; farm_type: string; area_hectares: number | null }[]
+  farms: {
+    id: number
+    farm_name: string
+    farm_type: string
+    area_hectares: number | null
+    primary_crop?: string | null
+    address?: string | null
+    latitude?: number | null
+    longitude?: number | null
+  }[]
   recent_incidents: { id: number; reference_code: string; title: string; status: IncidentStatus; severity: string; category: string | null; incident_date: string }[]
   created_at?: string
 }
@@ -38,6 +49,7 @@ export function MaoFarmersPage() {
   const [selected, setSelected] = useState<FarmerDetail | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [selectedFarmId, setSelectedFarmId] = useState<number | null>(null)
 
   useEffect(() => {
     setFarmers(null)
@@ -64,6 +76,7 @@ export function MaoFarmersPage() {
     try {
       const res = await maoFarmerService.get(farmer.id)
       setSelected((res.data as { data: FarmerDetail }).data)
+      setSelectedFarmId(null)
     } finally {
       setDetailLoading(false)
     }
@@ -72,6 +85,7 @@ export function MaoFarmersPage() {
   const closeDetail = () => {
     setDetailOpen(false)
     setSelected(null)
+    setSelectedFarmId(null)
   }
 
   return (
@@ -250,23 +264,96 @@ export function MaoFarmersPage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {selected.farms.map((farm) => (
-                    <div key={farm.id} className="flex items-center justify-between gap-3 rounded-2xl border border-black/[0.04] bg-canvas px-4 py-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-forest/10 text-forest">
-                          <MapPin className="h-4 w-4" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-ink">{farm.farm_name}</p>
-                          <p className="text-xs capitalize text-muted-foreground">{farm.farm_type.replace(/_/g, ' ')}</p>
+                <div className="space-y-3">
+                  {(() => {
+                    const located = selected.farms.filter((farm) =>
+                      isValidMapCoords({ lat: Number(farm.latitude), lng: Number(farm.longitude) }),
+                    )
+                    const focus = located.find((farm) => farm.id === selectedFarmId) ?? located[0]
+                    return (
+                      <>
+                        {located.length > 0 ? (
+                          <div>
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              Tap a farm below to highlight it on the map.
+                            </p>
+                            <AgriMap
+                              active={detailOpen}
+                              mapKey={`farmer-${selected.id}-${focus?.id ?? 'all'}`}
+                              center={focus ? [Number(focus.latitude), Number(focus.longitude)] : undefined}
+                              zoom={DETAIL_MAP_ZOOM}
+                              scrollWheelZoom={false}
+                              fitBounds={
+                                !selectedFarmId && located.length > 1
+                                  ? located.map((farm) => [Number(farm.latitude), Number(farm.longitude)] as [number, number])
+                                  : null
+                              }
+                              markers={located.map((farm) => ({
+                                id: farm.id,
+                                lat: Number(farm.latitude),
+                                lng: Number(farm.longitude),
+                                openPopup: farm.id === (selectedFarmId ?? focus?.id),
+                                popup: (
+                                  <div className="min-w-[160px] space-y-1 font-sans">
+                                    <p className="text-sm font-semibold text-ink">{farm.farm_name}</p>
+                                    <p className="text-xs capitalize text-muted-foreground">
+                                      {farm.farm_type.replace(/_/g, ' ')}
+                                      {farm.primary_crop ? ` · ${farm.primary_crop}` : ''}
+                                    </p>
+                                    {farm.address ? (
+                                      <p className="text-xs text-muted-foreground">{farm.address}</p>
+                                    ) : null}
+                                  </div>
+                                ),
+                              }))}
+                            />
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border-2 border-dashed border-forest-light/30 bg-forest/[0.03] px-4 py-4 text-sm text-muted-foreground">
+                            These farms do not have a GPS pin yet, so they cannot be shown on the map.
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          {selected.farms.map((farm) => {
+                            const onMap = isValidMapCoords({ lat: Number(farm.latitude), lng: Number(farm.longitude) })
+                            const isActive = farm.id === (selectedFarmId ?? focus?.id)
+                            return (
+                              <button
+                                key={farm.id}
+                                type="button"
+                                disabled={!onMap}
+                                onClick={() => onMap && setSelectedFarmId(farm.id)}
+                                className={cn(
+                                  'flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors',
+                                  onMap
+                                    ? isActive
+                                      ? 'border-forest-light/50 bg-forest/[0.06]'
+                                      : 'border-black/[0.04] bg-canvas hover:border-forest-light/40 hover:bg-forest/[0.04]'
+                                    : 'cursor-default border-black/[0.04] bg-canvas opacity-80',
+                                )}
+                              >
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-forest/10 text-forest">
+                                    <MapPin className="h-4 w-4" />
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="truncate font-medium text-ink">{farm.farm_name}</p>
+                                    <p className="text-xs capitalize text-muted-foreground">
+                                      {farm.farm_type.replace(/_/g, ' ')}
+                                      {onMap ? ' · View on map' : ' · No map pin'}
+                                    </p>
+                                  </div>
+                                </div>
+                                {farm.area_hectares != null && (
+                                  <span className="shrink-0 text-xs font-semibold text-forest">{farm.area_hectares} ha</span>
+                                )}
+                              </button>
+                            )
+                          })}
                         </div>
-                      </div>
-                      {farm.area_hectares != null && (
-                        <span className="shrink-0 text-xs font-semibold text-forest">{farm.area_hectares} ha</span>
-                      )}
-                    </div>
-                  ))}
+                      </>
+                    )
+                  })()}
                 </div>
               )}
             </section>

@@ -82,6 +82,10 @@ class FarmerController extends Controller
                     'farm_name' => $farm->farm_name,
                     'farm_type' => $farm->farm_type,
                     'area_hectares' => $farm->area_hectares,
+                    'primary_crop' => $farm->primary_crop,
+                    'address' => $farm->address,
+                    'latitude' => $farm->latitude !== null ? (float) $farm->latitude : null,
+                    'longitude' => $farm->longitude !== null ? (float) $farm->longitude : null,
                 ]),
                 'recent_incidents' => $farmer->reportedIncidents->map(fn ($incident) => [
                     'id' => $incident->id,

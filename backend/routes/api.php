@@ -58,11 +58,11 @@ Route::prefix('v1')->group(function () {
         Route::get('locations/barangays', [LocationController::class, 'barangays']);
         Route::get('locations/incident-categories', [LocationController::class, 'incidentCategories']);
 
-        Route::get('announcements', [AnnouncementController::class, 'index']);
         Route::get('advisories', [AdvisoryController::class, 'index']);
 
         Route::get('community/categories', [CommunityPostController::class, 'categories']);
         Route::middleware('auth.optional')->group(function () {
+            Route::get('announcements', [AnnouncementController::class, 'index']);
             Route::get('knowledge/categories', [KnowledgeArticleController::class, 'categories']);
             Route::get('knowledge/articles', [KnowledgeArticleController::class, 'index']);
             Route::get('knowledge/articles/{article}', [KnowledgeArticleController::class, 'show']);

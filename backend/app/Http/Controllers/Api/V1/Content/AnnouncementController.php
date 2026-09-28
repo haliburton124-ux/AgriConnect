@@ -32,12 +32,16 @@ class AnnouncementController extends Controller
 
         if (! $user) {
             $query->whereNull('municipality_id')->where('audience', 'all');
-        } elseif ($user->hasRole(['farmer', 'technician'])) {
+        } elseif ($user->hasRole(['farmer', 'technician', 'municipal_office'])) {
             $query->where(function ($q) use ($user) {
                 $q->whereNull('municipality_id')->orWhere('municipality_id', $user->municipality_id);
-            })->where(function ($q) use ($user) {
-                $q->where('audience', 'all')->orWhere('audience', $user->role === 'farmer' ? 'farmers' : 'technicians');
             });
+
+            if ($user->hasRole(['farmer', 'technician'])) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('audience', 'all')->orWhere('audience', $user->role === 'farmer' ? 'farmers' : 'technicians');
+                });
+            }
         }
 
         $announcements = $query->paginate($request->integer('per_page', 10));

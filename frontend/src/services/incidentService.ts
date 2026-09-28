@@ -1,6 +1,26 @@
 import { api } from '@/lib/api'
 import type { Incident, PaginatedResponse } from '@/types'
 
+export type TechnicianAvailability = 'available' | 'busy' | 'on_leave'
+
+export interface MaoTechnician {
+  id: number
+  first_name?: string
+  last_name?: string
+  full_name: string
+  email?: string
+  phone: string
+  avatar_url?: string | null
+  municipality?: { id: number; name: string } | null
+  barangay?: { id: number; name: string } | null
+  specializations?: string[]
+  years_experience?: number
+  license_number?: string | null
+  availability?: TechnicianAvailability
+  assigned_cases?: number
+  workload?: number
+}
+
 export interface IncidentFilters {
   status?: string
   severity?: string
@@ -41,5 +61,5 @@ export const incidentService = {
     api.put<{ message: string; data: Incident }>(`/mao/incidents/${id}/reject`, { rejection_reason }),
   assign: (id: number, technician_id: number, notes?: string) =>
     api.post<{ message: string; data: Incident }>(`/mao/incidents/${id}/assign`, { technician_id, notes }),
-  listTechnicians: () => api.get<{ data: { id: number; full_name: string; phone: string }[] }>('/mao/technicians'),
+  listTechnicians: () => api.get<{ data: MaoTechnician[] }>('/mao/technicians'),
 }

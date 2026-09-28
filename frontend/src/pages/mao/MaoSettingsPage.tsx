@@ -99,8 +99,8 @@ export function MaoSettingsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AccountSecurityCards />
+      <div className="max-w-2xl">
+        <AccountSecurityCards layout="modal" />
       </div>
     </div>
   )

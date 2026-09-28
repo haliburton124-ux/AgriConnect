@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             RoleUserSeeder::class,
             DemoDataSeeder::class,
             CommunityPostSeeder::class,
+            LaoagKnowledgeArticleSeeder::class,
         ]);
     }
 }

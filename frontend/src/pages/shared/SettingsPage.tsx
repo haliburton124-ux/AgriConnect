@@ -4,10 +4,20 @@ import { Badge } from '@/components/ui/Badge'
 import { useAuthStore } from '@/store/authStore'
 import { ROLE_LABELS } from '@/config/navigation'
 import { AccountSecurityCards } from '@/components/settings/AccountSecurityCards'
+import { TechnicianSettingsPage } from '@/pages/technician/TechnicianSettingsPage'
+import { MaoSettingsPage } from '@/pages/mao/MaoSettingsPage'
 
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user)
   if (!user) return null
+
+  if (user.role === 'technician') {
+    return <TechnicianSettingsPage />
+  }
+
+  if (user.role === 'municipal_office') {
+    return <MaoSettingsPage />
+  }
 
   return (
     <div className="max-w-2xl space-y-6 animate-fade-in">

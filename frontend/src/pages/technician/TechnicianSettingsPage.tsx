@@ -26,9 +26,9 @@ export function TechnicianSettingsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Field Settings</h1>
+        <h1 className="text-2xl font-bold text-ink">Technician Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your technician profile, availability, and account security.
+          Field availability, assignment details, and account security.
         </p>
       </div>
 

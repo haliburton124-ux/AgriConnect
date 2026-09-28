@@ -15,9 +15,11 @@ return new class extends Migration
         \Illuminate\Support\Facades\DB::table('knowledge_articles')
             ->whereIn('slug', [
                 'laoag-kc-sample-rice-calendar',
+                'laoag-kc-sample-rice-blast',
+                'laoag-kc-sample-monsoon-watch',
+                'laoag-kc-sample-heat-irrigation',
                 'laoag-kc-sample-planthopper',
                 'laoag-kc-sample-garlic-onion',
-                'laoag-kc-sample-heat-irrigation',
             ])
             ->delete();
     }

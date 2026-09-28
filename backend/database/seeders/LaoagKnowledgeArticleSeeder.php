@@ -2,136 +2,104 @@
 
 namespace Database\Seeders;
 
+use App\Models\KnowledgeArticle;
+use App\Models\KnowledgeCategory;
+use App\Models\Municipality;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class LaoagKnowledgeArticleSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! Schema::hasTable('knowledge_articles') || ! Schema::hasTable('municipalities')) {
+        $laoag = Municipality::query()->where('name', 'Laoag City')->first();
+        $author = User::query()->where('email', 'mao.laoagcity@agriri.gov.ph')->first()
+            ?? User::query()
+                ->where('role', 'municipal_office')
+                ->where('municipality_id', $laoag->id)
+                ->first();
+
+        if (! $laoag || ! $author) {
             return;
         }
 
-        $laoag = DB::table('municipalities')->where('name', 'Laoag City')->first();
-        if (! $laoag) {
-            return;
-        }
-
-        $author = DB::table('users')
-            ->where('role', 'municipal_office')
-            ->where('municipality_id', $laoag->id)
-            ->orderBy('id')
-            ->first();
-
-        if (! $author) {
-            $author = DB::table('users')->where('email', 'mao.laoagcity@agriri.gov.ph')->first();
-        }
-
-        if (! $author) {
-            return;
-        }
-
-        $categories = $this->ensureCategories();
-
-        $now = now();
-        $articles = [
-            [
-                'slug' => 'laoag-kc-sample-rice-calendar',
-                'category' => 'Crop Guides',
-                'title' => 'Wet-season rice calendar for Laoag City',
-                'content' => "Municipal Agriculture Office — Laoag City\n\nUse this calendar as a guide for irrigated rice in Laoag barangays. Adjust a few days based on your water schedule and seed variety.\n\nMay–June: Complete land preparation, repair dikes, and establish the seedbed.\nJune–July: Transplant 18–21 day old seedlings at 20×20 cm spacing.\nJuly–August: First weeding and first nitrogen topdress. Watch for golden apple snail.\nAugust–September: Panicle initiation; keep the field flooded and scout twice a week for pests.\nOctober–November: Drain 7–10 days before harvest when 80–85% of grains are golden.\n\nBring damaged plants to the MAO office or contact your assigned technician for diagnosis.",
-            ],
-            [
-                'slug' => 'laoag-kc-sample-planthopper',
-                'category' => 'Pests & Diseases',
-                'title' => 'Brown planthopper watch in Laoag rice fields',
-                'content' => "Municipal Agriculture Office — Laoag City\n\nBrown planthopper (BPH) builds up quickly in continuously flooded fields, especially after heavy rains. Hopperburn starts as yellowing patches that turn brown from the center of the field.\n\nWhat farmers should do:\n1. Walk the field weekly and check the base of tillers, not only the leaf tips.\n2. Avoid spraying at the first few insects. Unnecessary insecticide kills spiders and mirid bugs that keep BPH down.\n3. Do not apply extra nitrogen after seeing hopperburn — lush growth makes the outbreak worse.\n4. Alternate wet and dry irrigation if your barangay water schedule allows it.\n\nIf hopperburn covers more than a few square meters, report it in AgriConnect so a technician can visit. Bring a sample of infested tillers to the Laoag MAO if you cannot wait for a field visit.",
-            ],
-            [
-                'slug' => 'laoag-kc-sample-garlic-onion',
-                'category' => 'Farming Practices',
-                'title' => 'Dry-season garlic and onion tips for Laoag growers',
-                'content' => "Municipal Agriculture Office — Laoag City\n\nGarlic and onion remain important dry-season crops in Ilocos Norte. In Laoag, plant after rice harvest once fields are drained and clods are broken down.\n\nLand preparation: Incorporate rice straw or compost two weeks before planting. Raised beds help in low-lying barangays that stay wet.\nPlanting: Use healthy, disease-free cloves or bulbs. Plant at 15×20 cm for garlic and 10×15 cm for onion, with the neck just above the soil.\nWater: Light irrigation at establishment, then every 7–10 days. Stop watering 2–3 weeks before harvest so bulbs cure in the field.\nPests: Watch for thrips during hot, dry weeks. Silvering of leaves is an early sign. Remove weeds that harbor thrips along dikes.\n\nThe MAO can help check seed quality and fertilizer timing. Do not apply unregistered pesticides close to harvest.",
-            ],
-            [
-                'slug' => 'laoag-kc-sample-heat-irrigation',
-                'category' => 'Weather & Climate',
-                'title' => 'Heat and irrigation advisory for Laoag farms',
-                'content' => "Municipal Agriculture Office — Laoag City\n\nHot, dry spells can stress rice, vegetables, and livestock around Laoag City. Follow these steps when daytime temperatures stay high and rainfall is delayed.\n\nCrops: Irrigate early morning or late afternoon. Mulch vegetable beds with rice straw to keep soil moisture. Avoid spraying pesticides at midday — plants scorch easily.\nRice: Keep a thin water layer; do not let fields crack for more than two days at tillering and flowering.\nAnimals: Provide shade and clean drinking water at all times. Watch for heat stress (panting, reduced feeding).\n\nListen to PAGASA updates and AgriConnect advisories. If your irrigation turnout is delayed, message your technician so the office can coordinate with the irrigators’ association.",
-            ],
-        ];
-
-        foreach ($articles as $index => $article) {
-            if (DB::table('knowledge_articles')->where('slug', $article['slug'])->exists()) {
-                continue;
-            }
-
-            $row = [
-                'category_id' => $categories[$article['category']] ?? null,
-                'title' => $article['title'],
-                'slug' => $article['slug'],
-                'content' => $article['content'],
-                'cover_image_path' => null,
-                'type' => 'article',
-                'video_url' => null,
-                'pdf_path' => null,
-                'author_id' => $author->id,
-                'is_published' => true,
-                'view_count' => 12 + ($index * 7),
-                'created_at' => $now->copy()->subDays(8 - $index),
-                'updated_at' => $now,
-            ];
-
-            if (Schema::hasColumn('knowledge_articles', 'municipality_id')) {
-                $row['municipality_id'] = $laoag->id;
-            }
-            if (Schema::hasColumn('knowledge_articles', 'published_at')) {
-                $row['published_at'] = $now->copy()->subDays(8 - $index);
-            }
-            if (Schema::hasColumn('knowledge_articles', 'attachments')) {
-                $row['attachments'] = json_encode([]);
-            }
-            if (Schema::hasColumn('knowledge_articles', 'is_archived')) {
-                $row['is_archived'] = false;
-            }
-
-            DB::table('knowledge_articles')->insert($row);
-        }
-    }
-
-    /** @return array<string, int> */
-    private function ensureCategories(): array
-    {
-        if (! Schema::hasTable('knowledge_categories')) {
-            return [];
-        }
-
-        $names = [
+        $categories = [];
+        foreach ([
             'Crop Guides',
             'Pests & Diseases',
             'Farming Practices',
             'Weather & Climate',
             'Advisories',
             'Learning Materials',
-        ];
-
-        $now = now();
-        foreach ($names as $name) {
-            $slug = Str::slug($name);
-            $exists = DB::table('knowledge_categories')->where('slug', $slug)->exists();
-            if (! $exists) {
-                DB::table('knowledge_categories')->insert([
-                    'name' => $name,
-                    'slug' => $slug,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-            }
+        ] as $name) {
+            $categories[$name] = KnowledgeCategory::query()->firstOrCreate(
+                ['slug' => Str::slug($name)],
+                ['name' => $name],
+            );
         }
 
-        return DB::table('knowledge_categories')->pluck('id', 'name')->all();
+        $samples = [
+            [
+                'slug' => 'laoag-kc-sample-rice-calendar',
+                'title' => 'Rice transplanting calendar',
+                'category' => 'Crop Guides',
+                'cover' => 'https://images.unsplash.com/photo-1530053969600-caed259a2429?w=900&q=80',
+                'published' => true,
+                'published_at' => '2026-09-02 08:00:00',
+                'content' => "Best windows for wet-season transplanting in Laoag lowlands and recommended seedling age for inbred and hybrid rice.\n\nTransplant 18–21 day-old seedlings when paddies hold 2–3 cm of standing water. Stagger planting by 7–10 days across fields so labor and irrigation demand stay manageable. Keep seedbeds near a reliable water source and harden seedlings 2 days before pulling.",
+            ],
+            [
+                'slug' => 'laoag-kc-sample-rice-blast',
+                'title' => 'Managing rice blast',
+                'category' => 'Pests & Diseases',
+                'cover' => 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=900&q=80',
+                'published' => true,
+                'published_at' => '2026-08-28 08:00:00',
+                'content' => "Identify leaf lesions early and apply the recommended fungicide schedule for wet-season rice in Laoag City.\n\nWatch for diamond-shaped spots with gray centers on leaves, especially after long dew periods. Remove severely infected hills, avoid excess nitrogen, and follow MAO-recommended fungicide timing at tillering and panicle initiation. Report outbreaks to your assigned technician.",
+            ],
+            [
+                'slug' => 'laoag-kc-sample-monsoon-watch',
+                'title' => 'Southwest monsoon watch',
+                'category' => 'Advisories',
+                'cover' => 'https://images.unsplash.com/photo-1464226184884-fa280b87c0d3?w=900&q=80',
+                'published' => false,
+                'published_at' => null,
+                'created_at' => '2026-08-20 08:00:00',
+                'content' => "Delay fertilizer on flooded paddies until water recedes to avoid nutrient loss.\n\nWith habagat rains over Ilocos Norte, hold off topdressing while fields stay submerged. Drain to a thin film of water before applying urea, and check dikes after each heavy downpour. This draft is for MAO review before public release.",
+            ],
+            [
+                'slug' => 'laoag-kc-sample-heat-irrigation',
+                'title' => 'Heat and irrigation watch',
+                'category' => 'Farming Practices',
+                'cover' => 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=900&q=80',
+                'published' => true,
+                'published_at' => '2026-08-15 08:00:00',
+                'content' => "Keep shallow standing water in Laoag rice fields during peak heat to reduce stress and lodging.\n\nIrrigate early morning or late afternoon. Avoid midday flooding on newly transplanted hills. Alternate wetting and drying only after the crop is well established, and coordinate pump schedules with neighboring farms along the same canal.",
+            ],
+        ];
+
+        foreach ($samples as $sample) {
+            $createdAt = $sample['created_at'] ?? $sample['published_at'] ?? now();
+
+            KnowledgeArticle::query()->updateOrCreate(
+                ['slug' => $sample['slug']],
+                [
+                    'category_id' => $categories[$sample['category']]->id,
+                    'title' => $sample['title'],
+                    'content' => $sample['content'],
+                    'cover_image_path' => $sample['cover'],
+                    'type' => 'article',
+                    'author_id' => $author->id,
+                    'municipality_id' => $laoag->id,
+                    'is_published' => $sample['published'],
+                    'published_at' => $sample['published_at'],
+                    'view_count' => 0,
+                    'is_archived' => false,
+                    'created_at' => $createdAt,
+                    'updated_at' => now(),
+                ],
+            );
+        }
     }
 }

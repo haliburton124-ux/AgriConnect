@@ -36,6 +36,18 @@ class UserResource extends JsonResource
                 $this->role === 'technician',
                 fn () => $this->technicianProfile?->availability ?? 'available',
             ),
+            'specializations' => $this->when(
+                $this->role === 'technician',
+                fn () => $this->technicianProfile?->specializations ?? [],
+            ),
+            'license_number' => $this->when(
+                $this->role === 'technician',
+                fn () => $this->technicianProfile?->license_number,
+            ),
+            'years_experience' => $this->when(
+                $this->role === 'technician',
+                fn () => (int) ($this->technicianProfile?->years_experience ?? 0),
+            ),
         ];
     }
 }

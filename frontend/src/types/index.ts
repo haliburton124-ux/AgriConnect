@@ -31,6 +31,9 @@ export interface User {
   email_verified_at: string | null
   created_at: string
   availability?: 'available' | 'busy' | 'on_leave'
+  specializations?: string[]
+  license_number?: string | null
+  years_experience?: number
 }
 
 export type IncidentStatus = 'pending' | 'validated' | 'assigned' | 'ongoing' | 'resolved' | 'rejected'

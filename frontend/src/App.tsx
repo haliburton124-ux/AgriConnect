@@ -33,6 +33,8 @@ import { MaoKnowledgeCenterPage } from '@/pages/mao/MaoKnowledgeCenterPage'
 import { KnowledgeSharingPage } from '@/pages/shared/KnowledgeSharingPage'
 import { AnnouncementsPage } from '@/pages/shared/AnnouncementsPage'
 import { SettingsPage } from '@/pages/shared/SettingsPage'
+import { MaoSettingsPage } from '@/pages/mao/MaoSettingsPage'
+import { TechnicianSettingsPage } from '@/pages/technician/TechnicianSettingsPage'
 import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage'
 import { TechnicianDashboardPage } from '@/pages/technician/TechnicianDashboardPage'
 import { MaoTechniciansPage } from '@/pages/mao/MaoTechniciansPage'
@@ -85,8 +87,8 @@ const BUILT_PAGES: Partial<Record<string, ComponentType>> = {
   '/technician/map': GisMapPage,
   '/admin/audit-logs': AdminAuditLogsPage,
   '/farmer/settings': SettingsPage,
-  '/technician/settings': SettingsPage,
-  '/mao/settings': SettingsPage,
+  '/technician/settings': TechnicianSettingsPage,
+  '/mao/settings': MaoSettingsPage,
   '/ppo/settings': SettingsPage,
   '/admin/settings': SettingsPage,
 }

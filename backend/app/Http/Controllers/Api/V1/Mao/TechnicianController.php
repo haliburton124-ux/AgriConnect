@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Mao;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Mao\StoreMaoTechnicianRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TechnicianController extends Controller
 {
@@ -50,5 +52,40 @@ class TechnicianController extends Controller
         })->values();
 
         return response()->json(['data' => $data]);
+    }
+
+    public function store(StoreMaoTechnicianRequest $request): JsonResponse
+    {
+        $officer = $request->user();
+        $data = $request->validated();
+
+        $user = DB::transaction(function () use ($data, $officer) {
+            $technician = User::create([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'password' => $data['password'],
+                'role' => User::ROLE_TECHNICIAN,
+                'municipality_id' => $officer->municipality_id,
+                'barangay_id' => $data['barangay_id'],
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]);
+
+            $technician->technicianProfile()->create([
+                'license_number' => $data['license_number'] ?? null,
+                'specializations' => $data['specializations'] ?? [],
+                'assigned_municipality_id' => $officer->municipality_id,
+                'availability' => 'available',
+            ]);
+
+            return $technician;
+        });
+
+        return response()->json([
+            'message' => 'Technician account created successfully.',
+            'data' => new UserResource($user->load(['municipality', 'barangay', 'technicianProfile'])),
+        ], 201);
     }
 }

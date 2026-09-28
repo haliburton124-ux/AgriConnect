@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowRight, Briefcase, HardHat, Mail, MapPin, MessageCircle, Phone, Search,
+  ArrowRight, Briefcase, HardHat, Mail, MapPin, MessageCircle, Phone, Plus, Search,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -13,6 +13,7 @@ import { Modal } from '@/components/ui/Modal'
 import { incidentService, type MaoTechnician, type TechnicianAvailability } from '@/services/incidentService'
 import { getApiErrorMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { CreateTechnicianModal } from '@/components/modals/CreateTechnicianModal'
 
 const COVER_IMAGES = [
   'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=70',
@@ -46,8 +47,9 @@ export function MaoTechniciansPage() {
   const [search, setSearch] = useState('')
   const [availability, setAvailability] = useState<TechnicianAvailability | ''>('')
   const [selected, setSelected] = useState<MaoTechnician | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
     incidentService
       .listTechnicians()
       .then((res) => setTechnicians(res.data.data))
@@ -55,7 +57,9 @@ export function MaoTechniciansPage() {
         setTechnicians([])
         toast.error(getApiErrorMessage(error, 'Could not load technicians.'))
       })
-  }, [])
+  }
+
+  useEffect(load, [])
 
   const filtered = useMemo(() => {
     if (!technicians) return []
@@ -80,11 +84,16 @@ export function MaoTechniciansPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Agricultural Technicians</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Active technicians available for assignment in your municipality.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Agricultural Technicians</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Active technicians available for assignment in your municipality.
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4" /> Add Technician
+        </Button>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -128,7 +137,7 @@ export function MaoTechniciansPage() {
       ) : technicians.length === 0 ? (
         <Card>
           <CardContent className="p-6">
-            <EmptyState icon={HardHat} title="No technicians yet" description="Ask your Admin to provision technician accounts for your municipality." />
+            <EmptyState icon={HardHat} title="No technicians yet" description="Add a technician account so you can assign incident reports in your municipality." />
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
@@ -146,6 +155,14 @@ export function MaoTechniciansPage() {
       )}
 
       <TechnicianProfileModal tech={selected} onClose={() => setSelected(null)} />
+      <CreateTechnicianModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSuccess={() => {
+          setTechnicians(null)
+          load()
+        }}
+      />
     </div>
   )
 }

@@ -163,6 +163,7 @@ Route::prefix('v1')->group(function () {
             Route::put('incidents/{incident}/reject', [MaoIncidentController::class, 'reject']);
             Route::post('incidents/{incident}/assign', [MaoIncidentController::class, 'assign']);
             Route::get('technicians', [TechnicianController::class, 'index']);
+            Route::post('technicians', [TechnicianController::class, 'store']);
             Route::get('farmers', [MaoFarmerController::class, 'index']);
             Route::get('farmers/{farmer}', [MaoFarmerController::class, 'show']);
 

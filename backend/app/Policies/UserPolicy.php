@@ -43,4 +43,9 @@ class UserPolicy
     {
         return $actor->isAdmin();
     }
+
+    public function createTechnician(User $actor): bool
+    {
+        return $actor->hasRole('municipal_office') && (bool) $actor->municipality_id;
+    }
 }

@@ -62,4 +62,14 @@ export const incidentService = {
   assign: (id: number, technician_id: number, notes?: string) =>
     api.post<{ message: string; data: Incident }>(`/mao/incidents/${id}/assign`, { technician_id, notes }),
   listTechnicians: () => api.get<{ data: MaoTechnician[] }>('/mao/technicians'),
+  createTechnician: (payload: {
+    first_name: string
+    last_name: string
+    email: string
+    phone: string
+    password: string
+    barangay_id: number
+    license_number?: string
+    specializations?: string[]
+  }) => api.post<{ message: string; data: MaoTechnician }>('/mao/technicians', payload),
 }

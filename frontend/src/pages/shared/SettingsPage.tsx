@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { User as UserIcon, Shield, LogOut } from 'lucide-react'
+import { User as UserIcon, Shield, LogOut, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
+import { AvailabilityPicker } from '@/components/technician/AvailabilityPicker'
 
 const schema = z
   .object({
@@ -100,6 +101,17 @@ export function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {user.role === 'technician' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Clock className="h-4 w-4" /> Availability</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AvailabilityPicker />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

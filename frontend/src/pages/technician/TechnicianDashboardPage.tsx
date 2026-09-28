@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { incidentService } from '@/services/incidentService'
 import { formatDate } from '@/lib/utils'
 import type { Incident } from '@/types'
+import { AvailabilityPicker } from '@/components/technician/AvailabilityPicker'
 
 /**
  * Technician has no dedicated dashboard endpoint on the backend — this
@@ -24,6 +25,13 @@ export function TechnicianDashboardPage() {
   if (!incidents) {
     return (
       <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-ink">My Dashboard</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Your current workload at a glance.</p>
+          </div>
+          <AvailabilityPicker compact />
+        </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-28 w-full rounded-2xl" />)}
         </div>
@@ -40,9 +48,12 @@ export function TechnicianDashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">My Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your current workload at a glance.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">My Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Your current workload at a glance.</p>
+        </div>
+        <AvailabilityPicker compact />
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

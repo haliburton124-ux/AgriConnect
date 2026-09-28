@@ -32,6 +32,10 @@ class UserResource extends JsonResource
             'two_factor_enabled' => $this->two_factor_enabled,
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
+            'availability' => $this->when(
+                $this->role === 'technician',
+                fn () => $this->technicianProfile?->availability ?? 'available',
+            ),
         ];
     }
 }

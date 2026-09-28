@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Shared\MessageController;
 use App\Http\Controllers\Api\V1\Shared\NotificationController;
 use App\Http\Controllers\Api\V1\Shared\RealtimeController;
 use App\Http\Controllers\Api\V1\Technician\IncidentController as TechnicianIncidentController;
+use App\Http\Controllers\Api\V1\Technician\AvailabilityController as TechnicianAvailabilityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -138,6 +139,7 @@ Route::prefix('v1')->group(function () {
 
         // ── Technician-only routes ──────────────────────────────
         Route::middleware('role:technician')->prefix('technician')->group(function () {
+            Route::put('availability', [TechnicianAvailabilityController::class, 'update']);
             Route::get('incidents', [TechnicianIncidentController::class, 'index']);
             Route::get('incidents/{incident}', [TechnicianIncidentController::class, 'show']);
             Route::put('incidents/{incident}/status', [TechnicianIncidentController::class, 'updateStatus']);

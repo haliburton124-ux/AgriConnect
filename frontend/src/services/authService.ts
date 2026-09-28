@@ -42,4 +42,7 @@ export const authService = {
   logout: () => api.post<{ message: string }>('/auth/logout'),
 
   logoutAllDevices: () => api.post<{ message: string }>('/auth/logout-all'),
+
+  updateAvailability: (availability: NonNullable<User['availability']>) =>
+    api.put<{ message: string; user: User }>('/technician/availability', { availability }),
 }

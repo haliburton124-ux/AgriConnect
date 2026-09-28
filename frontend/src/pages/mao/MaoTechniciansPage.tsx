@@ -87,8 +87,8 @@ export function MaoTechniciansPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-wrap gap-2">
           {([
             { value: '', label: 'All' },
             { value: 'available', label: 'Available' },
@@ -110,10 +110,10 @@ export function MaoTechniciansPage() {
             </button>
           ))}
         </div>
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full min-w-0 lg:max-w-xs lg:shrink-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search name, barangay, or specialty…"
+            placeholder="Search technicians…"
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -165,34 +165,34 @@ function TechnicianCard({
   const workload = tech.workload ?? 0
 
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-      <article className="overflow-hidden rounded-[22px] border border-black/[0.04] bg-white shadow-card">
-        <div className="relative h-28">
+    <motion.div className="h-full" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+      <article className="flex h-full flex-col rounded-[22px] border border-black/[0.04] bg-white shadow-card">
+        <div className="relative h-[108px] shrink-0 overflow-hidden rounded-t-[22px]">
           <img src={cover} alt="" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/55 via-forest/20 to-transparent" />
-          <span className={cn('absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm', status.className)}>
+          <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/50 via-forest/15 to-transparent" />
+          <span className={cn('absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm', status.className)}>
             <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
             {status.label}
           </span>
         </div>
 
-        <div className="px-5 pb-5">
-          <div className="-mt-10 mb-4 flex items-end">
+        <div className="flex flex-1 flex-col px-5 pb-5">
+          <div className="relative z-10 -mt-9 mb-3">
             {tech.avatar_url ? (
               <img
                 src={tech.avatar_url}
                 alt={tech.full_name}
-                className="h-[72px] w-[72px] rounded-full object-cover ring-4 ring-white shadow-card"
+                className="h-16 w-16 rounded-full object-cover ring-[3px] ring-white shadow-card"
               />
             ) : (
-              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-primary text-lg font-semibold text-white ring-4 ring-white shadow-card">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-base font-semibold text-white ring-[3px] ring-white shadow-card">
                 {nameInitials(tech.full_name, tech.first_name, tech.last_name)}
               </div>
             )}
           </div>
 
-          <h2 className="text-lg font-semibold leading-tight text-ink">{tech.full_name}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{specializationLabel(tech.specializations)}</p>
+          <h2 className="truncate text-lg font-semibold leading-tight text-ink">{tech.full_name}</h2>
+          <p className="mt-1 line-clamp-1 min-h-5 text-sm text-muted-foreground">{specializationLabel(tech.specializations)}</p>
 
           <ul className="mt-4 space-y-2 text-sm text-ink/80">
             <li className="flex items-center gap-2">
@@ -203,29 +203,37 @@ function TechnicianCard({
               <Phone className="h-4 w-4 shrink-0 text-forest" />
               <a href={`tel:${tech.phone}`} className="truncate hover:text-forest">{tech.phone || '—'}</a>
             </li>
-            {tech.email && (
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 shrink-0 text-forest" />
+            <li className="flex min-h-5 items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0 text-forest" />
+              {tech.email ? (
                 <a href={`mailto:${tech.email}`} className="truncate hover:text-forest">{tech.email}</a>
-              </li>
-            )}
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </li>
           </ul>
 
-          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-black/5 pt-4">
+          <div className="mt-auto grid grid-cols-2 gap-4 border-t border-black/5 pt-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Assigned</p>
-              <p className="mt-1 text-lg font-bold text-ink">{assigned} <span className="text-xs font-medium text-muted-foreground">cases</span></p>
+              <p className="mt-1 flex h-7 items-baseline gap-1">
+                <span className="text-lg font-bold leading-none text-ink">{assigned}</span>
+                <span className="text-xs font-medium text-muted-foreground">cases</span>
+              </p>
+              <div className="mt-1.5 h-1.5" />
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Workload</p>
-              <p className="mt-1 text-lg font-bold text-ink">{workload}%</p>
+              <p className="mt-1 flex h-7 items-baseline">
+                <span className="text-lg font-bold leading-none text-ink">{workload}%</span>
+              </p>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-forest/10">
-                <div className="h-full rounded-full bg-gradient-primary" style={{ width: `${workload}%` }} />
+                <div className="h-full rounded-full bg-gradient-primary" style={{ width: `${Math.min(100, Math.max(0, workload))}%` }} />
               </div>
             </div>
           </div>
 
-          <div className="mt-5 flex items-center justify-between gap-2">
+          <div className="mt-4 flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={onView}

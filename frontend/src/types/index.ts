@@ -30,6 +30,7 @@ export interface User {
   two_factor_enabled: boolean
   email_verified_at: string | null
   created_at: string
+  availability?: 'available' | 'busy' | 'on_leave'
 }
 
 export type IncidentStatus = 'pending' | 'validated' | 'assigned' | 'ongoing' | 'resolved' | 'rejected'

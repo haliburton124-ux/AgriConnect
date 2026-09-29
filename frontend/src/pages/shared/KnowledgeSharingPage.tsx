@@ -35,6 +35,30 @@ export function KnowledgeSharingPage() {
 
   useEffect(load, [view])
 
+  const updatePost = (updated: CommunityPost) => {
+    setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
+    setSelected((current) => (current?.id === updated.id ? updated : current))
+  }
+
+  const handleLike = async (post: CommunityPost) => {
+    try {
+      const { data } = await communityService.like(post.id)
+      updatePost(data.data)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const handleShare = async (post: CommunityPost) => {
+    try {
+      const { data } = await communityService.share(post.id)
+      updatePost(data.data)
+      toast.success(post.shared_by_me ? 'Share updated.' : 'Shared.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
   const handleArchive = async () => {
     if (!archiveTarget) return
     try {
@@ -97,7 +121,7 @@ export function KnowledgeSharingPage() {
         <div className="space-y-4">
           {posts.map((post) => (
             <div key={post.id} className="relative">
-              <PostCard post={post} onOpen={setSelected} compact />
+              <PostCard post={post} onOpen={setSelected} onLike={handleLike} onShare={handleShare} compact />
               {view === 'archived' ? (
                 <Button
                   size="icon"
@@ -138,7 +162,7 @@ export function KnowledgeSharingPage() {
           setPosts((current) => current?.map((p) => (p.id === updated.id ? updated : p)) ?? null)
           setSelected(updated)
         }}
-        enableEngagement={false}
+        enableEngagement
       />
 
       <ArchiveConfirmDialog

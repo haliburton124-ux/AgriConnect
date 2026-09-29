@@ -130,6 +130,7 @@ export interface Appointment {
   completion_findings?: string | null
   completion_outcome?: string | null
   completion_follow_up?: string | null
+  cancellation_reason?: string | null
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
   farmer?: { id: number; first_name: string; last_name: string; phone: string }
   technician?: { id: number; first_name: string; last_name: string; phone: string }

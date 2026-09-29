@@ -131,6 +131,9 @@ class AppointmentController extends Controller
             $payload['completion_outcome'] = $request->validated('completion_outcome');
             $payload['completion_follow_up'] = $request->validated('completion_follow_up') ?? null;
         }
+        if ($nextStatus === 'cancelled') {
+            $payload['cancellation_reason'] = $request->validated('cancellation_reason');
+        }
 
         $appointment->update($payload);
 

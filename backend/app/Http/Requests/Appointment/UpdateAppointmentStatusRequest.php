@@ -14,12 +14,14 @@ class UpdateAppointmentStatusRequest extends FormRequest
     public function rules(): array
     {
         $completing = $this->input('status') === 'completed';
+        $cancelling = $this->input('status') === 'cancelled';
 
         return [
             'status' => ['required', 'in:confirmed,completed,cancelled,no_show'],
             'completion_findings' => [$completing ? 'required' : 'nullable', 'string', 'min:10', 'max:5000'],
             'completion_outcome' => [$completing ? 'required' : 'nullable', 'string', 'min:10', 'max:5000'],
             'completion_follow_up' => ['nullable', 'string', 'max:2000'],
+            'cancellation_reason' => [$cancelling ? 'required' : 'nullable', 'string', 'min:10', 'max:2000'],
         ];
     }
 }

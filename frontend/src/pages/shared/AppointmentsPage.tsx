@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ScheduleAppointmentModal } from '@/components/modals/ScheduleAppointmentModal'
 import { CompleteAppointmentModal } from '@/components/modals/CompleteAppointmentModal'
+import { CancelAppointmentModal } from '@/components/modals/CancelAppointmentModal'
 import { appointmentService } from '@/services/appointmentService'
 import { useAuthStore } from '@/store/authStore'
 import { getApiErrorMessage } from '@/lib/api'
@@ -27,6 +28,7 @@ export function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[] | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [completing, setCompleting] = useState<Appointment | null>(null)
+  const [cancelling, setCancelling] = useState<Appointment | null>(null)
 
   const load = () => {
     setAppointments(null)
@@ -104,6 +106,12 @@ export function AppointmentsPage() {
                           )}
                         </div>
                       )}
+                          {appt.cancellation_reason && (
+                            <p className="mt-1.5 text-xs leading-relaxed text-ink/70">
+                              <span className="font-medium text-ink/80">Cancellation reason: </span>
+                              {appt.cancellation_reason}
+                            </p>
+                          )}
                       {appt.incident && <p className="text-xs text-forest">Re: {appt.incident.reference_code}</p>}
                     </div>
                   </div>
@@ -115,7 +123,7 @@ export function AppointmentsPage() {
                         <Button size="icon" variant="ghost" title="Confirm" onClick={() => handleStatusChange(appt, 'confirmed')}>
                           <Clock className="h-4 w-4 text-sky" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Cancel" onClick={() => handleStatusChange(appt, 'cancelled')}>
+                        <Button size="icon" variant="ghost" title="Cancel" onClick={() => setCancelling(appt)}>
                           <XCircle className="h-4 w-4 text-danger" />
                         </Button>
                       </>
@@ -125,7 +133,7 @@ export function AppointmentsPage() {
                         <Button size="icon" variant="ghost" title="Mark completed" onClick={() => setCompleting(appt)}>
                           <CheckCircle2 className="h-4 w-4 text-success" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Cancel" onClick={() => handleStatusChange(appt, 'cancelled')}>
+                        <Button size="icon" variant="ghost" title="Cancel" onClick={() => setCancelling(appt)}>
                           <XCircle className="h-4 w-4 text-danger" />
                         </Button>
                       </>
@@ -143,6 +151,12 @@ export function AppointmentsPage() {
         open={completing !== null}
         appointment={completing}
         onClose={() => setCompleting(null)}
+        onSuccess={load}
+      />
+      <CancelAppointmentModal
+        open={cancelling !== null}
+        appointment={cancelling}
+        onClose={() => setCancelling(null)}
         onSuccess={load}
       />
     </div>

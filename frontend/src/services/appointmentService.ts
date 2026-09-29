@@ -26,6 +26,7 @@ export const appointmentService = {
     completion_findings?: string
     completion_outcome?: string
     completion_follow_up?: string
+    cancellation_reason?: string
   }) =>
     api.put<{ message: string; data: Appointment }>(`/appointments/${id}/status`, { status, ...extras }),
 }

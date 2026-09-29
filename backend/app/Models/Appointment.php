@@ -11,6 +11,7 @@ class Appointment extends Model
         'incident_id', 'farmer_id', 'technician_id', 'farm_id',
         'scheduled_at', 'purpose', 'notes', 'status',
         'completion_findings', 'completion_outcome', 'completion_follow_up',
+        'cancellation_reason',
     ];
 
     protected $casts = ['scheduled_at' => 'datetime'];

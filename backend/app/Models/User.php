@@ -87,6 +87,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(TechnicianProfile::class);
     }
 
+    public function profilePhoto(): HasOne
+    {
+        return $this->hasOne(ProfilePhoto::class);
+    }
+
     public function farms(): HasMany
     {
         return $this->hasMany(Farm::class, 'farmer_id');

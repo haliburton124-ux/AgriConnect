@@ -11,6 +11,7 @@ use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\UpdateAvatarRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
+use App\Models\ProfilePhoto;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\AuditLogger;
 use App\Services\AuthService;
@@ -191,10 +192,20 @@ class AuthController extends Controller
     public function updateAvatar(UpdateAvatarRequest $request, PublicMediaStorage $media): JsonResponse
     {
         $user = $request->user();
-        $stored = $media->storeUpload($request->file('avatar'), 'avatars/'.$user->id);
+        $file = $request->file('avatar');
+        $binary = (string) $file->get();
+        $stored = $media->storeUpload($file, 'avatars/'.$user->id);
         $previous = $user->avatar_path;
 
         $user->update(['avatar_path' => $stored['path']]);
+
+        ProfilePhoto::query()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'mime' => $file->getMimeType() ?: 'image/jpeg',
+                'data' => base64_encode($binary),
+            ],
+        );
 
         if ($previous && $previous !== $stored['path']) {
             $media->disk()->delete($previous);

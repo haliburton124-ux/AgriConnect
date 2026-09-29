@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Auth\AvatarController;
 use App\Http\Controllers\Api\V1\Community\CommunityPostController;
 use App\Http\Controllers\Api\V1\Content\AdvisoryController;
 use App\Http\Controllers\Api\V1\Content\AnnouncementController;
@@ -58,6 +59,7 @@ Route::prefix('v1')->group(function () {
         Route::get('locations/barangays', [LocationController::class, 'barangays']);
         Route::get('locations/incident-categories', [LocationController::class, 'incidentCategories']);
 
+        Route::get('avatars/{user}', [AvatarController::class, 'show']);
         Route::get('advisories', [AdvisoryController::class, 'index']);
 
         Route::get('community/categories', [CommunityPostController::class, 'categories']);

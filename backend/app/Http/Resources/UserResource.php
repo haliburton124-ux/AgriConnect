@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Services\PublicMediaStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,7 +21,7 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'status' => $this->status,
             'avatar_url' => $this->avatar_path
-                ? app(PublicMediaStorage::class)->urlForPath($this->avatar_path)
+                ? url('/api/v1/avatars/'.$this->id).'?t='.optional($this->updated_at)->getTimestamp()
                 : null,
             'municipality' => $this->whenLoaded('municipality', fn () => [
                 'id' => $this->municipality->id,
